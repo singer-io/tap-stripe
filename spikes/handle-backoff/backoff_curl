@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+# Also doesn't immediately trigger a 429…
+
+while curl -H 'Stitch-Account: '"$1" \
+           -s https://api.stripe.com/v1/charges \
+           -u '${2}:' >/dev/null
+do
+        date -u
+done

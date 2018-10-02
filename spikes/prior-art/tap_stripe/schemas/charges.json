@@ -1,0 +1,326 @@
+{
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "object": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "amount": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "amount_refunded": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "application": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "application_fee": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "balance_transaction": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "captured": {
+      "type": [
+        "null",
+        "boolean"
+      ]
+    },
+    "created": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "date-time"
+    },
+    "currency": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "customer": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "description": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "destination": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "dispute": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "failure_code": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "failure_message": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "fraud_details": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "additionalProperties": true,
+      "properties": {}
+    },
+    "invoice": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "livemode": {
+      "type": [
+        "null",
+        "boolean"
+      ]
+    },
+    "metadata": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "additionalProperties": true,
+      "properties": {}
+    },
+    "on_behalf_of": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "order": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "outcome": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {
+        "network_status": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "reason": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "risk_level": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "seller_message": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "type": {
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      }
+    },
+    "paid": {
+      "type": [
+        "null",
+        "boolean"
+      ]
+    },
+    "receipt_email": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "receipt_number": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "refunded": {
+      "type": [
+        "null",
+        "boolean"
+      ]
+    },
+    "refunds": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "items": {
+        "type": [
+          "null",
+          "object"
+        ],
+        "properties": {
+          "id": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "object": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "amount": {
+            "type": [
+              "null",
+              "integer"
+            ]
+          },
+          "balance_transaction": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "charge": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "created": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "currency": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "metadata": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": true,
+            "properties": {}
+          },
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "receipt_number": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      }
+    },
+    "review": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "shipping": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "additionalProperties": true,
+      "properties": {}
+    },
+    "source": { "$ref": "source.json" },
+    "source_transfer": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "statement_descriptor": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "status": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "transfer_group": {
+      "type": [
+        "null",
+        "string"
+      ]
+    }
+  }
+}

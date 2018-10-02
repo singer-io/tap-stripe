@@ -1,0 +1,15 @@
+* SDK
+
+  The SDK appears to be useful.
+
+  We'll need to change what we're requesting from the OAuth dance to the
+  =account_id=, assuming that's available.
+
+  See the [[file:spikes/sdk/][SDK Spike]].
+
+  We are assuming that the =account_id= is not a secret and so should be
+  logged/kept in the clear.
+
+  Notably the SDK has a pagination iterator. We'll just need to figure out
+  the bookmarking strategy for it. Default to writing a bookmark for every
+  record?

@@ -1,0 +1,149 @@
+{
+  "type": [
+    "null",
+    "object"
+  ],
+  "additionalProperties": true,
+  "properties": {
+    "id": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "object": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "address_city": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "address_country": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "address_line1": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "address_line1_check": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "address_line2": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "address_state": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "address_zip": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "address_zip_check": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "brand": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "country": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "customer": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "cvc_check": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "dynamic_last4": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "exp_month": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "exp_year": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "fingerprint": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "funding": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "last4": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "metadata": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "additionalProperties": true,
+      "properties": {}
+    },
+    "name": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "tokenization_method": {
+      "type": [
+        "null",
+        "string"
+      ]
+    }
+  }
+}

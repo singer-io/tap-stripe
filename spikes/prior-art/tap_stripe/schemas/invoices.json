@@ -1,0 +1,366 @@
+{
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "object": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "amount_due": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "amount_paid": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "amount_remaining": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "application_fee": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "attempt_count": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "attempted": {
+      "type": [
+        "null",
+        "boolean"
+      ]
+    },
+    "auto_advance": {
+      "type": [
+        "null",
+        "boolean"
+      ]
+    },
+    "billing": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "billing_reason": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "charge": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "closed": {
+      "type": [
+        "null",
+        "boolean"
+      ]
+    },
+    "currency": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "customer": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "date": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "date-time"
+    },
+    "description": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "discount": {
+      "$ref": "discount.json"
+    },
+    "due_date": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "date-time"
+    },
+    "ending_balance": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "forgiven": {
+      "type": [
+        "null",
+        "boolean"
+      ]
+    },
+    "hosted_invoice_url": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "invoice_pdf": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "lines": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "object": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "invoice_item": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "amount": {
+            "type": [
+              "null",
+              "integer"
+            ]
+          },
+          "currency": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "discountable": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "livemode": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "metadata": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": true,
+            "properties": {}
+          },
+          "period": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {
+              "end": {
+                "type": [
+                  "null",
+                  "string"
+                ],
+                "format": "date-time"
+              },
+              "start": {
+                "type": [
+                  "null",
+                  "string"
+                ],
+                "format": "date-time"
+              }
+            }
+          },
+          "plan": {
+            "$ref": "plan.json"
+          },
+          "proration": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "quantity": {
+            "type": [
+              "null",
+              "integer"
+            ]
+          },
+          "subscription": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "subscription_item": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "type": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      }
+    },
+    "livemode": {
+      "type": [
+        "null",
+        "boolean"
+      ]
+    },
+    "metadata": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "additionalProperties": true,
+      "properties": {}
+    },
+    "next_payment_attempt": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "date-time"
+    },
+    "number": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "paid": {
+      "type": [
+        "null",
+        "boolean"
+      ]
+    },
+    "period_end": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "date-time"
+    },
+    "period_start": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "date-time"
+    },
+    "receipt_number": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "starting_balance": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "statement_descriptor": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "subscription": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "subtotal": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "tax": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "tax_percent": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "total": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "webhooks_delivered_at": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "date-time"
+    }
+  }
+}

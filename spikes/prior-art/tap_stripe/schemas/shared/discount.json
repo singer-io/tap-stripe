@@ -1,0 +1,41 @@
+{
+  "type": [
+    "null",
+    "object"
+  ],
+  "properties": {
+    "object": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "coupon": { "$ref": "coupon.json" },
+    "customer": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "end": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "date-time"
+    },
+    "start": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "date-time"
+    },
+    "subscription": {
+      "type": [
+        "null",
+        "string"
+      ]
+    }
+  }
+}

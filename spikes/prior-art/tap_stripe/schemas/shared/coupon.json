@@ -1,0 +1,108 @@
+{
+  "type": [
+    "null",
+    "object"
+  ],
+  "properties": {
+    "id": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "object": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "amount_off": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "created": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "date-time"
+    },
+    "currency": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "duration": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "duration_in_months": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "livemode": {
+      "type": [
+        "null",
+        "boolean"
+      ]
+    },
+    "max_redemptions": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "metadata": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "additionalProperties": true,
+      "properties": {}
+    },
+    "name": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "percent_off": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "percent_off_precise": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "redeem_by": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "date-time"
+    },
+    "times_redeemed": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "valid": {
+      "type": [
+        "null",
+        "boolean"
+      ]
+    }
+  }
+}

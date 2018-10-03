@@ -50,3 +50,12 @@ import ipdb; ipdb.set_trace()
 # ['ch_1DGvHKDcBSxinnbL8cqeaClE', 'ch_1CncCSDcBSxinnbLGAg0FgCS', 'ch_1AfIBEDcBSxinnbLXEPmc6Yc', 'ch_16OI9wDcBSxinnbLb7d17FuT', 'ch_16MOjADcBSxinnbLMmmwvRi0', 'ch_16Jo1HDcBSxinnbLDT7Mk8hO', 'ch_16JnhSDcBSxinnbLK5KrZm2F', 'ch_16AOSQDcBSxinnbLaqa4dHqZ']
 # ipdb> [c.stripe_id for c in stripe.Charge.list(starting_after="ch_16MOjADcBSxinnbLMmmwvRi0")]
 # ['ch_16Jo1HDcBSxinnbLDT7Mk8hO', 'ch_16JnhSDcBSxinnbLK5KrZm2F', 'ch_16AOSQDcBSxinnbLaqa4dHqZ']
+
+# Checking how many accounts we can talk to
+# ipdb> stripe.Account.retrieve().id
+# 'acct_14zvmQDcBSxinnbL' # The Stitch Dev Account
+# ipdb> stripe.api_key
+# <REDACTED STITCH STRIPE TEST KEY>
+# ipdb> stripe.api_key = <REDACTED STITCH STRIPE LIVE KEY>
+# ipdb> stripe.Account.retrieve().id
+# 'acct_14zvmQDcBSxinnbL' # The Stitch Dev Account again

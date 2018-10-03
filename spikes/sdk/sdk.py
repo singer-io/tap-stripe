@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-# TODO Test out authentication
-
 import sys
 
 stripe_secret_key = sys.argv[1]
@@ -45,3 +43,10 @@ import ipdb; ipdb.set_trace()
 # [1424111008, 1424111009, 1424123398, 1424123398, 1424583077]
 # ipdb> sorted([x.created for x in stripe.Event.list(stripe_account="acct_15VQRNKi8yTvIJwI", created={"gte": 1424123398}).data])
 # [1424123398, 1424123398, 1424583077]
+
+# Here's how we do object id pagination
+
+# ipdb> [c.stripe_id for c in stripe.Charge.list()]
+# ['ch_1DGvHKDcBSxinnbL8cqeaClE', 'ch_1CncCSDcBSxinnbLGAg0FgCS', 'ch_1AfIBEDcBSxinnbLXEPmc6Yc', 'ch_16OI9wDcBSxinnbLb7d17FuT', 'ch_16MOjADcBSxinnbLMmmwvRi0', 'ch_16Jo1HDcBSxinnbLDT7Mk8hO', 'ch_16JnhSDcBSxinnbLK5KrZm2F', 'ch_16AOSQDcBSxinnbLaqa4dHqZ']
+# ipdb> [c.stripe_id for c in stripe.Charge.list(starting_after="ch_16MOjADcBSxinnbLMmmwvRi0")]
+# ['ch_16Jo1HDcBSxinnbLDT7Mk8hO', 'ch_16JnhSDcBSxinnbLK5KrZm2F', 'ch_16AOSQDcBSxinnbLaqa4dHqZ']

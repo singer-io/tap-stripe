@@ -10,13 +10,13 @@ setup(
     classifiers=["Programming Language :: Python :: 3 :: Only"],
     py_modules=["tap_stripe"],
     install_requires=[
-        "singer-python>=5.0.12",
-        "requests",
+        "singer-python==5.2.2",
+        "stripe==2.10.1",
     ],
     extras_require={
         'dev': [
             'ipdb',
-            'pylint',
+            'pylint==2.1.1',
         ]
     },
     entry_points="""

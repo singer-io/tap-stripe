@@ -1,10 +1,21 @@
 #!/usr/bin/env python3
 import os
 import json
+import stripe
 import singer
 from singer import utils
 
-REQUIRED_CONFIG_KEYS = ["start_date", "username", "password"]
+REQUIRED_CONFIG_KEYS = [
+    "account_id",
+    "client_secret",
+    "start_date",
+]
+STREAM_IDS = [
+    'charges',
+]
+STREAM_SDK_OBJECTS = {
+    'charges': stripe.Charge,
+}
 LOGGER = singer.get_logger()
 
 def get_abs_path(path):
@@ -27,54 +38,34 @@ def discover():
     streams = []
 
     for schema_name, schema in raw_schemas.items():
-
-        # TODO: populate any metadata and stream's key properties here..
-        stream_metadata = []
-        stream_key_properties = []
-
         # create and add catalog entry
         catalog_entry = {
             'stream': schema_name,
             'tap_stream_id': schema_name,
             'schema': schema,
-            'metadata' : [],
-            'key_properties': []
+            'metadata': [],
+            'key_properties': ['id']
         }
         streams.append(catalog_entry)
 
     return {'streams': streams}
 
-def get_selected_streams(catalog):
-    '''
-    Gets selected streams.  Checks schema's 'selected' first (legacy)
-    and then checks metadata (current), looking for an empty breadcrumb
-    and mdata with a 'selected' entry
-    '''
-    selected_streams = []
-    for stream in catalog['streams']:
-        stream_metadata = stream['metadata']
-        if stream['schema'].get('selected', False):
-            selected_streams.append(stream['tap_stream_id'])
-        else:
-            for entry in stream_metadata:
-                # stream metadata will have empty breadcrumb
-                if not entry['breadcrumb'] and entry['metadata'].get('selected',None):
-                    selected_streams.append(stream['tap_stream_id'])
-
-    return selected_streams
-
-def sync(config, state, catalog):
-
-    selected_stream_ids = get_selected_streams(catalog)
+def sync(config, catalog):
 
     # Loop over streams in catalog
     for stream in catalog['streams']:
         stream_id = stream['tap_stream_id']
         stream_schema = stream['schema']
-        if stream_id in selected_stream_ids:
-            # TODO: sync code for stream goes here...
-            LOGGER.info('Syncing stream:' + stream_id)
-    return
+        stream_key_properties = stream['key_properties']
+        if stream_id in STREAM_IDS:
+            LOGGER.info('Syncing stream: %s', stream_id)
+            singer.write_schema(stream_id,
+                                stream_schema,
+                                stream_key_properties)
+            for obj in STREAM_SDK_OBJECTS[stream_id].list(
+                    stripe_account=config.get(
+                        'account_id')).auto_paging_iter():
+                singer.write_record(stream_id, obj)
 
 @utils.handle_top_exception(LOGGER)
 def main():
@@ -82,23 +73,15 @@ def main():
     # Parse command line arguments
     args = utils.parse_args(REQUIRED_CONFIG_KEYS)
 
-    # If discover flag was passed, run discovery mode and dump output to stdout
-    if args.discover:
-        catalog = discover()
-        print(json.dumps(catalog, indent=2))
-    # Otherwise run in sync mode
-    else:
+    stripe.api_key = args.config.get('client_secret')
+    account = stripe.Account.retrieve(args.config.get('account_id'))
+    msg = "Successfully connected to Stripe Account with display name" \
+        + " `%s`"
+    LOGGER.info(msg, account.display_name)
 
-        # 'properties' is the legacy name of the catalog
-        if args.properties:
-            catalog = args.properties
-        # 'catalog' is the current name
-        elif args.catalog:
-            catalog = args.catalog
-        else:
-            catalog =  discover()
+    catalog = discover()
 
-        sync(args.config, args.state, catalog)
+    sync(args.config, catalog)
 
 if __name__ == "__main__":
     main()

@@ -22,15 +22,15 @@
     it into its state but retrieving the same object from the Object's
     stream has it as it was created?
   - @brian Do we need docs according to the contract?
-** TODO Can the VM perform the oauth dance?                              :v0:
-** TODO Add the form to the ui :v0:
+** DONE Can the VM perform the oauth dance?                              :v0:
+** DONE Add the form to the ui                                           :v0:
 
    Start with the assumption that we'll be collecting a 
-** TODO Add oauth callback support for platform.stripe to =connections-service= :v0:
+** DONE Add oauth callback support for platform.stripe to =connections-service= :v0:
 
    This is when we decide whether we can get the account-id or not.
-** TODO Create the skeleton tap project based on =singer-tap-template=   :v0:
-** TODO Get a skeleton pylint build running in circle                    :v0:
+** DONE Create the skeleton tap project based on =singer-tap-template=   :v0:
+** DONE Get a skeleton pylint build running in circle                    :v0:
 ** TODO Run a check job                                                  :v0:
 
    #+BEGIN_SRC bash

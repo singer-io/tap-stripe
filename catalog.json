@@ -1,0 +1,44 @@
+{
+  "streams": [
+    {
+      "schema": {
+        "type": [
+          "null",
+          "object"
+        ],
+        "properties": {
+          "integer_field": {
+            "type": [
+              "null",
+              "integer"
+            ]
+          },
+          "string_field": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "double_field": {
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "datetime_field": {
+            "format": "date-time",
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "key_properties": [],
+      "stream": "sample_stream",
+      "metadata": [],
+      "tap_stream_id": "sample_stream"
+    }
+  ]
+}

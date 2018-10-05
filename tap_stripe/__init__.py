@@ -13,6 +13,7 @@ REQUIRED_CONFIG_KEYS = [
 ]
 STREAM_SDK_OBJECTS = {
     'charges': stripe.Charge,
+    'events': stripe.Event,
 }
 LOGGER = singer.get_logger()
 

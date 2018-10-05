@@ -31,7 +31,7 @@
    This is when we decide whether we can get the account-id or not.
 ** DONE Create the skeleton tap project based on =singer-tap-template=   :v0:
 ** DONE Get a skeleton pylint build running in circle                    :v0:
-** TODO Run a check job                                                  :v0:
+** DONE Run a check job                                                  :v0:
 
    #+BEGIN_SRC bash
    # in orca
@@ -49,19 +49,18 @@
    Need to be sure to use the stable version of the API that we are
    currently using. Allowing customer specification of the API version
    needs to come later because it introduces too much uncertainty.
-** TODO Implement the schema for Charges                                 :v0:
+** DONE Implement the schema for Charges                                 :v0:
 
    Always selected. We will do field selection later.
-** TODO Do a sync for Charges                                            :v0:
+** DONE Do a sync for Charges                                            :v0:
 
    Notably, we do /not/ get updates for Charges at this time.
-** TODO Handle rate limiting                                             :v0:
+** DONE Handle rate limiting                                             :v0:
 
    This should be in line with the spike for [[file:spikes/timeout/timeout.py][=timeout=]].
 
    This is not a strict requirement because sourcerer doesn't handle it.
    /But/ we think it's super easy.
-** MAYBE Generate docs for Charges
 ** TODO Add bookmarking for Charges                                      :v0:
 
    This is object cursor id pagination. See [[https://github.com/singer-io/tap-stripe/blob/cf3eaf16e162762978a8e23d77a99948f248520f/spikes/sdk/sdk.py#L47-L52][sdk.py]].

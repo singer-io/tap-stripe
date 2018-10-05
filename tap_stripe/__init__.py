@@ -73,7 +73,25 @@ def main():
     # Parse command line arguments
     args = utils.parse_args(REQUIRED_CONFIG_KEYS)
 
+    # Set the API key we'll be using
+    # https://github.com/stripe/stripe-python/tree/a9a8d754b73ad47bdece6ac4b4850822fa19db4e#usage
     stripe.api_key = args.config.get('client_secret')
+    # Allow ourselves to retry retriable network errors 5 times
+    # https://github.com/stripe/stripe-python/tree/a9a8d754b73ad47bdece6ac4b4850822fa19db4e#configuring-automatic-retries
+    stripe.max_network_retries = 5
+    # Configure client-side network timeout of 1 second
+    # https://github.com/stripe/stripe-python/tree/a9a8d754b73ad47bdece6ac4b4850822fa19db4e#configuring-a-client
+    client = stripe.http_client.RequestsClient(timeout=1)
+    stripe.default_http_client = client
+    # FIXME Add stripe logging wired in to the tap logger
+    # Set stripe logging to INFO level
+    # https://github.com/stripe/stripe-python/tree/a9a8d754b73ad47bdece6ac4b4850822fa19db4e#logging
+    # this_dir, _ = os.path.split(__file__)
+    # path = os.path.join(this_dir, 'logging.conf')
+    # logging.config.fileConfig(path)
+    # logging.getLogger('stripe').setLevel(logging.INFO)
+
+    # Verify connectivity
     account = stripe.Account.retrieve(args.config.get('account_id'))
     msg = "Successfully connected to Stripe Account with display name" \
         + " `%s`"

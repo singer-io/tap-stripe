@@ -62,7 +62,7 @@
    This is not a strict requirement because sourcerer doesn't handle it.
    /But/ we think it's super easy.
 ** DONE Add Charges data typing
-** TODO Add bookmarking for Charges                                      :v0:
+** DONE Add bookmarking for Charges                                      :v0:
 
    This is object cursor id pagination. See [[https://github.com/singer-io/tap-stripe/blob/cf3eaf16e162762978a8e23d77a99948f248520f/spikes/sdk/sdk.py#L47-L52][sdk.py]].
 ** TODO Add =Events= stream                                              :v0:

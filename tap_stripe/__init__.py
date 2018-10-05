@@ -50,7 +50,7 @@ def discover():
 
     return {'streams': streams}
 
-def sync(config, catalog):
+def sync(config, state, catalog):
     # Loop over streams in catalog
     for stream in catalog['streams']:
         stream_id = stream['tap_stream_id']
@@ -64,13 +64,21 @@ def sync(config, catalog):
             for obj in STREAM_SDK_OBJECTS[stream_id].list(
                     # If we want to increase the page size we can do
                     # `limit=N` as a second parameter here.
-                    stripe_account=config.get(
-                        'account_id')).auto_paging_iter():
+                    stripe_account=config.get('account_id'),
+                    # None passed to starting_after appears to retrieve
+                    # all of them so this should always be safe.
+                    starting_after=singer.get_bookmark(state, stream_id, 'id')
+            ).auto_paging_iter():
                 singer.write_record(stream_id,
                                     transformer.transform(
                                         obj,
                                         stream_schema,
                                         {}))
+                singer.write_bookmark(state,
+                                      stream_id,
+                                      'id',
+                                      obj.id)
+                singer.write_state(state)
 
 @utils.handle_top_exception(LOGGER)
 def main():
@@ -100,7 +108,7 @@ def main():
 
     catalog = discover()
 
-    sync(args.config, catalog)
+    sync(args.config, args.state, catalog)
 
 if __name__ == "__main__":
     main()

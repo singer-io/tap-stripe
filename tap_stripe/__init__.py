@@ -5,15 +5,11 @@ import logging
 
 import stripe
 import singer
-from singer import utils
+from singer import utils, Transformer
 
 REQUIRED_CONFIG_KEYS = [
     "account_id",
-    "client_secret",
-    "start_date",
-]
-STREAM_IDS = [
-    'charges',
+    "client_secret"
 ]
 STREAM_SDK_OBJECTS = {
     'charges': stripe.Charge,
@@ -46,6 +42,8 @@ def discover():
             'tap_stream_id': schema_name,
             'schema': schema,
             'metadata': [],
+            # Events may have a different key property than this. Change
+            # if it's appropriate.
             'key_properties': ['id']
         }
         streams.append(catalog_entry)
@@ -53,21 +51,26 @@ def discover():
     return {'streams': streams}
 
 def sync(config, catalog):
-
     # Loop over streams in catalog
     for stream in catalog['streams']:
         stream_id = stream['tap_stream_id']
         stream_schema = stream['schema']
         stream_key_properties = stream['key_properties']
-        if stream_id in STREAM_IDS:
+        with Transformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
             LOGGER.info('Syncing stream: %s', stream_id)
             singer.write_schema(stream_id,
                                 stream_schema,
                                 stream_key_properties)
             for obj in STREAM_SDK_OBJECTS[stream_id].list(
+                    # If we want to increase the page size we can do
+                    # `limit=N` as a second parameter here.
                     stripe_account=config.get(
                         'account_id')).auto_paging_iter():
-                singer.write_record(stream_id, obj)
+                singer.write_record(stream_id,
+                                    transformer.transform(
+                                        obj,
+                                        stream_schema,
+                                        {}))
 
 @utils.handle_top_exception(LOGGER)
 def main():

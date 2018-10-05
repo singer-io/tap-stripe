@@ -1,6 +1,552 @@
 {
-  "type": "object",
+  "type": [
+    "null",
+    "object"
+  ],
   "properties": {
-    "id": {"type": "string"}
+    "metadata": {
+      "type": [
+        "null",
+        "object"
+      ]
+    },
+    "fraud_details": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {
+        "stripe_report": {
+          "type": ["null", "string"]
+        }
+      }
+    },
+    "transfer_group": {
+      "type": [
+        "null"
+      ]
+    },
+    "on_behalf_of": {
+      "type": [
+        "null"
+      ]
+    },
+    "review": {
+      "type": [
+        "null"
+      ]
+    },
+    "failure_message": {
+      "type": [
+        "null"
+      ]
+    },
+    "receipt_email": {
+      "type": [
+        "null"
+      ]
+    },
+    "statement_descriptor": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "source": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {
+        "metadata": {
+          "type": [
+            "null",
+            "object"
+          ]
+        },
+        "exp_month": {
+          "type": [
+            "null",
+            "integer"
+          ]
+        },
+        "address_state": {
+          "type": [
+            "null"
+          ]
+        },
+        "id": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "object": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "address_line1_check": {
+          "type": [
+            "null"
+          ]
+        },
+        "address_line1": {
+          "type": [
+            "null"
+          ]
+        },
+        "exp_year": {
+          "type": [
+            "null",
+            "integer"
+          ]
+        },
+        "tokenization_method": {
+          "type": [
+            "null"
+          ]
+        },
+        "address_country": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "fingerprint": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "address_city": {
+          "type": [
+            "null"
+          ]
+        },
+        "last4": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "address_line2": {
+          "type": [
+            "null"
+          ]
+        },
+        "customer": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "brand": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "country": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "dynamic_last4": {
+          "type": [
+            "null"
+          ]
+        },
+        "name": {
+          "type": [
+            "null"
+          ]
+        },
+        "funding": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "address_zip": {
+          "type": [
+            "null"
+          ]
+        },
+        "address_zip_check": {
+          "type": [
+            "null"
+          ]
+        },
+        "cvc_check": {
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      }
+    },
+    "destination": {
+      "type": [
+        "null"
+      ]
+    },
+    "id": {
+      "type": [
+        "string"
+      ]
+    },
+    "object": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "outcome": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {
+        "type": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "seller_message": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "reason": {
+          "type": [
+            "null"
+          ]
+        },
+        "risk_level": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "network_status": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "risk_score": {
+          "type": [
+            "null",
+            "integer"
+          ]
+        }
+      }
+    },
+    "status": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "currency": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "created": {
+      "type": [
+        "string"
+      ],
+      "format": "date-time"
+    },
+    "order": {
+      "type": [
+        "null"
+      ]
+    },
+    "application": {
+      "type": [
+        "null"
+      ]
+    },
+    "refunded": {
+      "type": [
+        "null",
+        "boolean"
+      ]
+    },
+    "receipt_number": {
+      "type": [
+        "null"
+      ]
+    },
+    "livemode": {
+      "type": [
+        "null",
+        "boolean"
+      ]
+    },
+    "captured": {
+      "type": [
+        "null",
+        "boolean"
+      ]
+    },
+    "paid": {
+      "type": [
+        "null",
+        "boolean"
+      ]
+    },
+    "shipping": {
+      "type": [
+        "null"
+      ]
+    },
+    "invoice": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "amount": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "customer": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "payment_intent": {
+      "type": [
+        "null"
+      ]
+    },
+    "source_transfer": {
+      "type": [
+        "null"
+      ]
+    },
+    "statement_description": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "refunds": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {
+        "data": {
+          "type": ["null", "array"],
+          "items": {}
+        },
+        "url": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "object": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "has_more": {
+          "type": [
+            "null",
+            "boolean"
+          ]
+        },
+        "total_count": {
+          "type": [
+            "null",
+            "integer"
+          ]
+        }
+      }
+    },
+    "application_fee": {
+      "type": [
+        "null"
+      ]
+    },
+    "card": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {
+        "metadata": {
+          "type": [
+            "null",
+            "object"
+          ]
+        },
+        "exp_month": {
+          "type": [
+            "null",
+            "integer"
+          ]
+        },
+        "address_state": {
+          "type": [
+            "null"
+          ]
+        },
+        "id": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "object": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "address_line1_check": {
+          "type": [
+            "null"
+          ]
+        },
+        "address_line1": {
+          "type": [
+            "null"
+          ]
+        },
+        "exp_year": {
+          "type": [
+            "null",
+            "integer"
+          ]
+        },
+        "tokenization_method": {
+          "type": [
+            "null"
+          ]
+        },
+        "address_country": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "fingerprint": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "address_city": {
+          "type": [
+            "null"
+          ]
+        },
+        "last4": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "address_line2": {
+          "type": [
+            "null"
+          ]
+        },
+        "customer": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "brand": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "country": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "dynamic_last4": {
+          "type": [
+            "null"
+          ]
+        },
+        "name": {
+          "type": [
+            "null"
+          ]
+        },
+        "funding": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "address_zip": {
+          "type": [
+            "null"
+          ]
+        },
+        "address_zip_check": {
+          "type": [
+            "null"
+          ]
+        },
+        "cvc_check": {
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      }
+    },
+    "balance_transaction": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "amount_refunded": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "failure_code": {
+      "type": [
+        "null"
+      ]
+    },
+    "dispute": {
+      "type": [
+        "null"
+      ]
+    },
+    "description": {
+      "type": [
+        "null",
+        "string"
+      ]
+    }
   }
 }

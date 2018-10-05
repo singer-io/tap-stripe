@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import os
 import json
+import logging
+
 import stripe
 import singer
 from singer import utils
@@ -83,13 +85,9 @@ def main():
     # https://github.com/stripe/stripe-python/tree/a9a8d754b73ad47bdece6ac4b4850822fa19db4e#configuring-a-client
     client = stripe.http_client.RequestsClient(timeout=1)
     stripe.default_http_client = client
-    # FIXME Add stripe logging wired in to the tap logger
     # Set stripe logging to INFO level
     # https://github.com/stripe/stripe-python/tree/a9a8d754b73ad47bdece6ac4b4850822fa19db4e#logging
-    # this_dir, _ = os.path.split(__file__)
-    # path = os.path.join(this_dir, 'logging.conf')
-    # logging.config.fileConfig(path)
-    # logging.getLogger('stripe').setLevel(logging.INFO)
+    logging.getLogger('stripe').setLevel(logging.INFO)
 
     # Verify connectivity
     account = stripe.Account.retrieve(args.config.get('account_id'))

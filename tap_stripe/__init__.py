@@ -6,6 +6,7 @@ import logging
 import stripe
 import singer
 from singer import utils, Transformer
+from singer.transform import unix_seconds_to_datetime
 
 REQUIRED_CONFIG_KEYS = [
     "account_id",
@@ -14,8 +15,28 @@ REQUIRED_CONFIG_KEYS = [
 STREAM_SDK_OBJECTS = {
     'charges': stripe.Charge,
     'events': stripe.Event,
+    'customers': stripe.Customer
 }
 LOGGER = singer.get_logger()
+
+class Context():
+    config = {}
+    state = {}
+    catalog = {}
+    tap_start = None
+    stream_map = {}
+
+    @classmethod
+    def get_catalog_entry(cls, stream_name):
+        if not cls.stream_map:
+            cls.stream_map = {s["tap_stream_id"]: s for s in cls.catalog['streams']}
+        return cls.stream_map[stream_name]
+
+    @classmethod
+    def get_schema(cls, stream_name):
+        stream = [s for s in cls.catalog["streams"] if s["tap_stream_id"] == stream_name][0]
+        return stream["schema"]
+
 
 def get_abs_path(path):
     return os.path.join(os.path.dirname(os.path.realpath(__file__)), path)
@@ -51,35 +72,108 @@ def discover():
 
     return {'streams': streams}
 
-def sync(config, state, catalog):
-    # Loop over streams in catalog
-    for stream in catalog['streams']:
-        stream_id = stream['tap_stream_id']
-        stream_schema = stream['schema']
-        stream_key_properties = stream['key_properties']
-        with Transformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
-            LOGGER.info('Syncing stream: %s', stream_id)
-            singer.write_schema(stream_id,
-                                stream_schema,
-                                stream_key_properties)
-            for obj in STREAM_SDK_OBJECTS[stream_id].list(
-                    # If we want to increase the page size we can do
-                    # `limit=N` as a second parameter here.
-                    stripe_account=config.get('account_id'),
-                    # None passed to starting_after appears to retrieve
-                    # all of them so this should always be safe.
-                    starting_after=singer.get_bookmark(state, stream_id, 'id')
+
+
+class Stream():
+    name = None
+    key_properties = 'id'
+    schema = None
+
+    def __init__(self, name, schema):
+        self.name = name
+        self.schema = schema
+
+    def sync(self):
+        count = 0
+        for stream_obj in STREAM_SDK_OBJECTS[self.name].list(
+                # If we want to increase the page size we can do
+                # `limit=N` as a second parameter here.
+                stripe_account=Context.config.get('account_id'),
+                # None passed to starting_after appears to retrieve
+                # all of them so this should always be safe.
+                starting_after=singer.get_bookmark(Context.state, self.name, 'id')
             ).auto_paging_iter():
-                singer.write_record(stream_id,
-                                    transformer.transform(
-                                        obj,
-                                        stream_schema,
-                                        {}))
-                singer.write_bookmark(state,
-                                      stream_id,
-                                      'id',
-                                      obj.id)
-                singer.write_state(state)
+            count += 1
+            yield (self.name, stream_obj)
+
+            singer.write_bookmark(Context.state,
+                                  self.name,
+                                  self.key_properties,
+                                  stream_obj.id)
+            singer.write_state(Context.state)
+        LOGGER.info("Sync'd %d records for %s", count, self.name)
+
+class Events():
+    name = None
+    key_properties = 'id'
+    schema = None
+
+    def __init__(self, name, schema):
+        self.name = name
+        self.schema = schema
+
+    def sync(self):
+        count = 0
+        for event_obj in STREAM_SDK_OBJECTS[self.name].list(
+                # If we want to increase the page size we can do
+                # `limit=N` as a second parameter here.
+                stripe_account=Context.config.get('account_id'),
+                # None passed to starting_after appears to retrieve
+                # all of them so this should always be safe.
+                starting_after=singer.get_bookmark(Context.state, self.name, 'id')
+            ).auto_paging_iter():
+
+            event_obj_dict  = event_obj.to_dict_recursive()
+            yield (self.name, event_obj_dict)
+            count += 1
+
+            event_resource = event_obj.data.object
+            event_resource_name = event_resource.object + 's'
+            if STREAMS.get(event_resource_name):
+                event_resource_dict = event_resource.to_dict_recursive()
+                yield (event_resource_name, event_resource_dict)
+
+            singer.write_bookmark(Context.state,
+                                  self.name,
+                                  self.key_properties,
+                                  event_obj.id)
+            singer.write_state(Context.state)
+        LOGGER.info("Sync'd %d records for %s", count, self.name)
+
+STREAMS = {
+    "charges": Stream,
+    "events": Events,
+    "customers": Stream
+}
+
+
+def sync():
+    # Loop over streams in catalog
+    for catalog_entry in Context.catalog['streams']:
+        stream_id = catalog_entry['tap_stream_id']
+        stream_schema = catalog_entry['schema']
+        stream = STREAMS[stream_id](stream_id, stream_schema)
+
+        singer.write_schema(stream.name,
+                            stream.schema,
+                            stream.key_properties)
+
+        for (tap_stream_id, rec) in stream.sync():
+            with Transformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
+                extraction_time = singer.utils.now()
+                record_stream = Context.get_catalog_entry(tap_stream_id)
+                record_schema = record_stream['schema']
+
+                rec = transformer.transform(rec, record_schema, {})
+                #LOGGER.info('-------------')
+                #LOGGER.info('Stream Name: ' + tap_stream_id)
+                #LOGGER.info('Created: ' + rec['created'])
+                #if tap_stream_id == 'events':
+                #    LOGGER.info('Type: ' + rec['type'])
+                singer.write_record(tap_stream_id,
+                                    rec,
+                                    time_extracted=extraction_time)
+
 
 @utils.handle_top_exception(LOGGER)
 def main():
@@ -109,7 +203,13 @@ def main():
 
     catalog = discover()
 
-    sync(args.config, args.state, catalog)
+
+    Context.config = args.config
+    Context.state = args.state
+    Context.catalog = catalog
+
+
+    sync()
 
 if __name__ == "__main__":
     main()

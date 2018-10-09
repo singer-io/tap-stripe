@@ -15,7 +15,9 @@ REQUIRED_CONFIG_KEYS = [
 STREAM_SDK_OBJECTS = {
     'charges': stripe.Charge,
     'events': stripe.Event,
-    'customers': stripe.Customer
+    'customers': stripe.Customer,
+    'plans': stripe.Plan,
+    'invoices': stripe.Invoice
 }
 LOGGER = singer.get_logger()
 
@@ -121,13 +123,15 @@ def sync():
                     rec = transformer.transform(event_resource_obj.to_dict_recursive(),
                                                 event_resource_stream["schema"],
                                                 {})
+                    if rec.get('id'):
+                        singer.write_record(event_resource_name,
+                                            rec,
+                                            time_extracted=extraction_time)
 
-                    singer.write_record(event_resource_name,
-                                        rec,
-                                        time_extracted=extraction_time)
-
-                    updated_counts[event_resource_name] += 1
-
+                        updated_counts[event_resource_name] += 1
+                    else:
+                        LOGGER.warning('Type = %s', stream_obj.type)
+                        LOGGER.warning('Caught an event for %s without an id (event id %s)!', event_resource_name, stream_obj.id)
             singer.write_bookmark(Context.state,
                                   stream_id,
                                   'id',

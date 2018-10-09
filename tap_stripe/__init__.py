@@ -30,7 +30,7 @@ class Context():
     def get_catalog_entry(cls, stream_name):
         if not cls.stream_map:
             cls.stream_map = {s["tap_stream_id"]: s for s in cls.catalog['streams']}
-        return cls.stream_map[stream_name]
+        return cls.stream_map.get(stream_name)
 
     @classmethod
     def get_schema(cls, stream_name):
@@ -72,107 +72,76 @@ def discover():
 
     return {'streams': streams}
 
-
-
-class Stream():
-    name = None
-    key_properties = 'id'
-    schema = None
-
-    def __init__(self, name, schema):
-        self.name = name
-        self.schema = schema
-
-    def sync(self):
-        count = 0
-        for stream_obj in STREAM_SDK_OBJECTS[self.name].list(
-                # If we want to increase the page size we can do
-                # `limit=N` as a second parameter here.
-                stripe_account=Context.config.get('account_id'),
-                # None passed to starting_after appears to retrieve
-                # all of them so this should always be safe.
-                starting_after=singer.get_bookmark(Context.state, self.name, 'id')
-            ).auto_paging_iter():
-            count += 1
-            yield (self.name, stream_obj)
-
-            singer.write_bookmark(Context.state,
-                                  self.name,
-                                  self.key_properties,
-                                  stream_obj.id)
-            singer.write_state(Context.state)
-        LOGGER.info("Sync'd %d records for %s", count, self.name)
-
-class Events():
-    name = None
-    key_properties = 'id'
-    schema = None
-
-    def __init__(self, name, schema):
-        self.name = name
-        self.schema = schema
-
-    def sync(self):
-        count = 0
-        for event_obj in STREAM_SDK_OBJECTS[self.name].list(
-                # If we want to increase the page size we can do
-                # `limit=N` as a second parameter here.
-                stripe_account=Context.config.get('account_id'),
-                # None passed to starting_after appears to retrieve
-                # all of them so this should always be safe.
-                starting_after=singer.get_bookmark(Context.state, self.name, 'id')
-            ).auto_paging_iter():
-
-            event_obj_dict  = event_obj.to_dict_recursive()
-            yield (self.name, event_obj_dict)
-            count += 1
-
-            event_resource = event_obj.data.object
-            event_resource_name = event_resource.object + 's'
-            if STREAMS.get(event_resource_name):
-                event_resource_dict = event_resource.to_dict_recursive()
-                yield (event_resource_name, event_resource_dict)
-
-            singer.write_bookmark(Context.state,
-                                  self.name,
-                                  self.key_properties,
-                                  event_obj.id)
-            singer.write_state(Context.state)
-        LOGGER.info("Sync'd %d records for %s", count, self.name)
-
-STREAMS = {
-    "charges": Stream,
-    "events": Events,
-    "customers": Stream
-}
-
-
 def sync():
+    new_counts = {}
+    updated_counts = {}
+
+    # Write all schemas and init count to 0
+    for catalog_entry in Context.catalog['streams']:
+        singer.write_schema(catalog_entry['tap_stream_id'],
+                            catalog_entry['schema'],
+                            'id')
+
+        new_counts[catalog_entry['tap_stream_id']] = 0
+        updated_counts[catalog_entry['tap_stream_id']] = 0
+
     # Loop over streams in catalog
     for catalog_entry in Context.catalog['streams']:
         stream_id = catalog_entry['tap_stream_id']
         stream_schema = catalog_entry['schema']
-        stream = STREAMS[stream_id](stream_id, stream_schema)
-
-        singer.write_schema(stream.name,
-                            stream.schema,
-                            stream.key_properties)
-
-        for (tap_stream_id, rec) in stream.sync():
+        extraction_time = singer.utils.now()
+        for stream_obj in STREAM_SDK_OBJECTS[stream_id].list(
+                # If we want to increase the page size we can do
+                # `limit=N` as a second parameter here.
+                stripe_account=Context.config.get('account_id'),
+                # None passed to starting_after appears to retrieve
+                # all of them so this should always be safe.
+                starting_after=singer.get_bookmark(Context.state, stream_id, 'id')
+            ).auto_paging_iter():
+            
             with Transformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
-                extraction_time = singer.utils.now()
-                record_stream = Context.get_catalog_entry(tap_stream_id)
-                record_schema = record_stream['schema']
+                rec = transformer.transform(stream_obj.to_dict_recursive(),
+                                            stream_schema,
+                                            {})
 
-                rec = transformer.transform(rec, record_schema, {})
-                #LOGGER.info('-------------')
-                #LOGGER.info('Stream Name: ' + tap_stream_id)
-                #LOGGER.info('Created: ' + rec['created'])
-                #if tap_stream_id == 'events':
-                #    LOGGER.info('Type: ' + rec['type'])
-                singer.write_record(tap_stream_id,
+                singer.write_record(stream_id,
                                     rec,
                                     time_extracted=extraction_time)
+
+                new_counts[stream_id] += 1
+
+            # if events stream, write record for event resource
+            if stream_id == 'events':
+                event_resource_obj = stream_obj.data.object
+                event_resource_name = event_resource_obj.object + 's'
+                event_resource_stream = Context.get_catalog_entry(event_resource_name)
+                if not event_resource_stream:
+                    continue
+                with Transformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
+                    rec = transformer.transform(event_resource_obj.to_dict_recursive(),
+                                                event_resource_stream["schema"],
+                                                {})
+
+                    singer.write_record(event_resource_name,
+                                        rec,
+                                        time_extracted=extraction_time)
+
+                    updated_counts[event_resource_name] += 1
+            
+            singer.write_bookmark(Context.state,
+                                  stream_id,
+                                  'id',
+                                  stream_obj.id)
+            singer.write_state(Context.state)
+
+    # log count of new and updated items
+    LOGGER.info('------------------')
+    for stream_name, stream_count in new_counts.items():
+        LOGGER.info('%s: %d new, %d updates',
+                    stream_name,
+                    stream_count,
+                    updated_counts[stream_name])
+    LOGGER.info('------------------')
 
 
 @utils.handle_top_exception(LOGGER)

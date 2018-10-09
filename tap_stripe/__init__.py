@@ -17,8 +17,19 @@ STREAM_SDK_OBJECTS = {
     'events': stripe.Event,
     'customers': stripe.Customer,
     'plans': stripe.Plan,
-    'invoices': stripe.Invoice
+    'invoices': stripe.Invoice,
+    'invoice_items': stripe.InvoiceItem
 }
+
+EVENT_RESOURCE_TO_STREAM = {
+    'charge': 'charges',
+    'customer': 'customers',
+    'plan': 'plans',
+    'invoice': 'invoices',
+    'invoiceitem': 'invoice_items'
+}
+
+
 LOGGER = singer.get_logger()
 
 class Context():
@@ -115,7 +126,7 @@ def sync():
             # if events stream, write record for event resource
             if stream_id == 'events':
                 event_resource_obj = stream_obj.data.object
-                event_resource_name = event_resource_obj.object + 's'
+                event_resource_name = EVENT_RESOURCE_TO_STREAM.get(event_resource_obj.object)
                 event_resource_stream = Context.get_catalog_entry(event_resource_name)
                 if not event_resource_stream:
                     continue

@@ -1,0 +1,270 @@
+{
+  "type": [
+    "null",
+    "object"
+  ],
+  "properties": {
+    "amount": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "metadata": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {}
+    },
+    "plan": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {
+        "metadata": {
+          "type": [
+            "null",
+            "object"
+          ],
+          "properties": {}
+        },
+        "amount": {
+          "type": [
+            "null",
+            "integer"
+          ]
+        },
+        "interval_count": {
+          "type": [
+            "null",
+            "integer"
+          ]
+        },
+        "tiers": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "items": {
+            "type": [
+              "null",
+              "integer"
+            ]
+          }
+        },
+        "product": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "interval": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "object": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "usage_type": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "active": {
+          "type": [
+            "null",
+            "boolean"
+          ]
+        },
+        "name": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "id": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "statement_descriptor": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "nickname": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "tiers_mode": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "livemode": {
+          "type": [
+            "null",
+            "boolean"
+          ]
+        },
+        "aggregate_usage": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "billing_scheme": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "created": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "format": "date-time"
+        },
+        "transform_usage": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "currency": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "trial_period_days": {
+          "type": [
+            "null",
+            "integer"
+          ]
+        },
+        "statement_description": {
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      }
+    },
+    "invoice": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "period": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {
+        "end": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "format": "date-time"          
+        },
+        "start": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "format": "date-time"
+        }
+      }
+    },
+    "quantity": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "description": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "date": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "date-time"
+    },
+    "object": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "subscription": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "id": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "livemode": {
+      "type": [
+        "null",
+        "boolean"
+      ]
+    },
+    "discountable": {
+      "type": [
+        "null",
+        "boolean"
+      ]
+    },
+    "unit_amount": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "currency": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "customer": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "proration": {
+      "type": [
+        "null",
+        "boolean"
+      ]
+    }
+  }
+}

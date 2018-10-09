@@ -98,7 +98,7 @@ def sync():
                 # all of them so this should always be safe.
                 starting_after=singer.get_bookmark(Context.state, stream_id, 'id')
             ).auto_paging_iter():
-            
+
             with Transformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
                 rec = transformer.transform(stream_obj.to_dict_recursive(),
                                             stream_schema,
@@ -127,7 +127,7 @@ def sync():
                                         time_extracted=extraction_time)
 
                     updated_counts[event_resource_name] += 1
-            
+
             singer.write_bookmark(Context.state,
                                   stream_id,
                                   'id',

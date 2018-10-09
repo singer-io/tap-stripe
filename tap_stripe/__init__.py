@@ -18,7 +18,8 @@ STREAM_SDK_OBJECTS = {
     'customers': stripe.Customer,
     'plans': stripe.Plan,
     'invoices': stripe.Invoice,
-    'invoice_items': stripe.InvoiceItem
+    'invoice_items': stripe.InvoiceItem,
+    'transfers': stripe.Transfer
 }
 
 EVENT_RESOURCE_TO_STREAM = {
@@ -26,7 +27,8 @@ EVENT_RESOURCE_TO_STREAM = {
     'customer': 'customers',
     'plan': 'plans',
     'invoice': 'invoices',
-    'invoiceitem': 'invoice_items'
+    'invoiceitem': 'invoice_items',
+    'transfer': 'transfers'
 }
 
 

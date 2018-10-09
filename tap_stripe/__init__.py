@@ -130,8 +130,10 @@ def sync():
 
                         updated_counts[event_resource_name] += 1
                     else:
-                        LOGGER.warning('Type = %s', stream_obj.type)
-                        LOGGER.warning('Caught an event for %s without an id (event id %s)!', event_resource_name, stream_obj.id)
+                        LOGGER.warning('Caught %s event for %s without an id (event id %s)!',
+                                       stream_obj.type,
+                                       event_resource_name,
+                                       stream_obj.id)
             singer.write_bookmark(Context.state,
                                   stream_id,
                                   'id',

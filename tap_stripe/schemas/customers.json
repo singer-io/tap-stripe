@@ -89,7 +89,8 @@
               },
               "tokenization_method": {
                 "type": [
-                  "null"
+                  "null",
+                  "string"
                 ]
               },
               "fingerprint": {
@@ -106,7 +107,8 @@
               },
               "address_line1_check": {
                 "type": [
-                  "null"
+                  "null",
+                  "string"
                 ]
               },
               "exp_year": {
@@ -117,12 +119,14 @@
               },
               "address_city": {
                 "type": [
-                  "null"
+                  "null",
+                  "string"
                 ]
               },
               "name": {
                 "type": [
-                  "null"
+                  "null",
+                  "string"
                 ]
               },
               "brand": {
@@ -139,7 +143,8 @@
               },
               "address_country": {
                 "type": [
-                  "null"
+                  "null",
+                  "string"
                 ]
               },
               "object": {
@@ -439,8 +444,9 @@
     "created": {
       "type": [
         "null",
-        "integer"
-      ]
+        "string"
+      ],
+      "format": "date-time"
     },
     "livemode": {
       "type": [
@@ -484,8 +490,9 @@
               "current_period_end": {
                 "type": [
                   "null",
-                  "integer"
-                ]
+                  "string"
+                ],
+                "format": "date-time"
               },
               "metadata": {
                 "type": [
@@ -518,8 +525,9 @@
               "billing_cycle_anchor": {
                 "type": [
                   "null",
-                  "integer"
-                ]
+                  "string"
+                ],
+                "format": "date-time"
               },
               "trial_end": {
                 "type": [
@@ -531,8 +539,9 @@
               "created": {
                 "type": [
                   "null",
-                  "integer"
-                ]
+                  "string"
+                ],
+                "format": "date-time"
               },
               "quantity": {
                 "type": [
@@ -645,8 +654,9 @@
                   "created": {
                     "type": [
                       "null",
-                      "integer"
-                    ]
+                      "string"
+                    ],
+                    "format": "date-time"
                   },
                   "product": {
                     "type": [
@@ -709,8 +719,9 @@
               "start": {
                 "type": [
                   "null",
-                  "integer"
-                ]
+                  "string"
+                ],
+                "format": "date-time"
               },
               "trial_start": {
                 "type": [
@@ -756,8 +767,9 @@
                         "created": {
                           "type": [
                             "null",
-                            "integer"
-                          ]
+                            "string"
+                          ],
+                          "format": "date-time"
                         },
                         "plan": {
                           "properties": {
@@ -841,8 +853,9 @@
                             "created": {
                               "type": [
                                 "null",
-                                "integer"
-                              ]
+                                "string"
+                              ],
+                              "format": "date-time"
                             },
                             "product": {
                               "type": [
@@ -963,8 +976,9 @@
               "current_period_start": {
                 "type": [
                   "null",
-                  "integer"
-                ]
+                  "string"
+                ],
+                "format": "date-time"
               }
             },
             "type": [

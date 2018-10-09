@@ -7,8 +7,9 @@
     "date": {
       "type": [
         "null",
-        "integer"
-      ]
+        "string"
+      ],
+      "format": "date-time"
     },
     "next_payment_attempt": {
       "type": [
@@ -82,8 +83,9 @@
     "webhooks_delivered_at": {
       "type": [
         "null",
-        "integer"
-      ]
+        "string"
+      ],
+      "format": "date-time"
     },
     "statement_descriptor": {
       "type": [
@@ -100,8 +102,9 @@
     "period_end": {
       "type": [
         "null",
-        "integer"
-      ]
+        "string"
+      ],
+      "format": "date-time"
     },
     "amount_remaining": {
       "type": [
@@ -167,8 +170,9 @@
     "period_start": {
       "type": [
         "null",
-        "integer"
-      ]
+        "string"
+      ],
+      "format": "date-time"
     },
     "attempted": {
       "type": [
@@ -234,7 +238,7 @@
                   "null",
                   "string"
                 ]
-              },              
+              },
               "id": {
                 "type": [
                   "null",
@@ -305,14 +309,16 @@
                   "start": {
                     "type": [
                       "null",
-                      "integer"
-                    ]
+                      "string"
+                    ],
+                    "format": "date-time"
                   },
                   "end": {
                     "type": [
                       "null",
-                      "integer"
-                    ]
+                      "string"
+                    ],
+                    "format": "date-time"
                   }
                 }
               },
@@ -362,8 +368,9 @@
                   "created": {
                     "type": [
                       "null",
-                      "integer"
-                    ]
+                      "string"
+                    ],
+                    "format": "date-time"
                   },
                   "active": {
                     "type": [

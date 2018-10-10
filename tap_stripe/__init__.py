@@ -23,7 +23,7 @@ STREAM_SDK_OBJECTS = {
     'transfers': stripe.Transfer,
     'coupons': stripe.Coupon,
     'subscriptions': stripe.Subscription,
-#    'subscription_items': stripe.SubscriptionItem
+    'subscription_items': stripe.SubscriptionItem
 }
 
 EVENT_RESOURCE_TO_STREAM = {
@@ -35,11 +35,11 @@ EVENT_RESOURCE_TO_STREAM = {
     'transfer': 'transfers',
     'coupon': 'coupons',
     'subscription': 'subscriptions',
-#    'subscriptionitem': 'subscription_items'
+    'subscriptionitem': 'subscription_items'
 }
 
 SUB_STREAMS = {
-    'subscriptions': ['subscription_items']
+    'subscriptions': 'subscription_items'
 }
 
 LOGGER = singer.get_logger()
@@ -67,6 +67,32 @@ class Context():
         stream = cls.get_catalog_entry(stream_name)
         stream_metadata = metadata.to_map(stream['metadata'])
         return metadata.get(stream_metadata, (), 'selected')
+
+    @classmethod
+    def is_sub_stream(cls, stream_name):
+        for stream_id, sub_stream_id in SUB_STREAMS.items():
+            if stream_name == sub_stream_id:
+                return True
+        return False
+
+class DependencyException(Exception):
+    pass
+
+def validate_dependencies():
+    errs = []
+    msg_tmpl = ("Unable to extract {0} data. "
+                "To receive {0} data, you also need to select {1}.")
+
+    for catalog_entry in Context.catalog['streams']:
+        stream_id = catalog_entry['tap_stream_id']
+        sub_stream_id = SUB_STREAMS.get(stream_id)
+        if sub_stream_id:
+            if Context.is_selected(sub_stream_id) and not Context.is_selected(stream_id):
+                #throw error here
+                errs.append(msg_tmpl.format(sub_stream_id, stream_id))
+
+    if errs:
+        raise DependencyException(" ".join(errs))
 
 
 def get_abs_path(path):
@@ -139,34 +165,86 @@ def sync():
     for catalog_entry in Context.catalog['streams']:
         stream_id = catalog_entry['tap_stream_id']
         stream_schema = catalog_entry['schema']
+        stream_metadata = metadata.to_map(catalog_entry['metadata'])
 
         # Sync records for stream
-        if Context.is_selected(stream_id):
+        if Context.is_selected(stream_id) and not Context.is_sub_stream(stream_id):
             extraction_time = singer.utils.now()
+            stream_bookmark = singer.get_bookmark(Context.state, stream_id, 'id')
+            bookmark = stream_bookmark
+            # if this stream has a sub_stream, compare the bookmark
+            sub_stream_id = SUB_STREAMS.get(stream_id)
+            if sub_stream_id:
+                sub_stream_bookmark = singer.get_bookmark(Context.state, sub_stream_id, 'id')
+                if sub_stream_bookmark != stream_bookmark:
+                    bookmark = sub_stream_bookmark
+
             for stream_obj in STREAM_SDK_OBJECTS[stream_id].list(
                     # If we want to increase the page size we can do
                     # `limit=N` as a second parameter here.
                     stripe_account=Context.config.get('account_id'),
                     # None passed to starting_after appears to retrieve
                     # all of them so this should always be safe.
-                    starting_after=singer.get_bookmark(Context.state, stream_id, 'id')
+                    starting_after=bookmark
             ).auto_paging_iter():
 
-                with Transformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
-                    rec = transformer.transform(stream_obj.to_dict_recursive(),
-                                                stream_schema,
-                                                {})
+                # if there is a sub stream, set bookmark to sub stream's bookmark
+                # since we know it must be earlier than the stream's bookmark
 
-                    singer.write_record(stream_id,
+                with Transformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
+
+                    should_sync_sub_stream = sub_stream_id and Context.is_selected(sub_stream_id)
+                    should_sync_stream = not sub_stream_id \
+                    or not Context.is_selected(sub_stream_id) \
+                        or stream_bookmark==sub_stream_bookmark
+
+                    # if the bookmark equals the stream bookmark, sync stream records
+                    if should_sync_stream:
+
+                        rec = transformer.transform(stream_obj.to_dict_recursive(),
+                                                    stream_schema,
+                                                    stream_metadata)
+
+                        singer.write_record(stream_id,
                                         rec,
                                         time_extracted=extraction_time)
 
-                    new_counts[stream_id] += 1
+                        new_counts[stream_id] += 1
 
-                    singer.write_bookmark(Context.state,
-                                          stream_id,
-                                          'id',
-                                          stream_obj.id)
+                        stream_bookmark = stream_obj.id
+
+                        singer.write_bookmark(Context.state,
+                                              stream_id,
+                                              'id',
+                                              stream_obj.id)
+
+                    # sync sub streams
+                    if should_sync_sub_stream:
+                        sub_stream_catalog_entry = Context.get_catalog_entry(sub_stream_id)
+                        sub_stream_schema = sub_stream_catalog_entry['schema']
+                        sub_stream_metadata = metadata.to_map(sub_stream_catalog_entry['metadata'])
+                        for sub_stream_obj in STREAM_SDK_OBJECTS[sub_stream_id].list(
+                                # If we want to increase the page size we can do
+                                # `limit=N` as a second parameter here.
+                                stripe_account=Context.config.get('account_id'),
+                                subscription=stream_obj.id
+                        ).auto_paging_iter():
+                            rec = transformer.transform(sub_stream_obj.to_dict_recursive(),
+                                                        sub_stream_schema,
+                                                        sub_stream_metadata)
+
+                            singer.write_record(sub_stream_id,
+                                                rec,
+                                                time_extracted=extraction_time)
+                            new_counts[sub_stream_id] += 1
+
+                            sub_stream_bookmark = stream_obj.id
+
+                            singer.write_bookmark(Context.state,
+                                                  sub_stream_id,
+                                                  'id',
+                                                  bookmark)
+
             singer.write_state(Context.state)
 
     # Get updates via events endpoint
@@ -187,10 +265,11 @@ def sync():
         # if we got an event for a selected stream, sync the updates for that stream
         if event_resource_stream and Context.is_selected(event_resource_name):
             with Transformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
+                event_resource_metadata = metadata.to_map(event_resource_stream['metadata'])
                 rec = transformer.transform(event_resource_obj.to_dict_recursive(),
-                                            event_resource_stream["schema"],
-                                            {})
-                # we've observed event_resources with ids (e.g. invoice.upcoming events)
+                                            event_resource_stream['schema'],
+                                            event_resource_metadata)
+                # we've observed event_resources without ids (e.g. invoice.upcoming events)
                 if rec.get('id'):
                     singer.write_record(event_resource_name,
                                         rec,
@@ -260,6 +339,7 @@ def main():
 
         Context.config = args.config
         Context.state = args.state
+        validate_dependencies()
         sync()
 
 if __name__ == "__main__":

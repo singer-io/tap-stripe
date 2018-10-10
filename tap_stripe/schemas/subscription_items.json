@@ -1,0 +1,145 @@
+{
+  "type": [
+    "null",
+    "object"
+  ],
+  "properties": {
+    "metadata": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {}
+    },
+    "canceled_at": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "date-time"
+    },
+    "current_period_end": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "date-time"
+    },
+    "plan": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {}
+    },
+    "subscription": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },    
+    "trial_start": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "date-time"
+    },
+    "created": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "date-time"      
+    },
+    "cancel_at_period_end": {
+      "type": [
+        "null",
+        "boolean"
+      ]
+    },
+    "quantity": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "tax_percent": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "current_period_start": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "date-time"
+    },
+    "start": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "date-time"
+    },
+    "discount": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {}
+    },
+    "application_fee_percent": {
+      "type": [
+        "null",
+        "number"
+      ]
+    },
+    "id": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "status": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "customer": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "object": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "livemode": {
+      "type": [
+        "null",
+        "boolean"
+      ]
+    },
+    "ended_at": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "date-time"
+    },
+    "trial_end": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "date-time"
+    }
+  }
+}

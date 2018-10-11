@@ -50,6 +50,8 @@ class Context():
     catalog = {}
     tap_start = None
     stream_map = {}
+    new_counts = {}
+    updated_counts = {}
 
     @classmethod
     def get_catalog_entry(cls, stream_name):
@@ -70,7 +72,7 @@ class Context():
 
     @classmethod
     def is_sub_stream(cls, stream_name):
-        for stream_id, sub_stream_id in SUB_STREAMS.items():
+        for sub_stream_id in SUB_STREAMS.values():
             if stream_name == sub_stream_id:
                 return True
         return False
@@ -147,8 +149,6 @@ def discover():
     return {'streams': streams}
 
 def sync():
-    new_counts = {}
-    updated_counts = {}
 
     # Write all schemas and init count to 0
     for catalog_entry in Context.catalog['streams']:
@@ -157,8 +157,8 @@ def sync():
                                 catalog_entry['schema'],
                                 'id')
 
-            new_counts[catalog_entry['tap_stream_id']] = 0
-            updated_counts[catalog_entry['tap_stream_id']] = 0
+            Context.new_counts[catalog_entry['tap_stream_id']] = 0
+            Context.updated_counts[catalog_entry['tap_stream_id']] = 0
 
 
     # Loop over streams in catalog
@@ -196,7 +196,7 @@ def sync():
                     should_sync_sub_stream = sub_stream_id and Context.is_selected(sub_stream_id)
                     should_sync_stream = not sub_stream_id \
                     or not Context.is_selected(sub_stream_id) \
-                        or stream_bookmark==sub_stream_bookmark
+                        or stream_bookmark == sub_stream_bookmark
 
                     # if the bookmark equals the stream bookmark, sync stream records
                     if should_sync_stream:
@@ -206,10 +206,10 @@ def sync():
                                                     stream_metadata)
 
                         singer.write_record(stream_id,
-                                        rec,
-                                        time_extracted=extraction_time)
+                                            rec,
+                                            time_extracted=extraction_time)
 
-                        new_counts[stream_id] += 1
+                        Context.new_counts[stream_id] += 1
 
                         stream_bookmark = stream_obj.id
 
@@ -236,7 +236,7 @@ def sync():
                             singer.write_record(sub_stream_id,
                                                 rec,
                                                 time_extracted=extraction_time)
-                            new_counts[sub_stream_id] += 1
+                            Context.new_counts[sub_stream_id] += 1
 
                             sub_stream_bookmark = stream_obj.id
 
@@ -275,11 +275,11 @@ def sync():
                                         rec,
                                         time_extracted=extraction_time)
 
-                    updated_counts[event_resource_name] += 1
+                    Context.updated_counts[event_resource_name] += 1
                     singer.write_bookmark(Context.state,
-                                                  'events',
-                                                  'updates_id',
-                                                  events_obj.id)
+                                          'events',
+                                          'updates_id',
+                                          events_obj.id)
                 else:
                     LOGGER.warning('Caught %s event for %s without an id (event id %s)!',
                                    events_obj.type,
@@ -289,11 +289,11 @@ def sync():
 
     # log count of new and updated items
     LOGGER.info('------------------')
-    for stream_name, stream_count in new_counts.items():
+    for stream_name, stream_count in Context.new_counts.items():
         LOGGER.info('%s: %d new, %d updates',
                     stream_name,
                     stream_count,
-                    updated_counts[stream_name])
+                    Context.updated_counts[stream_name])
     LOGGER.info('------------------')
 
 

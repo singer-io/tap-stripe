@@ -243,7 +243,7 @@ def sync():
                             singer.write_bookmark(Context.state,
                                                   sub_stream_id,
                                                   'id',
-                                                  bookmark)
+                                                  sub_stream_bookmark)
 
             singer.write_state(Context.state)
 

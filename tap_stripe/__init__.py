@@ -194,17 +194,15 @@ def sync_stream(stream_name):
         # since we know it must be earlier than the stream's bookmark
         if sub_stream_bookmark != stream_bookmark:
             bookmark = sub_stream_bookmark
-
-    for stream_obj in STREAM_SDK_OBJECTS[stream_name].list(
-            # If we want to increase the page size we can do
-            # `limit=N` as a second parameter here.
-            stripe_account=Context.config.get('account_id'),
-            # None passed to starting_after appears to retrieve
-            # all of them so this should always be safe.
-            starting_after=bookmark
-    ).auto_paging_iter():
-
-        with Transformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
+    with Transformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
+        for stream_obj in STREAM_SDK_OBJECTS[stream_name].list(
+                # If we want to increase the page size we can do
+                # `limit=N` as a second parameter here.
+                stripe_account=Context.config.get('account_id'),
+                # None passed to starting_after appears to retrieve
+                # all of them so this should always be safe.
+                starting_after=bookmark
+        ).auto_paging_iter():
             if sub_stream_name:
                 sub_stream_bookmark = singer.get_bookmark(Context.state, sub_stream_name, 'id')
             should_sync_sub_stream = sub_stream_name and Context.is_selected(sub_stream_name)

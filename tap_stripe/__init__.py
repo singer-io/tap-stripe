@@ -77,6 +77,26 @@ class Context():
                 return True
         return False
 
+def configure_stripe_client():
+    # Set the API key we'll be using
+    # https://github.com/stripe/stripe-python/tree/a9a8d754b73ad47bdece6ac4b4850822fa19db4e#usage
+    stripe.api_key = Context.config.get('client_secret')
+    # Allow ourselves to retry retriable network errors 5 times
+    # https://github.com/stripe/stripe-python/tree/a9a8d754b73ad47bdece6ac4b4850822fa19db4e#configuring-automatic-retries
+    stripe.max_network_retries = 5
+    # Configure client-side network timeout of 1 second
+    # https://github.com/stripe/stripe-python/tree/a9a8d754b73ad47bdece6ac4b4850822fa19db4e#configuring-a-client
+    client = stripe.http_client.RequestsClient(timeout=5)
+    stripe.default_http_client = client
+    # Set stripe logging to INFO level
+    # https://github.com/stripe/stripe-python/tree/a9a8d754b73ad47bdece6ac4b4850822fa19db4e#logging
+    logging.getLogger('stripe').setLevel(logging.INFO)
+    # Verify connectivity
+    account = stripe.Account.retrieve(Context.config.get('account_id'))
+    msg = "Successfully connected to Stripe Account with display name" \
+          + " `%s`"
+    LOGGER.info(msg, account.display_name)
+
 class DependencyException(Exception):
     pass
 
@@ -148,107 +168,105 @@ def discover():
 
     return {'streams': streams}
 
-def sync():
+def sync_stream(stream_name):
+    catalog_entry = Context.get_catalog_entry(stream_name)
+    stream_schema = catalog_entry['schema']
+    stream_metadata = metadata.to_map(catalog_entry['metadata'])
+    extraction_time = singer.utils.now()
+    stream_bookmark = singer.get_bookmark(Context.state, stream_name, 'id')
+    bookmark = stream_bookmark
+    # if this stream has a sub_stream, compare the bookmark
+    sub_stream_name = SUB_STREAMS.get(stream_name)
+    if sub_stream_name:
+        sub_stream_bookmark = singer.get_bookmark(Context.state, sub_stream_name, 'id')
+        # if there is a sub stream, set bookmark to sub stream's bookmark
+        # since we know it must be earlier than the stream's bookmark
+        if sub_stream_bookmark != stream_bookmark:
+            bookmark = sub_stream_bookmark
 
-    # Write all schemas and init count to 0
-    for catalog_entry in Context.catalog['streams']:
-        if Context.is_selected(catalog_entry["tap_stream_id"]):
-            singer.write_schema(catalog_entry['tap_stream_id'],
-                                catalog_entry['schema'],
-                                'id')
+    for stream_obj in STREAM_SDK_OBJECTS[stream_name].list(
+            # If we want to increase the page size we can do
+            # `limit=N` as a second parameter here.
+            stripe_account=Context.config.get('account_id'),
+            # None passed to starting_after appears to retrieve
+            # all of them so this should always be safe.
+            starting_after=bookmark
+    ).auto_paging_iter():
 
-            Context.new_counts[catalog_entry['tap_stream_id']] = 0
-            Context.updated_counts[catalog_entry['tap_stream_id']] = 0
+        with Transformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
+            if sub_stream_name:
+                sub_stream_bookmark = singer.get_bookmark(Context.state, sub_stream_name, 'id')
+            should_sync_sub_stream = sub_stream_name and Context.is_selected(sub_stream_name)
+
+            # If there is no sub stream, or there is and it isn't selected,
+            # or the sub stream is up to date (bookmarks are equal),
+            # the stream should be sync'd
+            should_sync_stream = not sub_stream_name \
+            or not Context.is_selected(sub_stream_name) \
+                or stream_bookmark == sub_stream_bookmark
+
+            # if the bookmark equals the stream bookmark, sync stream records
+            if should_sync_stream:
+
+                rec = transformer.transform(stream_obj.to_dict_recursive(),
+                                            stream_schema,
+                                            stream_metadata)
+
+                singer.write_record(stream_name,
+                                    rec,
+                                    time_extracted=extraction_time)
+
+                Context.new_counts[stream_name] += 1
+
+                stream_bookmark = stream_obj.id
+
+                singer.write_bookmark(Context.state,
+                                      stream_name,
+                                      'id',
+                                      stream_obj.id)
+
+            # sync sub streams
+            if should_sync_sub_stream:
+                sync_sub_stream(sub_stream_name, stream_obj.id)
+
+    singer.write_state(Context.state)
 
 
-    # Loop over streams in catalog
-    for catalog_entry in Context.catalog['streams']:
-        stream_id = catalog_entry['tap_stream_id']
-        stream_schema = catalog_entry['schema']
-        stream_metadata = metadata.to_map(catalog_entry['metadata'])
+def sync_sub_stream(sub_stream_name, parent_id):
+    sub_stream_catalog_entry = Context.get_catalog_entry(sub_stream_name)
+    sub_stream_schema = sub_stream_catalog_entry['schema']
+    sub_stream_metadata = metadata.to_map(sub_stream_catalog_entry['metadata'])
+    extraction_time = singer.utils.now()
+    with Transformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
+        for sub_stream_obj in STREAM_SDK_OBJECTS[sub_stream_name].list(
+                # If we want to increase the page size we can do
+                # `limit=N` as a second parameter here.
+                stripe_account=Context.config.get('account_id'),
+                subscription=parent_id
+        ).auto_paging_iter():
 
-        # Sync records for stream
-        if Context.is_selected(stream_id) and not Context.is_sub_stream(stream_id):
-            extraction_time = singer.utils.now()
-            stream_bookmark = singer.get_bookmark(Context.state, stream_id, 'id')
-            bookmark = stream_bookmark
-            # if this stream has a sub_stream, compare the bookmark
-            sub_stream_id = SUB_STREAMS.get(stream_id)
-            if sub_stream_id:
-                sub_stream_bookmark = singer.get_bookmark(Context.state, sub_stream_id, 'id')
-                if sub_stream_bookmark != stream_bookmark:
-                    bookmark = sub_stream_bookmark
+            rec = transformer.transform(sub_stream_obj.to_dict_recursive(),
+                                        sub_stream_schema,
+                                        sub_stream_metadata)
 
-            for stream_obj in STREAM_SDK_OBJECTS[stream_id].list(
-                    # If we want to increase the page size we can do
-                    # `limit=N` as a second parameter here.
-                    stripe_account=Context.config.get('account_id'),
-                    # None passed to starting_after appears to retrieve
-                    # all of them so this should always be safe.
-                    starting_after=bookmark
-            ).auto_paging_iter():
+            singer.write_record(sub_stream_name,
+                                rec,
+                                time_extracted=extraction_time)
+            Context.new_counts[sub_stream_name] += 1
 
-                # if there is a sub stream, set bookmark to sub stream's bookmark
-                # since we know it must be earlier than the stream's bookmark
+            sub_stream_bookmark = parent_id
 
-                with Transformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
+            singer.write_bookmark(Context.state,
+                                  sub_stream_name,
+                                  'id',
+                                  sub_stream_bookmark)
 
-                    should_sync_sub_stream = sub_stream_id and Context.is_selected(sub_stream_id)
-                    should_sync_stream = not sub_stream_id \
-                    or not Context.is_selected(sub_stream_id) \
-                        or stream_bookmark == sub_stream_bookmark
+def sync_event_updates():
+    '''
+    Get updates via events endpoint
 
-                    # if the bookmark equals the stream bookmark, sync stream records
-                    if should_sync_stream:
-
-                        rec = transformer.transform(stream_obj.to_dict_recursive(),
-                                                    stream_schema,
-                                                    stream_metadata)
-
-                        singer.write_record(stream_id,
-                                            rec,
-                                            time_extracted=extraction_time)
-
-                        Context.new_counts[stream_id] += 1
-
-                        stream_bookmark = stream_obj.id
-
-                        singer.write_bookmark(Context.state,
-                                              stream_id,
-                                              'id',
-                                              stream_obj.id)
-
-                    # sync sub streams
-                    if should_sync_sub_stream:
-                        sub_stream_catalog_entry = Context.get_catalog_entry(sub_stream_id)
-                        sub_stream_schema = sub_stream_catalog_entry['schema']
-                        sub_stream_metadata = metadata.to_map(sub_stream_catalog_entry['metadata'])
-                        for sub_stream_obj in STREAM_SDK_OBJECTS[sub_stream_id].list(
-                                # If we want to increase the page size we can do
-                                # `limit=N` as a second parameter here.
-                                stripe_account=Context.config.get('account_id'),
-                                subscription=stream_obj.id
-                        ).auto_paging_iter():
-                            rec = transformer.transform(sub_stream_obj.to_dict_recursive(),
-                                                        sub_stream_schema,
-                                                        sub_stream_metadata)
-
-                            singer.write_record(sub_stream_id,
-                                                rec,
-                                                time_extracted=extraction_time)
-                            Context.new_counts[sub_stream_id] += 1
-
-                            sub_stream_bookmark = stream_obj.id
-
-                            singer.write_bookmark(Context.state,
-                                                  sub_stream_id,
-                                                  'id',
-                                                  sub_stream_bookmark)
-
-            singer.write_state(Context.state)
-
-    # Get updates via events endpoint
-    # look at 'events update' bookmark and pull events after that
+    look at 'events update' bookmark and pull events after that
+    '''
     extraction_time = singer.utils.now()
     for events_obj in STREAM_SDK_OBJECTS['events'].list(
             # If we want to increase the page size we can do
@@ -287,6 +305,29 @@ def sync():
                                    events_obj.id)
     singer.write_state(Context.state)
 
+def sync():
+
+    # Write all schemas and init count to 0
+    for catalog_entry in Context.catalog['streams']:
+        if Context.is_selected(catalog_entry["tap_stream_id"]):
+            singer.write_schema(catalog_entry['tap_stream_id'],
+                                catalog_entry['schema'],
+                                'id')
+
+            Context.new_counts[catalog_entry['tap_stream_id']] = 0
+            Context.updated_counts[catalog_entry['tap_stream_id']] = 0
+
+    # Loop over streams in catalog
+    for catalog_entry in Context.catalog['streams']:
+        stream_name = catalog_entry['tap_stream_id']
+        # Sync records for stream
+        if Context.is_selected(stream_name) and not Context.is_sub_stream(stream_name):
+            sync_stream(stream_name)
+
+
+    # Get event updates
+    sync_event_updates()
+
     # log count of new and updated items
     LOGGER.info('------------------')
     for stream_name, stream_count in Context.new_counts.items():
@@ -303,9 +344,7 @@ def main():
     # Parse command line arguments
     args = utils.parse_args(REQUIRED_CONFIG_KEYS)
 
-
-
-        # If discover flag was passed, run discovery mode and dump output to stdout
+    # If discover flag was passed, run discovery mode and dump output to stdout
     if args.discover:
         catalog = discover()
         print(json.dumps(catalog, indent=2))
@@ -317,28 +356,9 @@ def main():
         else:
             Context.catalog = discover()
 
-
-        # Set the API key we'll be using
-        # https://github.com/stripe/stripe-python/tree/a9a8d754b73ad47bdece6ac4b4850822fa19db4e#usage
-        stripe.api_key = args.config.get('client_secret')
-        # Allow ourselves to retry retriable network errors 5 times
-        # https://github.com/stripe/stripe-python/tree/a9a8d754b73ad47bdece6ac4b4850822fa19db4e#configuring-automatic-retries
-        stripe.max_network_retries = 5
-        # Configure client-side network timeout of 1 second
-        # https://github.com/stripe/stripe-python/tree/a9a8d754b73ad47bdece6ac4b4850822fa19db4e#configuring-a-client
-        client = stripe.http_client.RequestsClient(timeout=5)
-        stripe.default_http_client = client
-        # Set stripe logging to INFO level
-        # https://github.com/stripe/stripe-python/tree/a9a8d754b73ad47bdece6ac4b4850822fa19db4e#logging
-        logging.getLogger('stripe').setLevel(logging.INFO)
-        # Verify connectivity
-        account = stripe.Account.retrieve(args.config.get('account_id'))
-        msg = "Successfully connected to Stripe Account with display name" \
-                      + " `%s`"
-        LOGGER.info(msg, account.display_name)
-
         Context.config = args.config
         Context.state = args.state
+        configure_stripe_client()
         validate_dependencies()
         sync()
 

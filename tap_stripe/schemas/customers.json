@@ -14,190 +14,11 @@
       "properties": {}
     },
     "sources": {
-      "properties": {
-        "total_count": {
-          "type": [
-            "null",
-            "integer"
-          ]
-        },
-        "metadata": {
-          "type": [
-            "null",
-            "object"
-          ],
-          "properties": {}
-        },
-        "has_more": {
-          "type": [
-            "null",
-            "boolean"
-          ]
-        },
-        "url": {
-          "type": [
-            "null",
-            "string"
-          ]
-        },
-        "data": {
-          "type": [
-            "null",
-            "array"
-          ],
-          "items": {
-            "properties": {
-              "last4": {
-                "type": [
-                  "null",
-                  "string"
-                ]
-              },
-              "metadata": {
-                "type": [
-                  "null",
-                  "object"
-                ],
-                "properties": {}
-              },
-              "address_zip_check": {
-                "type": [
-                  "null"
-                ]
-              },
-              "address_line1": {
-                "type": [
-                  "null"
-                ]
-              },
-              "cvc_check": {
-                "type": [
-                  "null",
-                  "string"
-                ]
-              },
-              "dynamic_last4": {
-                "type": [
-                  "null"
-                ]
-              },
-              "id": {
-                "type": [
-                  "null",
-                  "string"
-                ]
-              },
-              "tokenization_method": {
-                "type": [
-                  "null",
-                  "string"
-                ]
-              },
-              "fingerprint": {
-                "type": [
-                  "null",
-                  "string"
-                ]
-              },
-              "customer": {
-                "type": [
-                  "null",
-                  "string"
-                ]
-              },
-              "address_line1_check": {
-                "type": [
-                  "null",
-                  "string"
-                ]
-              },
-              "exp_year": {
-                "type": [
-                  "null",
-                  "integer"
-                ]
-              },
-              "address_city": {
-                "type": [
-                  "null",
-                  "string"
-                ]
-              },
-              "name": {
-                "type": [
-                  "null",
-                  "string"
-                ]
-              },
-              "brand": {
-                "type": [
-                  "null",
-                  "string"
-                ]
-              },
-              "funding": {
-                "type": [
-                  "null",
-                  "string"
-                ]
-              },
-              "address_country": {
-                "type": [
-                  "null",
-                  "string"
-                ]
-              },
-              "object": {
-                "type": [
-                  "null",
-                  "string"
-                ]
-              },
-              "address_line2": {
-                "type": [
-                  "null"
-                ]
-              },
-              "country": {
-                "type": [
-                  "null",
-                  "string"
-                ]
-              },
-              "address_state": {
-                "type": [
-                  "null"
-                ]
-              },
-              "address_zip": {
-                "type": [
-                  "null"
-                ]
-              },
-              "exp_month": {
-                "type": [
-                  "null",
-                  "integer"
-                ]
-              }
-            },
-            "type": [
-              "null",
-              "object"
-            ]
-          }
-        },
-        "object": {
-          "type": [
-            "null",
-            "string"
-          ]
-        }
-      },
       "type": [
         "null",
         "object"
-      ]
+      ],
+      "properties": {}
     },
     "email": {
       "type": [
@@ -207,8 +28,10 @@
     },
     "discount": {
       "type": [
-        "null"
-      ]
+        "null",
+        "object"
+      ],
+      "properties": {}
     },
     "cards": {
       "properties": {
@@ -422,8 +245,10 @@
     },
     "shipping": {
       "type": [
-        "null"
-      ]
+        "null",
+        "object"
+      ],
+      "properties": {}
     },
     "delinquent": {
       "type": [

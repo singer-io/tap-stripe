@@ -77,6 +77,17 @@ class Context():
                 return True
         return False
 
+    @classmethod
+    def print_counts(cls):
+        LOGGER.info('------------------')
+        for stream_name, stream_count in Context.new_counts.items():
+            LOGGER.info('%s: %d new, %d updates',
+                        stream_name,
+                        stream_count,
+                        Context.updated_counts[stream_name])
+        LOGGER.info('------------------')
+
+
 def configure_stripe_client():
     # Set the API key we'll be using
     # https://github.com/stripe/stripe-python/tree/a9a8d754b73ad47bdece6ac4b4850822fa19db4e#usage
@@ -229,6 +240,10 @@ def sync_stream(stream_name):
             if should_sync_sub_stream:
                 sync_sub_stream(sub_stream_name, stream_obj.id)
 
+            # write state after every 100 records
+            if (Context.new_counts[stream_name] % 100) == 0:
+                singer.write_state(Context.state)
+
     singer.write_state(Context.state)
 
 
@@ -306,7 +321,6 @@ def sync_event_updates():
     singer.write_state(Context.state)
 
 def sync():
-
     # Write all schemas and init count to 0
     for catalog_entry in Context.catalog['streams']:
         if Context.is_selected(catalog_entry["tap_stream_id"]):
@@ -328,15 +342,8 @@ def sync():
     # Get event updates
     sync_event_updates()
 
-    # log count of new and updated items
-    LOGGER.info('------------------')
-    for stream_name, stream_count in Context.new_counts.items():
-        LOGGER.info('%s: %d new, %d updates',
-                    stream_name,
-                    stream_count,
-                    Context.updated_counts[stream_name])
-    LOGGER.info('------------------')
-
+    # Print counts
+    Context.print_counts()
 
 @utils.handle_top_exception(LOGGER)
 def main():

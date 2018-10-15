@@ -89,6 +89,7 @@ class Context():
 
 
 def configure_stripe_client():
+    stripe.set_app_info(Context.config.get('user_agent', 'Singer.io Tap'), url="https://github.com/singer-io/tap-stripe")
     # Set the API key we'll be using
     # https://github.com/stripe/stripe-python/tree/a9a8d754b73ad47bdece6ac4b4850822fa19db4e#usage
     stripe.api_key = Context.config.get('client_secret')

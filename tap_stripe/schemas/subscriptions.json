@@ -303,8 +303,10 @@
     },
     "discount": {
       "type": [
-        "null"
-      ]
+        "null",
+        "object"
+      ],
+      "properties": {}
     },
     "current_period_end": {
       "type": [

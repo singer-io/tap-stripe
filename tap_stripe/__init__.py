@@ -23,8 +23,7 @@ STREAM_SDK_OBJECTS = {
     'transfers': stripe.Transfer,
     'coupons': stripe.Coupon,
     'subscriptions': stripe.Subscription,
-    'subscription_items': stripe.SubscriptionItem,
-    'balance_transactions': stripe.BalanceTransaction
+    'subscription_items': stripe.SubscriptionItem
 }
 
 EVENT_RESOURCE_TO_STREAM = {
@@ -36,8 +35,7 @@ EVENT_RESOURCE_TO_STREAM = {
     'transfer': 'transfers',
     'coupon': 'coupons',
     'subscription': 'subscriptions',
-    'subscriptionitem': 'subscription_items',
-    'balancetransaction': 'balance_transactions'
+    'subscriptionitem': 'subscription_items'
 }
 
 SUB_STREAMS = {

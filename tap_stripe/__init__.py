@@ -202,12 +202,16 @@ def sync_stream(stream_name):
     bookmark = stream_bookmark
     # if this stream has a sub_stream, compare the bookmark
     sub_stream_name = SUB_STREAMS.get(stream_name)
-    # if sub_stream_name:
-    #    sub_stream_bookmark = singer.get_bookmark(Context.state, sub_stream_name, 'id')
-    #    # if there is a sub stream, set bookmark to sub stream's bookmark
-    #    # since we know it must be earlier than the stream's bookmark
-    #    if sub_stream_bookmark != stream_bookmark:
-    #        bookmark = sub_stream_bookmark
+
+    if sub_stream_name:
+        sub_stream_bookmark = singer.get_bookmark(Context.state, sub_stream_name, 'id')
+        # if there is a sub stream, set bookmark to sub stream's bookmark
+        # since we know it must be earlier than the stream's bookmark
+        if sub_stream_bookmark != stream_bookmark:
+            bookmark = sub_stream_bookmark
+    else:
+        sub_stream_bookmark = None
+
     with Transformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
         for stream_obj in STREAM_SDK_OBJECTS[stream_name].list(
                 # If we want to increase the page size we can do
@@ -217,16 +221,16 @@ def sync_stream(stream_name):
                 # all of them so this should always be safe.
                 starting_after=bookmark
         ).auto_paging_iter():
-            # if sub_stream_name:
-            #    sub_stream_bookmark = singer.get_bookmark(Context.state, sub_stream_name, 'id')
+            if sub_stream_name:
+                sub_stream_bookmark = singer.get_bookmark(Context.state, sub_stream_name, 'id')
             should_sync_sub_stream = sub_stream_name and Context.is_selected(sub_stream_name)
 
             # If there is no sub stream, or there is and it isn't selected,
             # or the sub stream is up to date (bookmarks are equal),
             # the stream should be sync'd
             should_sync_stream = not sub_stream_name \
-                                 or not Context.is_selected(sub_stream_name)  # \
-            #                    or stream_bookmark == sub_stream_bookmark
+                                 or not Context.is_selected(sub_stream_name)   \
+                                 or stream_bookmark == sub_stream_bookmark
 
             # if the bookmark equals the stream bookmark, sync stream records
             if should_sync_stream:
@@ -240,7 +244,7 @@ def sync_stream(stream_name):
 
                 Context.new_counts[stream_name] += 1
 
-                # stream_bookmark = stream_obj.id
+                stream_bookmark = stream_obj.id
 
                 singer.write_bookmark(Context.state,
                                       stream_name,

@@ -4,6 +4,7 @@ import json
 import logging
 
 import stripe
+import stripe.error
 import singer
 from singer import utils, Transformer
 from singer import metadata
@@ -305,6 +306,11 @@ def sync_event_updates():
 
     extraction_time = singer.utils.now()
     max_created_value = 0
+
+    created_bookmark = singer.get_bookmark(Context.state, 'events', 'last_created')
+    if not created_bookmark:
+        created_bookmark = 0
+
     for events_obj in STREAM_SDK_OBJECTS['events'].list(
             # If we want to increase the page size we can do
             # `limit=N` as a second parameter here.
@@ -312,7 +318,7 @@ def sync_event_updates():
             # None passed to starting_after appears to retrieve
             # all of them so this should always be safe.
             # starting_after=singer.get_bookmark(Context.state, 'events', 'updates_id'),
-            created={"gte": singer.get_bookmark(Context.state, 'events', 'last_created')}
+            created={"gte": created_bookmark}
     ).auto_paging_iter():
         event_resource_obj = events_obj.data.object
         stream_name = EVENT_RESOURCE_TO_STREAM.get(event_resource_obj.object)
@@ -343,8 +349,15 @@ def sync_event_updates():
                         if sub_stream_name == "invoice_line_items":
                             # retrieve parent object and query children
                             # TODO avoid invoice loading
-                            parent_object = STREAM_SDK_OBJECTS[stream_name].retrieve(parent_id)
-                            sync_sub_stream(sub_stream_name, parent_object)
+                            try:
+                                # sometimes the invoice that presented in the event cannot be loaded, weird
+                                parent_object = STREAM_SDK_OBJECTS[stream_name].retrieve(parent_id)
+                            except stripe.error.InvalidRequestError as e:
+                                LOGGER.error("Failed to load invoice: %s", e)
+                                parent_object = None
+
+                            if parent_object:
+                                sync_sub_stream(sub_stream_name, parent_object)
                 else:
                     LOGGER.warning('Caught %s event for %s without an id (event id %s)!',
                                    events_obj.type,

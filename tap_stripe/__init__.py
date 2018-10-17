@@ -322,6 +322,9 @@ def sync_event_updates():
                                    events_obj.id)
     singer.write_state(Context.state)
 
+def any_streams_selected():
+    return any(s for s in STREAM_SDK_OBJECTS.keys() if Context.is_selected(s))
+
 def sync():
     # Write all schemas and init count to 0
     for catalog_entry in Context.catalog['streams']:
@@ -340,9 +343,9 @@ def sync():
         if Context.is_selected(stream_name) and not Context.is_sub_stream(stream_name):
             sync_stream(stream_name)
 
-
     # Get event updates
-    sync_event_updates()
+    if any_streams_selected():
+        sync_event_updates()
 
     # Print counts
     Context.print_counts()

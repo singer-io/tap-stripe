@@ -35,9 +35,10 @@ EVENT_RESOURCE_TO_STREAM = {
     'invoiceitem': 'invoice_items',
     'transfer': 'transfers',
     'coupon': 'coupons',
-    'subscription': 'subscriptions',
-    'subscriptionitem': 'subscription_items',
-    'balancetransaction': 'balance_transactions'
+    'subscription': 'subscriptions'
+    # Cannot find evidence of these streams having events associated:
+    # subscription_items - appears on subscriptions events
+    # balance_transactions - seems to be immutable
 }
 
 SUB_STREAMS = {
@@ -285,13 +286,16 @@ def sync_event_updates():
     look at 'events update' bookmark and pull events after that
     '''
     extraction_time = singer.utils.now()
+    bookmark_value = singer.get_bookmark(Context.state, 'events', 'created') or 0
+    max_created = bookmark_value
+
     for events_obj in STREAM_SDK_OBJECTS['events'].list(
             # If we want to increase the page size we can do
             # `limit=N` as a second parameter here.
             stripe_account=Context.config.get('account_id'),
             # None passed to starting_after appears to retrieve
             # all of them so this should always be safe.
-            starting_after=singer.get_bookmark(Context.state, 'events', 'updates_id')
+            **{"created[gt]": max_created}
     ).auto_paging_iter():
         event_resource_obj = events_obj.data.object
         event_resource_name = EVENT_RESOURCE_TO_STREAM.get(event_resource_obj.object)
@@ -304,22 +308,21 @@ def sync_event_updates():
                 rec = transformer.transform(event_resource_obj.to_dict_recursive(),
                                             event_resource_stream['schema'],
                                             event_resource_metadata)
-                # we've observed event_resources without ids (e.g. invoice.upcoming events)
-                if rec.get('id'):
-                    singer.write_record(event_resource_name,
-                                        rec,
-                                        time_extracted=extraction_time)
 
-                    Context.updated_counts[event_resource_name] += 1
-                    singer.write_bookmark(Context.state,
-                                          'events',
-                                          'updates_id',
-                                          events_obj.id)
-                else:
-                    LOGGER.warning('Caught %s event for %s without an id (event id %s)!',
-                                   events_obj.type,
-                                   event_resource_name,
-                                   events_obj.id)
+                if events_obj.created > bookmark_value:
+                    if rec.get('id') is not None:
+                        singer.write_record(event_resource_name,
+                                            rec,
+                                            time_extracted=extraction_time)
+                        Context.updated_counts[event_resource_name] += 1
+
+                    if events_obj.created > max_created:
+                        max_created = events_obj.created
+                        singer.write_bookmark(Context.state,
+                                              'events',
+                                              'created',
+                                              max_created)
+
     singer.write_state(Context.state)
 
 def any_streams_selected():

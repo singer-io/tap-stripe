@@ -27,6 +27,20 @@ STREAM_SDK_OBJECTS = {
     'balance_transactions': stripe.BalanceTransaction
 }
 
+STREAM_REPLICATION_KEY = {
+    'charges': 'created',
+    'events': 'created',
+    'customers': 'created',
+    'plans': 'created',
+    'invoices': 'date',
+    'invoice_items': 'date',
+    'transfers': 'created',
+    'coupons': 'created',
+    'subscriptions': 'created',
+    'subscription_items': 'created',
+    'balance_transactions': 'created'
+}
+
 EVENT_RESOURCE_TO_STREAM = {
     'charge': 'charges',
     'customer': 'customers',
@@ -175,7 +189,7 @@ def discover():
             'stream': schema_name,
             'tap_stream_id': schema_name,
             'schema': schema,
-            'metadata': get_discovery_metadata(schema, 'id', 'INCREMENTAL', 'id'),
+            'metadata': get_discovery_metadata(schema, 'id', 'INCREMENTAL', STREAM_REPLICATION_KEY[schema_name]),
             # Events may have a different key property than this. Change
             # if it's appropriate.
             'key_properties': ['id']
@@ -185,19 +199,26 @@ def discover():
     return {'streams': streams}
 
 def sync_stream(stream_name):
+    """
+    Sync each stream, looking for newly created records. Updates are captured by events stream.
+    """
     catalog_entry = Context.get_catalog_entry(stream_name)
     stream_schema = catalog_entry['schema']
     stream_metadata = metadata.to_map(catalog_entry['metadata'])
     extraction_time = singer.utils.now()
-    stream_bookmark = singer.get_bookmark(Context.state, stream_name, 'id')
-    bookmark = stream_bookmark
+    replication_key = metadata.get(stream_metadata, (), 'valid-replication-keys')[0]
+    # Invoice Items bookmarks on `date`, but queries on `created`
+    filter_key = 'created' if stream_name == 'invoice_items' else replication_key
+    stream_bookmark = singer.get_bookmark(Context.state, stream_name, replication_key)
+    bookmark = stream_bookmark or 0
+    max_bookmark = bookmark
     # if this stream has a sub_stream, compare the bookmark
     sub_stream_name = SUB_STREAMS.get(stream_name)
     if sub_stream_name:
-        sub_stream_bookmark = singer.get_bookmark(Context.state, sub_stream_name, 'id')
+        sub_stream_bookmark = singer.get_bookmark(Context.state, sub_stream_name, replication_key)
         # if there is a sub stream, set bookmark to sub stream's bookmark
         # since we know it must be earlier than the stream's bookmark
-        if sub_stream_bookmark != stream_bookmark:
+        if sub_stream_bookmark and sub_stream_bookmark != stream_bookmark:
             bookmark = sub_stream_bookmark
     with Transformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
         for stream_obj in STREAM_SDK_OBJECTS[stream_name].list(
@@ -206,18 +227,19 @@ def sync_stream(stream_name):
                 stripe_account=Context.config.get('account_id'),
                 # None passed to starting_after appears to retrieve
                 # all of them so this should always be safe.
-                starting_after=bookmark
+                **{filter_key + "[gt]": bookmark}
         ).auto_paging_iter():
             if sub_stream_name:
-                sub_stream_bookmark = singer.get_bookmark(Context.state, sub_stream_name, 'id')
+                sub_stream_bookmark = singer.get_bookmark(Context.state, sub_stream_name, replication_key)
             should_sync_sub_stream = sub_stream_name and Context.is_selected(sub_stream_name)
 
             # If there is no sub stream, or there is and it isn't selected,
             # or the sub stream is up to date (bookmarks are equal),
             # the stream should be sync'd
+            # TODO: This may need adjusted, the logic is strange
             should_sync_stream = not sub_stream_name \
-            or not Context.is_selected(sub_stream_name) \
-                or stream_bookmark == sub_stream_bookmark
+                                 or not Context.is_selected(sub_stream_name) \
+                                 or stream_bookmark == sub_stream_bookmark
 
             # if the bookmark equals the stream bookmark, sync stream records
             if should_sync_stream:
@@ -232,16 +254,18 @@ def sync_stream(stream_name):
 
                 Context.new_counts[stream_name] += 1
 
-                stream_bookmark = stream_obj.id
+                stream_bookmark = stream_obj.get(replication_key)
 
-                singer.write_bookmark(Context.state,
-                                      stream_name,
-                                      'id',
-                                      stream_obj.id)
+                if stream_bookmark > max_bookmark:
+                    max_bookmark = stream_bookmark
+                    singer.write_bookmark(Context.state,
+                                          stream_name,
+                                          replication_key,
+                                          max_bookmark)
 
             # sync sub streams
             if should_sync_sub_stream:
-                sync_sub_stream(sub_stream_name, stream_obj.id)
+                sync_sub_stream(sub_stream_name, stream_obj, replication_key)
 
             # write state after every 100 records
             if (Context.new_counts[stream_name] % 100) == 0:
@@ -250,7 +274,10 @@ def sync_stream(stream_name):
     singer.write_state(Context.state)
 
 
-def sync_sub_stream(sub_stream_name, parent_id):
+def sync_sub_stream(sub_stream_name, parent_obj, parent_replication_key):
+    """
+    Given a parent object, retrieve its values for the specified substream.
+    """
     sub_stream_catalog_entry = Context.get_catalog_entry(sub_stream_name)
     sub_stream_schema = sub_stream_catalog_entry['schema']
     sub_stream_metadata = metadata.to_map(sub_stream_catalog_entry['metadata'])
@@ -260,7 +287,7 @@ def sync_sub_stream(sub_stream_name, parent_id):
                 # If we want to increase the page size we can do
                 # `limit=N` as a second parameter here.
                 stripe_account=Context.config.get('account_id'),
-                subscription=parent_id
+                subscription=parent_obj.id
         ).auto_paging_iter():
 
             rec = transformer.transform(sub_stream_obj.to_dict_recursive(),
@@ -272,11 +299,12 @@ def sync_sub_stream(sub_stream_name, parent_id):
                                 time_extracted=extraction_time)
             Context.new_counts[sub_stream_name] += 1
 
-            sub_stream_bookmark = parent_id
+            # TODO: Does this even need a bookmark? Could just use the parent + events sync
+            sub_stream_bookmark = parent_obj.created
 
             singer.write_bookmark(Context.state,
                                   sub_stream_name,
-                                  'id',
+                                  parent_replication_key,
                                   sub_stream_bookmark)
 
 def sync_event_updates():

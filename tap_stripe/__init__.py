@@ -229,7 +229,7 @@ def sync_stream(stream_name):
             # or the sub stream is up to date (bookmarks are equal),
             # the stream should be sync'd
             should_sync_stream = not sub_stream_name \
-                                 or not Context.is_selected(sub_stream_name)   \
+                                 or not Context.is_selected(sub_stream_name) \
                                  or stream_bookmark == sub_stream_bookmark
 
             # if the bookmark equals the stream bookmark, sync stream records
@@ -381,13 +381,15 @@ def sync_event_updates():
 def sync():
     # Write all schemas and init count to 0
     for catalog_entry in Context.catalog['streams']:
-        if Context.is_selected(catalog_entry["tap_stream_id"]):
-            singer.write_schema(catalog_entry['tap_stream_id'],
-                                catalog_entry['schema'],
-                                'id')
+        stream_name = catalog_entry["tap_stream_id"]
+        if Context.is_selected(stream_name):
+            if stream_name == "invoice_line_items":  # TODO make configurable
+                singer.write_schema(stream_name, catalog_entry['schema'], ['invoice', 'id'])
+            else:
+                singer.write_schema(stream_name, catalog_entry['schema'], 'id')
 
-            Context.new_counts[catalog_entry['tap_stream_id']] = 0
-            Context.updated_counts[catalog_entry['tap_stream_id']] = 0
+            Context.new_counts[stream_name] = 0
+            Context.updated_counts[stream_name] = 0
 
     # Loop over streams in catalog
     for catalog_entry in Context.catalog['streams']:

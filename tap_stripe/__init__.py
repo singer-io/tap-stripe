@@ -35,7 +35,7 @@ EVENT_RESOURCE_TO_STREAM = {
     'invoiceitem': 'invoice_items',
     'transfer': 'transfers',
     'coupon': 'coupons',
-    'subscription': 'subscriptions'
+    'subscription': 'subscriptions',
     # Cannot find evidence of these streams having events associated:
     # subscription_items - appears on subscriptions events
     # balance_transactions - seems to be immutable
@@ -326,7 +326,7 @@ def sync_event_updates():
     singer.write_state(Context.state)
 
 def any_streams_selected():
-    return any(s for s in STREAM_SDK_OBJECTS.keys() if Context.is_selected(s))
+    return any(s for s in STREAM_SDK_OBJECTS if Context.is_selected(s))
 
 def sync():
     # Write all schemas and init count to 0

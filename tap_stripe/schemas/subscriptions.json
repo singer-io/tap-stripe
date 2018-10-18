@@ -490,8 +490,9 @@
     "created": {
       "type": [
         "null",
-        "integer"
-      ]
+        "string"
+      ],
+      "format": "date-time"
     },
     "ended_at": {
       "type": [

@@ -262,7 +262,7 @@ def sync_stream(stream_name):
     singer.write_state(Context.state)
 
 
-def sync_sub_stream(sub_stream_name, parent):
+def sync_sub_stream(sub_stream_name, parent, save_bookmarks=True):
     sub_stream_catalog_entry = Context.get_catalog_entry(sub_stream_name)
     sub_stream_schema = sub_stream_catalog_entry['schema']
     sub_stream_metadata = metadata.to_map(sub_stream_catalog_entry['metadata'])
@@ -294,10 +294,11 @@ def sync_sub_stream(sub_stream_name, parent):
 
             sub_stream_bookmark = parent.id
 
-            singer.write_bookmark(Context.state,
-                                  sub_stream_name,
-                                  'id',
-                                  sub_stream_bookmark)
+            if save_bookmarks:
+                singer.write_bookmark(Context.state,
+                                      sub_stream_name,
+                                      'id',
+                                      sub_stream_bookmark)
 
 
 def sync_event_updates():
@@ -361,7 +362,7 @@ def sync_event_updates():
                                 parent_object = None
 
                             if parent_object:
-                                sync_sub_stream(sub_stream_name, parent_object)
+                                sync_sub_stream(sub_stream_name, parent_object, False)
                 else:
                     LOGGER.warning('Caught %s event for %s without an id (event id %s)!',
                                    events_obj.type,

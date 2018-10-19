@@ -314,7 +314,7 @@ def sync_event_updates():
     look at 'events update' bookmark and pull events after that
     '''
     extraction_time = singer.utils.now()
-    bookmark_value = singer.get_bookmark(Context.state, 'events', 'created') or 0
+    bookmark_value = singer.get_bookmark(Context.state, 'events', 'updates_created') or 0
     max_created = bookmark_value
 
     for events_obj in STREAM_SDK_OBJECTS['events'].list(
@@ -348,7 +348,7 @@ def sync_event_updates():
                         max_created = events_obj.created
                         singer.write_bookmark(Context.state,
                                               'events',
-                                              'created',
+                                              'updates_created',
                                               max_created)
 
     singer.write_state(Context.state)

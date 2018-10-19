@@ -274,7 +274,7 @@ def sync_stream(stream_name):
     singer.write_state(Context.state)
 
 
-def sync_sub_stream(sub_stream_name, parent_obj, parent_replication_key):
+def sync_sub_stream(sub_stream_name, parent_obj, parent_replication_key, save_bookmarks=True, updates=False):
     """
     Given a parent object, retrieve its values for the specified substream.
     """
@@ -297,15 +297,18 @@ def sync_sub_stream(sub_stream_name, parent_obj, parent_replication_key):
             singer.write_record(sub_stream_name,
                                 rec,
                                 time_extracted=extraction_time)
-            Context.new_counts[sub_stream_name] += 1
+            if updates:
+                Context.updated_counts[sub_stream_name] += 1
+            else:
+                Context.new_counts[sub_stream_name] += 1
 
-            # TODO: Does this even need a bookmark? Could just use the parent + events sync
             sub_stream_bookmark = parent_obj.created
 
-            singer.write_bookmark(Context.state,
-                                  sub_stream_name,
-                                  parent_replication_key,
-                                  sub_stream_bookmark)
+            if save_bookmarks:
+                singer.write_bookmark(Context.state,
+                                      sub_stream_name,
+                                      parent_replication_key,
+                                      sub_stream_bookmark)
 
 def sync_event_updates():
     '''
@@ -313,6 +316,8 @@ def sync_event_updates():
 
     look at 'events update' bookmark and pull events after that
     '''
+    LOGGER.info("Started syncing event based updates")
+
     extraction_time = singer.utils.now()
     bookmark_value = singer.get_bookmark(Context.state, 'events', 'updates_created') or 0
     max_created = bookmark_value
@@ -326,11 +331,14 @@ def sync_event_updates():
             **{"created[gt]": max_created}
     ).auto_paging_iter():
         event_resource_obj = events_obj.data.object
-        event_resource_name = EVENT_RESOURCE_TO_STREAM.get(event_resource_obj.object)
-        event_resource_stream = Context.get_catalog_entry(event_resource_name)
+        stream_name = EVENT_RESOURCE_TO_STREAM.get(event_resource_obj.object)
+        event_resource_stream = Context.get_catalog_entry(stream_name)
 
+        sub_stream_name = SUB_STREAMS.get(stream_name)
+        should_sync_stream = event_resource_stream and Context.is_selected(stream_name)
+        should_sync_sub_stream = should_sync_stream and sub_stream_name and Context.is_selected(sub_stream_name)
         # if we got an event for a selected stream, sync the updates for that stream
-        if event_resource_stream and Context.is_selected(event_resource_name):
+        if should_sync_stream:
             with Transformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
                 event_resource_metadata = metadata.to_map(event_resource_stream['metadata'])
                 rec = transformer.transform(event_resource_obj.to_dict_recursive(),
@@ -338,18 +346,32 @@ def sync_event_updates():
                                             event_resource_metadata)
 
                 if events_obj.created > bookmark_value:
-                    if rec.get('id') is not None:
-                        singer.write_record(event_resource_name,
+                    object_id = rec.get('id')
+                    if object_id is not None:
+                        singer.write_record(stream_name,
                                             rec,
                                             time_extracted=extraction_time)
-                        Context.updated_counts[event_resource_name] += 1
+                        Context.updated_counts[stream_name] += 1
 
-                    if events_obj.created > max_created:
-                        max_created = events_obj.created
-                        singer.write_bookmark(Context.state,
-                                              'events',
-                                              'updates_created',
-                                              max_created)
+                        if events_obj.created > max_created:
+                            max_created = events_obj.created
+                            singer.write_bookmark(Context.state,
+                                                  'events',
+                                                  'updates_created',
+                                                  max_created)
+                        if should_sync_sub_stream:
+                            try:
+                                parent_object = STREAM_SDK_OBJECTS[stream_name].retrieve(object_id)
+                            except stripe.error.InvalidRequestError as e:
+                                LOGGER.error("Failed to load %s (%s): %s", stream_name, object_id, e)
+                                parent_object = None
+
+                            if parent_object is not None:
+                                sync_sub_stream(sub_stream_name,
+                                                parent_object,
+                                                STREAM_REPLICATION_KEY[stream_name],
+                                                save_bookmarks=False,
+                                                updates=True)
 
     singer.write_state(Context.state)
 

@@ -11,6 +11,70 @@
       ],
       "properties": {}
     },
+    "shipping": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {
+        "address": {
+          "type": [
+            "null",
+            "object"
+          ],
+          "properties": {
+            "line2": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "state": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "city": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "postal_code": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "country": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "line1": {
+              "type": [
+                "null",
+                "string"
+              ]
+            }
+          }
+        },
+        "name": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "phone": {
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      }
+    },
     "sources": {
       "type": [
         "null",
@@ -22,6 +86,13 @@
           "object"
         ],
         "properties": {
+          "metadata": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {}
+          },
           "type": {
             "type": [
               "null",
@@ -509,6 +580,13 @@
           "object"
         ],
         "properties": {
+          "metadata": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {}
+          },
           "object": {
             "type": [
               "null",

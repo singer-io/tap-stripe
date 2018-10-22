@@ -25,7 +25,8 @@ STREAM_SDK_OBJECTS = {
     'coupons': stripe.Coupon,
     'subscriptions': stripe.Subscription,
     'subscription_items': stripe.SubscriptionItem,
-    'balance_transactions': stripe.BalanceTransaction
+    'balance_transactions': stripe.BalanceTransaction,
+    'payouts': stripe.Payout
 }
 
 STREAM_REPLICATION_KEY = {
@@ -40,6 +41,7 @@ STREAM_REPLICATION_KEY = {
     'subscriptions': 'created',
     'subscription_items': 'created',
     'balance_transactions': 'created',
+    'payouts': 'created'
     # invoice_line_items is bookmarked based on parent invoices,
     # no replication key value on the object itself
     #'invoice_line_items': 'date'
@@ -54,6 +56,7 @@ EVENT_RESOURCE_TO_STREAM = {
     'transfer': 'transfers',
     'coupon': 'coupons',
     'subscription': 'subscriptions',
+    'payout': 'payouts', #TODO: VALIDATE THIS
     # Cannot find evidence of these streams having events associated:
     # subscription_items - appears on subscriptions events
     # balance_transactions - seems to be immutable

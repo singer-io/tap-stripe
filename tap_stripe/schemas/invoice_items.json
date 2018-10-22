@@ -265,6 +265,12 @@
         "null",
         "boolean"
       ]
+    },
+    "subscription_item": {
+      "type": [
+        "null",
+        "string"
+      ]
     }
   }
 }

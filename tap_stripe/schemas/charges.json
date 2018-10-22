@@ -369,40 +369,8 @@
       ]
     },
     "refunds": {
-      "type": [
-        "null",
-        "object"
-      ],
-      "properties": {
-        "data": {
-          "type": ["null", "array"],
-          "items": {}
-        },
-        "url": {
-          "type": [
-            "null",
-            "string"
-          ]
-        },
-        "object": {
-          "type": [
-            "null",
-            "string"
-          ]
-        },
-        "has_more": {
-          "type": [
-            "null",
-            "boolean"
-          ]
-        },
-        "total_count": {
-          "type": [
-            "null",
-            "integer"
-          ]
-        }
-      }
+      "type": ["null", "array"],
+      "items": {}
     },
     "application_fee": {
       "type": [

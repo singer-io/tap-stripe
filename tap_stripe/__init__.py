@@ -39,7 +39,10 @@ STREAM_REPLICATION_KEY = {
     'coupons': 'created',
     'subscriptions': 'created',
     'subscription_items': 'created',
-    'balance_transactions': 'created'
+    'balance_transactions': 'created',
+    # invoice_line_items is bookmarked based on parent invoices,
+    # no replication key value on the object itself
+    #'invoice_line_items': 'date'
 }
 
 EVENT_RESOURCE_TO_STREAM = {
@@ -235,7 +238,7 @@ def discover():
             'metadata': get_discovery_metadata(schema,
                                                'id',
                                                'INCREMENTAL',
-                                               STREAM_REPLICATION_KEY[stream_name]),
+                                               STREAM_REPLICATION_KEY.get(stream_name)),
             # Events may have a different key property than this. Change
             # if it's appropriate.
             'key_properties': ['id']

@@ -56,10 +56,10 @@ EVENT_RESOURCE_TO_STREAM = {
     'transfer': 'transfers',
     'coupon': 'coupons',
     'subscription': 'subscriptions',
-    'payout': 'payouts', #TODO: VALIDATE THIS
     # Cannot find evidence of these streams having events associated:
     # subscription_items - appears on subscriptions events
     # balance_transactions - seems to be immutable
+    # payouts - these are called transfers with an event type of payout.*
 }
 
 SUB_STREAMS = {
@@ -268,6 +268,8 @@ def sync_stream(stream_name):
     # if this stream has a sub_stream, compare the bookmark
     sub_stream_name = SUB_STREAMS.get(stream_name)
 
+    # TODO: Payouts appear to be returning both transfers and payouts
+    # - Test by creating a payout and a transfer and observing the difference
     if sub_stream_name:
         sub_stream_bookmark = singer.get_bookmark(Context.state, sub_stream_name, replication_key)
         # if there is a sub stream, set bookmark to sub stream's bookmark
@@ -401,7 +403,8 @@ def sync_event_updates():
     ).auto_paging_iter():
         event_resource_obj = events_obj.data.object
         stream_name = EVENT_RESOURCE_TO_STREAM.get(event_resource_obj.object)
-
+        if event_resource_obj.object == 'transfer' and events_obj.type.startswith('payout'):
+            stream_name = 'payouts'
         sub_stream_name = SUB_STREAMS.get(stream_name)
         # if we got an event for a selected stream, sync the updates for that stream
         if Context.get_catalog_entry(stream_name) and Context.is_selected(stream_name):

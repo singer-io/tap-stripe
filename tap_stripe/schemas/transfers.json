@@ -140,6 +140,12 @@
         "string"
       ],
       "format": "date-time"
+    },
+    "description": {
+      "type": [
+        "null",
+        "string"
+      ]
     }
   },
   "type": [

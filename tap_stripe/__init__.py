@@ -338,7 +338,7 @@ def sync_sub_stream(sub_stream_name, parent_obj, parent_replication_key, save_bo
             else:
                 Context.new_counts[sub_stream_name] += 1
 
-            sub_stream_bookmark = parent_obj.created
+            sub_stream_bookmark = parent_obj.get(parent_replication_key)
 
             if save_bookmarks:
                 singer.write_bookmark(Context.state,

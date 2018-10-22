@@ -8,56 +8,17 @@
       "properties": {}
     },
     "reversals": {
-      "properties": {
-        "data": {
-          "type": [
-            "null",
-            "array"
-          ],
-          "items": {
-            "type": [
-              "null",
-              "object"
-            ],
-            "properties": {}
-          }
-        },
-        "metadata": {
-          "type": [
-            "null",
-            "object"
-          ],
-          "properties": {}
-        },
-        "url": {
-          "type": [
-            "null",
-            "string"
-          ]
-        },
-        "object": {
-          "type": [
-            "null",
-            "string"
-          ]
-        },
-        "has_more": {
-          "type": [
-            "null",
-            "boolean"
-          ]
-        },
-        "total_count": {
-          "type": [
-            "null",
-            "integer"
-          ]
-        }
-      },
       "type": [
         "null",
-        "object"
-      ]
+        "array"
+      ],
+      "items": {
+        "type": [
+          "null",
+          "object"
+        ],
+        "properties": {}
+      }
     },
     "failure_code": {
       "type": [

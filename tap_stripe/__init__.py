@@ -111,6 +111,8 @@ def configure_stripe_client():
     # Set the API key we'll be using
     # https://github.com/stripe/stripe-python/tree/a9a8d754b73ad47bdece6ac4b4850822fa19db4e#usage
     stripe.api_key = Context.config.get('client_secret')
+    # Override the Stripe API Version for consistent access
+    stripe.api_version = '2018-09-24'
     # Allow ourselves to retry retriable network errors 5 times
     # https://github.com/stripe/stripe-python/tree/a9a8d754b73ad47bdece6ac4b4850822fa19db4e#configuring-automatic-retries
     stripe.max_network_retries = 5

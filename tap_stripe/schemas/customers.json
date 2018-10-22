@@ -366,6 +366,30 @@
                   "null",
                   "string"
                 ]
+              },
+              "name": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "phone": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "verified_name": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "verified_phone": {
+                "type": [
+                  "null",
+                  "string"
+                ]
               }
             }
           },
@@ -503,6 +527,18 @@
                   "string"
                 ]
               },
+              "refund_account_number": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "refund_routing_number": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
               "account_number": {
                 "type": [
                   "null",
@@ -541,6 +577,73 @@
               "null",
               "string"
             ]
+          },
+          "alipay": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {}
+          },
+          "bancontact": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {}
+          },
+          "eps": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {}
+          },
+          "ideal": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {}
+          },
+          "multibanco": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {}
+          },
+          "redirect": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {
+              "failure_reason":{
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "return_url": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "status": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "url": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              }
+            }
           }
         }
       }
@@ -762,6 +865,13 @@
             "object"
           ],
           "properties": {
+            "metadata": {
+              "type": [
+                "null",
+                "object"
+              ],
+              "properties": {}
+            },
             "valid": {
               "type": [
                 "null",
@@ -870,6 +980,12 @@
           "format": "date-time"
         },
         "object": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "subscription": {
           "type": [
             "null",
             "string"

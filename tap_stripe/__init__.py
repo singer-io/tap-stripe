@@ -281,9 +281,8 @@ def sync_stream(stream_name):
 
             # if the bookmark equals the stream bookmark, sync stream records
             if should_sync_stream:
-
                 rec = transformer.transform(unwrap_data_objects(stream_obj.to_dict_recursive()),
-                                            stream_schema,
+                                            Context.get_catalog_entry(stream_name)['schema'],
                                             stream_metadata)
 
                 singer.write_record(stream_name,

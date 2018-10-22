@@ -127,6 +127,40 @@ def configure_stripe_client():
           + " `%s`"
     LOGGER.info(msg, account.display_name)
 
+def unwrap_data_objects(rec):
+    """
+    Looks for levels in the record that look like:
+
+    {
+        "has_more": ...,
+        "url": ...,
+        "object": ...,
+        "data": {...}|[...]|...,
+        ...
+    }
+
+    and recursively de-nests any that match by bringing the "data"
+    value up to its parent's level.
+    """
+    # Return early if we got here with a list of strings, no denesting required
+    if not isinstance(rec, dict):
+        return rec
+
+    for k, v in rec.items():
+        new_child = v
+        if (k == "data" and all(c in rec for c in
+                                ["has_more", "url", "object"])):
+            if isinstance(v, dict):
+                return unwrap_data_objects(v)
+            if isinstance(v, list):
+                return [unwrap_data_objects(o) for o in v]
+            return v
+        if isinstance(v, dict):
+            rec[k] = unwrap_data_objects(v)
+        if isinstance(v, list):
+            rec[k] = [unwrap_data_objects(o) for o in rec[k]]
+    return rec
+
 class DependencyException(Exception):
     pass
 
@@ -244,7 +278,7 @@ def sync_stream(stream_name):
             # if the bookmark equals the stream bookmark, sync stream records
             if should_sync_stream:
 
-                rec = transformer.transform(stream_obj.to_dict_recursive(),
+                rec = transformer.transform(unwrap_data_objects(stream_obj.to_dict_recursive()),
                                             stream_schema,
                                             stream_metadata)
 
@@ -290,7 +324,7 @@ def sync_sub_stream(sub_stream_name, parent_obj, parent_replication_key, save_bo
                 subscription=parent_obj.id
         ).auto_paging_iter():
 
-            rec = transformer.transform(sub_stream_obj.to_dict_recursive(),
+            rec = transformer.transform(unwrap_data_objects(sub_stream_obj.to_dict_recursive()),
                                         sub_stream_schema,
                                         sub_stream_metadata)
 
@@ -341,7 +375,7 @@ def sync_event_updates():
         if should_sync_stream:
             with Transformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
                 event_resource_metadata = metadata.to_map(event_resource_stream['metadata'])
-                rec = transformer.transform(event_resource_obj.to_dict_recursive(),
+                rec = transformer.transform(unwrap_data_objects(event_resource_obj.to_dict_recursive()),
                                             event_resource_stream['schema'],
                                             event_resource_metadata)
 

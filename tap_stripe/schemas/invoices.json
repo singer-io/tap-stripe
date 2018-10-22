@@ -213,38 +213,115 @@
     "lines": {
       "type": [
         "null",
-        "object"
+        "array"
       ],
-      "properties": {
-        "url": {
-          "type": [
-            "null",
-            "string"
-          ]
-        },
-        "data": {
-          "type": [
-            "null",
-            "array"
-          ],
-          "items": {
+      "items": {
+        "type": [
+          "null",
+          "object"
+        ],
+        "properties": {
+          "subscription_item": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "id": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "metadata": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {}
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "object": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "discountable": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "quantity": {
+            "type": [
+              "null",
+              "integer"
+            ]
+          },
+          "amount": {
+            "type": [
+              "null",
+              "integer"
+            ]
+          },
+          "type": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "livemode": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "proration": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "period": {
             "type": [
               "null",
               "object"
             ],
             "properties": {
-              "subscription_item": {
+              "start": {
                 "type": [
                   "null",
                   "string"
-                ]
+                ],
+                "format": "date-time"
               },
-              "id": {
+              "end": {
                 "type": [
                   "null",
                   "string"
-                ]
-              },
+                ],
+                "format": "date-time"
+              }
+            }
+          },
+          "subscription": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "plan": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {
               "metadata": {
                 "type": [
                   "null",
@@ -252,28 +329,53 @@
                 ],
                 "properties": {}
               },
-              "description": {
+              "tiers_mode": {
                 "type": [
                   "null",
                   "string"
                 ]
               },
-              "object": {
+              "trial_period_days": {
+                "type": [
+                  "null",
+                  "integer"
+                ]
+              },
+              "tiers": {
+                "type": [
+                  "null",
+                  "array"
+                ],
+                "items": {
+                  "type": [
+                    "null",
+                    "integer"
+                  ]
+                }
+              },
+              "created": {
                 "type": [
                   "null",
                   "string"
-                ]
+                ],
+                "format": "date-time"
               },
-              "discountable": {
+              "active": {
                 "type": [
                   "null",
                   "boolean"
                 ]
               },
-              "quantity": {
+              "nickname": {
                 "type": [
                   "null",
-                  "integer"
+                  "string"
+                ]
+              },
+              "product": {
+                "type": [
+                  "null",
+                  "string"
                 ]
               },
               "amount": {
@@ -282,7 +384,7 @@
                   "integer"
                 ]
               },
-              "type": {
+              "id": {
                 "type": [
                   "null",
                   "string"
@@ -294,195 +396,65 @@
                   "boolean"
                 ]
               },
-              "proration": {
-                "type": [
-                  "null",
-                  "boolean"
-                ]
-              },
-              "period": {
-                "type": [
-                  "null",
-                  "object"
-                ],
-                "properties": {
-                  "start": {
-                    "type": [
-                      "null",
-                      "string"
-                    ],
-                    "format": "date-time"
-                  },
-                  "end": {
-                    "type": [
-                      "null",
-                      "string"
-                    ],
-                    "format": "date-time"
-                  }
-                }
-              },
-              "subscription": {
+              "usage_type": {
                 "type": [
                   "null",
                   "string"
                 ]
               },
-              "plan": {
+              "interval_count": {
                 "type": [
                   "null",
-                  "object"
-                ],
-                "properties": {
-                  "metadata": {
-                    "type": [
-                      "null",
-                      "object"
-                    ],
-                    "properties": {}
-                  },
-                  "tiers_mode": {
-                    "type": [
-                      "null",
-                      "string"
-                    ]
-                  },
-                  "trial_period_days": {
-                    "type": [
-                      "null",
-                      "integer"
-                    ]
-                  },
-                  "tiers": {
-                    "type": [
-                      "null",
-                      "array"
-                    ],
-                    "items": {
-                      "type": [
-                        "null",
-                        "integer"
-                      ]
-                    }
-                  },
-                  "created": {
-                    "type": [
-                      "null",
-                      "string"
-                    ],
-                    "format": "date-time"
-                  },
-                  "active": {
-                    "type": [
-                      "null",
-                      "boolean"
-                    ]
-                  },
-                  "nickname": {
-                    "type": [
-                      "null",
-                      "string"
-                    ]
-                  },
-                  "product": {
-                    "type": [
-                      "null",
-                      "string"
-                    ]
-                  },
-                  "amount": {
-                    "type": [
-                      "null",
-                      "integer"
-                    ]
-                  },
-                  "id": {
-                    "type": [
-                      "null",
-                      "string"
-                    ]
-                  },
-                  "livemode": {
-                    "type": [
-                      "null",
-                      "boolean"
-                    ]
-                  },
-                  "usage_type": {
-                    "type": [
-                      "null",
-                      "string"
-                    ]
-                  },
-                  "interval_count": {
-                    "type": [
-                      "null",
-                      "integer"
-                    ]
-                  },
-                  "aggregate_usage": {
-                    "type": [
-                      "null",
-                      "string"
-                    ]
-                  },
-                  "statement_descriptor": {
-                    "type": [
-                      "null",
-                      "string"
-                    ]
-                  },
-                  "object": {
-                    "type": [
-                      "null",
-                      "string"
-                    ]
-                  },
-                  "name": {
-                    "type": [
-                      "null",
-                      "string"
-                    ]
-                  },
-                  "interval": {
-                    "type": [
-                      "null",
-                      "string"
-                    ]
-                  },
-                  "billing_scheme": {
-                    "type": [
-                      "null",
-                      "string"
-                    ]
-                  },
-                  "statement_description": {
-                    "type": [
-                      "null",
-                      "string"
-                    ]
-                  },
-                  "transform_usage": {
-                    "type": [
-                      "null",
-                      "string"
-                    ]
-                  },
-                  "currency": {
-                    "type": [
-                      "null",
-                      "string"
-                    ]
-                  }
-                }
+                  "integer"
+                ]
               },
-              "invoice_item": {
+              "aggregate_usage": {
                 "type": [
                   "null",
-                  "object",
                   "string"
-                ],
-                "properties": {}
+                ]
+              },
+              "statement_descriptor": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "object": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "name": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "interval": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "billing_scheme": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "statement_description": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "transform_usage": {
+                "type": [
+                  "null",
+                  "string"
+                ]
               },
               "currency": {
                 "type": [
@@ -491,25 +463,21 @@
                 ]
               }
             }
+          },
+          "invoice_item": {
+            "type": [
+              "null",
+              "object",
+              "string"
+            ],
+            "properties": {}
+          },
+          "currency": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
-        },
-        "total_count": {
-          "type": [
-            "null",
-            "integer"
-          ]
-        },
-        "has_more": {
-          "type": [
-            "null",
-            "boolean"
-          ]
-        },
-        "object": {
-          "type": [
-            "null",
-            "string"
-          ]
         }
       }
     },

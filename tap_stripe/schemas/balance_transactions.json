@@ -97,35 +97,10 @@
       ]
     },
     "sourced_transfers": {
-      "properties": {
-        "object": {
-          "type": [
-            "null",
-            "string"
-          ]
-        },
-        "total_count": {
-          "type": [
-            "null",
-            "integer"
-          ]
-        },
-        "url": {
-          "type": [
-            "null",
-            "string"
-          ]
-        },
-        "has_more": {
-          "type": [
-            "null",
-            "boolean"
-          ]
-        }
-      },
+      "items": {},
       "type": [
         "null",
-        "object"
+        "array"
       ]
     },
     "id": {

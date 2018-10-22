@@ -32,25 +32,33 @@
       "format": "date-time"
     },
     "items": {
-      "type": [
-        "null",
-        "object"
-      ],
-      "properties": {
-        "total_count": {
-          "type": [
-            "null",
-            "integer"
-          ]
-        },
-        "has_more": {
-          "type": [
-            "null",
-            "boolean"
-          ]
-        },
-        "data": {
-          "items": {
+      "items": {
+        "type": [
+          "null",
+          "object"
+        ],
+        "properties": {
+          "metadata": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {}
+          },
+          "created": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "subscription": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "plan": {
             "type": [
               "null",
               "object"
@@ -63,6 +71,60 @@
                 ],
                 "properties": {}
               },
+              "product": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "statement_description": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "currency": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "livemode": {
+                "type": [
+                  "null",
+                  "boolean"
+                ]
+              },
+              "tiers_mode": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "active": {
+                "type": [
+                  "null",
+                  "boolean"
+                ]
+              },
+              "id": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "tiers": {
+                "type": [
+                  "null",
+                  "array"
+                ],
+                "items": {
+                  "type": [
+                    "null",
+                    "integer"
+                  ]
+                }
+              },
               "created": {
                 "type": [
                   "null",
@@ -70,167 +132,67 @@
                 ],
                 "format": "date-time"
               },
-              "subscription": {
+              "nickname": {
                 "type": [
                   "null",
                   "string"
                 ]
               },
-              "plan": {
+              "transform_usage": {
                 "type": [
                   "null",
-                  "object"
-                ],
-                "properties": {
-                  "metadata": {
-                    "type": [
-                      "null",
-                      "object"
-                    ],
-                    "properties": {}
-                  },
-                  "product": {
-                    "type": [
-                      "null",
-                      "string"
-                    ]
-                  },
-                  "statement_description": {
-                    "type": [
-                      "null",
-                      "string"
-                    ]
-                  },
-                  "currency": {
-                    "type": [
-                      "null",
-                      "string"
-                    ]
-                  },
-                  "livemode": {
-                    "type": [
-                      "null",
-                      "boolean"
-                    ]
-                  },
-                  "tiers_mode": {
-                    "type": [
-                      "null",
-                      "string"
-                    ]
-                  },
-                  "active": {
-                    "type": [
-                      "null",
-                      "boolean"
-                    ]
-                  },
-                  "id": {
-                    "type": [
-                      "null",
-                      "string"
-                    ]
-                  },
-                  "tiers": {
-                    "type": [
-                      "null",
-                      "array"
-                    ],
-                    "items": {
-                      "type": [
-                        "null",
-                        "integer"
-                      ]
-                    }
-                  },
-                  "created": {
-                    "type": [
-                      "null",
-                      "string"
-                    ],
-                    "format": "date-time"
-                  },
-                  "nickname": {
-                    "type": [
-                      "null",
-                      "string"
-                    ]
-                  },
-                  "transform_usage": {
-                    "type": [
-                      "null",
-                      "string"
-                    ]
-                  },
-                  "interval_count": {
-                    "type": [
-                      "null",
-                      "integer"
-                    ]
-                  },
-                  "name": {
-                    "type": [
-                      "null",
-                      "string"
-                    ]
-                  },
-                  "amount": {
-                    "type": [
-                      "null",
-                      "integer"
-                    ]
-                  },
-                  "interval": {
-                    "type": [
-                      "null",
-                      "string"
-                    ]
-                  },
-                  "aggregate_usage": {
-                    "type": [
-                      "null",
-                      "string"
-                    ]
-                  },
-                  "trial_period_days": {
-                    "type": [
-                      "null",
-                      "integer"
-                    ]
-                  },
-                  "billing_scheme": {
-                    "type": [
-                      "null",
-                      "string"
-                    ]
-                  },
-                  "statement_descriptor": {
-                    "type": [
-                      "null",
-                      "string"
-                    ]
-                  },
-                  "usage_type": {
-                    "type": [
-                      "null",
-                      "string"
-                    ]
-                  },
-                  "object": {
-                    "type": [
-                      "null",
-                      "string"
-                    ]
-                  }
-                }
+                  "string"
+                ]
               },
-              "quantity": {
+              "interval_count": {
                 "type": [
                   "null",
                   "integer"
                 ]
               },
-              "id": {
+              "name": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "amount": {
+                "type": [
+                  "null",
+                  "integer"
+                ]
+              },
+              "interval": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "aggregate_usage": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "trial_period_days": {
+                "type": [
+                  "null",
+                  "integer"
+                ]
+              },
+              "billing_scheme": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "statement_descriptor": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "usage_type": {
                 "type": [
                   "null",
                   "string"
@@ -244,24 +206,30 @@
               }
             }
           },
-          "type": [
-            "null",
-            "array"
-          ]
-        },
-        "url": {
-          "type": [
-            "null",
-            "string"
-          ]
-        },
-        "object": {
-          "type": [
-            "null",
-            "string"
-          ]
+          "quantity": {
+            "type": [
+              "null",
+              "integer"
+            ]
+          },
+          "id": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "object": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
         }
-      }
+      },
+      "type": [
+        "null",
+        "array"
+      ]
     },
     "id": {
       "type": [

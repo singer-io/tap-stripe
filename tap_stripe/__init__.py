@@ -147,7 +147,6 @@ def unwrap_data_objects(rec):
         return rec
 
     for k, v in rec.items():
-        new_child = v
         if (k == "data" and all(c in rec for c in
                                 ["has_more", "url", "object"])):
             if isinstance(v, dict):
@@ -192,7 +191,7 @@ def load_schemas():
         path = get_abs_path('schemas') + '/' + filename
         file_raw = filename.replace('.json', '')
         with open(path) as file:
-            schemas[file_raw] = json.load(file)
+            schemas[file_raw] = {'path': filename, 'schema': json.load(file)}
 
     return schemas
 
@@ -217,13 +216,15 @@ def discover():
     raw_schemas = load_schemas()
     streams = []
 
-    for schema_name, schema in raw_schemas.items():
+    for stream_name in STREAM_SDK_OBJECTS.keys():
+        schema = raw_schemas[stream_name]['schema']
+        refs = {v['path']: v['schema'] for v in raw_schemas.values()}
         # create and add catalog entry
         catalog_entry = {
-            'stream': schema_name,
-            'tap_stream_id': schema_name,
-            'schema': schema,
-            'metadata': get_discovery_metadata(schema, 'id', 'INCREMENTAL', STREAM_REPLICATION_KEY[schema_name]),
+            'stream': stream_name,
+            'tap_stream_id': stream_name,
+            'schema': singer.resolve_schema_references(schema, refs),
+            'metadata': get_discovery_metadata(schema, 'id', 'INCREMENTAL', STREAM_REPLICATION_KEY[stream_name]),
             # Events may have a different key property than this. Change
             # if it's appropriate.
             'key_properties': ['id']
@@ -270,7 +271,8 @@ def sync_stream(stream_name):
             # If there is no sub stream, or there is and it isn't selected,
             # or the sub stream is up to date (bookmarks are equal),
             # the stream should be sync'd
-            # TODO: This may need adjusted, the logic is strange
+            # Note: The parent stream is already checked if selected before we
+            #       call this function
             should_sync_stream = not sub_stream_name \
                                  or not Context.is_selected(sub_stream_name) \
                                  or stream_bookmark == sub_stream_bookmark

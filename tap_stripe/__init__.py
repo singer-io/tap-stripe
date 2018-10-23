@@ -218,7 +218,7 @@ def get_discovery_metadata(schema, key_property, replication_method, replication
         mdata = metadata.write(mdata, (), 'valid-replication-keys', [replication_key])
 
     for field_name in schema['properties'].keys():
-        if field_name == key_property:
+        if field_name == key_property or field_name == replication_key:
             mdata = metadata.write(mdata, ('properties', field_name), 'inclusion', 'automatic')
         else:
             mdata = metadata.write(mdata, ('properties', field_name), 'inclusion', 'available')
@@ -290,7 +290,7 @@ def sync_stream(stream_name):
                 stripe_account=Context.config.get('account_id'),
                 # None passed to starting_after appears to retrieve
                 # all of them so this should always be safe.
-                **{filter_key + "[gt]": bookmark}
+                **{filter_key + "[gte]": bookmark}
         ).auto_paging_iter():
             if sub_stream_name:
                 sub_stream_bookmark = singer.get_bookmark(Context.state,
@@ -308,10 +308,11 @@ def sync_stream(stream_name):
 
             # if the bookmark equals the stream bookmark, sync stream records
             if should_sync_stream:
-                rec = transformer.transform(unwrap_data_objects(stream_obj.to_dict_recursive()),
+                rec = unwrap_data_objects(stream_obj.to_dict_recursive())
+                rec = reduce_foreign_keys(rec, stream_name)
+                rec = transformer.transform(rec,
                                             Context.get_catalog_entry(stream_name)['schema'],
                                             stream_metadata)
-                rec = reduce_foreign_keys(rec, stream_name)
                 singer.write_record(stream_name,
                                     rec,
                                     time_extracted=extraction_time)
@@ -404,7 +405,7 @@ def sync_event_updates():
             stripe_account=Context.config.get('account_id'),
             # None passed to starting_after appears to retrieve
             # all of them so this should always be safe.
-            **{"created[gt]": max_created}
+            **{"created[gte]": max_created}
     ).auto_paging_iter():
         event_resource_obj = events_obj.data.object
         stream_name = EVENT_RESOURCE_TO_STREAM.get(event_resource_obj.object)
@@ -417,16 +418,16 @@ def sync_event_updates():
                 event_resource_metadata = metadata.to_map(
                     Context.get_catalog_entry(stream_name)['metadata']
                 )
+                rec = unwrap_data_objects(event_resource_obj.to_dict_recursive())
+                rec = reduce_foreign_keys(rec, stream_name)
                 rec = transformer.transform(
-                    unwrap_data_objects(
-                        event_resource_obj.to_dict_recursive()
-                    ),
+                    rec,
                     Context.get_catalog_entry(stream_name)['schema'],
                     event_resource_metadata
                 )
-                rec = reduce_foreign_keys(rec, stream_name)
 
-                if events_obj.created > bookmark_value:
+
+                if events_obj.created >= bookmark_value:
                     object_id = rec.get('id')
                     if object_id is not None:
                         singer.write_record(stream_name,
@@ -468,10 +469,7 @@ def sync():
     for catalog_entry in Context.catalog['streams']:
         stream_name = catalog_entry["tap_stream_id"]
         if Context.is_selected(stream_name):
-            if stream_name == "invoice_line_items":
-                singer.write_schema(stream_name, catalog_entry['schema'], ['invoice', 'id'])
-            else:
-                singer.write_schema(stream_name, catalog_entry['schema'], 'id')
+            singer.write_schema(stream_name, catalog_entry['schema'], 'id')
 
             Context.new_counts[stream_name] = 0
             Context.updated_counts[stream_name] = 0

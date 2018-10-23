@@ -210,6 +210,18 @@
         "integer"
       ]
     },
+    "lines": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "items": {
+        "type": [
+          "null",
+          "string"
+        ]
+      }
+    },
     "forgiven": {
       "type": [
         "null",

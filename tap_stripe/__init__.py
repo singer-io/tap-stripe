@@ -268,8 +268,6 @@ def sync_stream(stream_name):
     # if this stream has a sub_stream, compare the bookmark
     sub_stream_name = SUB_STREAMS.get(stream_name)
 
-    # TODO: Payouts appear to be returning both transfers and payouts
-    # - Test by creating a payout and a transfer and observing the difference
     if sub_stream_name:
         sub_stream_bookmark = singer.get_bookmark(Context.state, sub_stream_name, replication_key)
         # if there is a sub stream, set bookmark to sub stream's bookmark

@@ -41,7 +41,7 @@ STREAM_REPLICATION_KEY = {
     'subscriptions': 'created',
     'subscription_items': 'created',
     'balance_transactions': 'created',
-    'payouts': 'created'
+    'payouts': 'created',
     # invoice_line_items is bookmarked based on parent invoices,
     # no replication key value on the object itself
     #'invoice_line_items': 'date'
@@ -256,7 +256,7 @@ def sync_stream(stream_name):
     Sync each stream, looking for newly created records. Updates are captured by events stream.
     """
     LOGGER.info("Started syncing stream %s", stream_name)
-    
+
     stream_metadata = metadata.to_map(Context.get_catalog_entry(stream_name)['metadata'])
     extraction_time = singer.utils.now()
     replication_key = metadata.get(stream_metadata, (), 'valid-replication-keys')[0]
@@ -348,7 +348,8 @@ def sync_sub_stream(sub_stream_name,
     else:
         # If we want to increase the page size we can do
         # `limit=N` as a parameter here.
-        object_list = sdk_implementation.list(stripe_account=Context.config.get('account_id'), subscription=parent_obj.id)
+        object_list = sdk_implementation.list(stripe_account=Context.config.get('account_id'),
+                                              subscription=parent_obj.id)
 
     with Transformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
         for sub_stream_obj in object_list.auto_paging_iter():
@@ -460,7 +461,7 @@ def sync():
     for catalog_entry in Context.catalog['streams']:
         stream_name = catalog_entry["tap_stream_id"]
         if Context.is_selected(stream_name):
-            if stream_name == "invoice_line_items":  # TODO make configurable
+            if stream_name == "invoice_line_items":
                 singer.write_schema(stream_name, catalog_entry['schema'], ['invoice', 'id'])
             else:
                 singer.write_schema(stream_name, catalog_entry['schema'], 'id')

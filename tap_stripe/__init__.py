@@ -25,7 +25,8 @@ STREAM_SDK_OBJECTS = {
     'coupons': stripe.Coupon,
     'subscriptions': stripe.Subscription,
     'subscription_items': stripe.SubscriptionItem,
-    'balance_transactions': stripe.BalanceTransaction
+    'balance_transactions': stripe.BalanceTransaction,
+    'payouts': stripe.Payout
 }
 
 STREAM_REPLICATION_KEY = {
@@ -40,6 +41,7 @@ STREAM_REPLICATION_KEY = {
     'subscriptions': 'created',
     'subscription_items': 'created',
     'balance_transactions': 'created',
+    'payouts': 'created',
     # invoice_line_items is bookmarked based on parent invoices,
     # no replication key value on the object itself
     #'invoice_line_items': 'date'
@@ -57,6 +59,7 @@ EVENT_RESOURCE_TO_STREAM = {
     # Cannot find evidence of these streams having events associated:
     # subscription_items - appears on subscriptions events
     # balance_transactions - seems to be immutable
+    # payouts - these are called transfers with an event type of payout.*
 }
 
 SUB_STREAMS = {
@@ -253,7 +256,7 @@ def sync_stream(stream_name):
     Sync each stream, looking for newly created records. Updates are captured by events stream.
     """
     LOGGER.info("Started syncing stream %s", stream_name)
-    
+
     stream_metadata = metadata.to_map(Context.get_catalog_entry(stream_name)['metadata'])
     extraction_time = singer.utils.now()
     replication_key = metadata.get(stream_metadata, (), 'valid-replication-keys')[0]
@@ -345,7 +348,8 @@ def sync_sub_stream(sub_stream_name,
     else:
         # If we want to increase the page size we can do
         # `limit=N` as a parameter here.
-        object_list = sdk_implementation.list(stripe_account=Context.config.get('account_id'), subscription=parent_obj.id)
+        object_list = sdk_implementation.list(stripe_account=Context.config.get('account_id'),
+                                              subscription=parent_obj.id)
 
     with Transformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
         for sub_stream_obj in object_list.auto_paging_iter():
@@ -398,7 +402,8 @@ def sync_event_updates():
     ).auto_paging_iter():
         event_resource_obj = events_obj.data.object
         stream_name = EVENT_RESOURCE_TO_STREAM.get(event_resource_obj.object)
-
+        if event_resource_obj.object == 'transfer' and events_obj.type.startswith('payout'):
+            stream_name = 'payouts'
         sub_stream_name = SUB_STREAMS.get(stream_name)
         # if we got an event for a selected stream, sync the updates for that stream
         if Context.get_catalog_entry(stream_name) and Context.is_selected(stream_name):
@@ -456,7 +461,7 @@ def sync():
     for catalog_entry in Context.catalog['streams']:
         stream_name = catalog_entry["tap_stream_id"]
         if Context.is_selected(stream_name):
-            if stream_name == "invoice_line_items":  # TODO make configurable
+            if stream_name == "invoice_line_items":
                 singer.write_schema(stream_name, catalog_entry['schema'], ['invoice', 'id'])
             else:
                 singer.write_schema(stream_name, catalog_entry['schema'], 'id')

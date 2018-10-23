@@ -238,6 +238,12 @@
         "null",
         "string"
       ]
+    },
+    "source_transaction": {
+      "type": [
+        "null",
+        "string"
+      ]
     }
   },
   "type": [

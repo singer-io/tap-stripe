@@ -250,6 +250,12 @@ def discover():
 
     return {'streams': streams}
 
+def reduce_foreign_keys(rec, stream_name):
+    if stream_name == 'customers':
+        rec['subscriptions'] = [s['id'] for s in rec['subscriptions']]
+    elif stream_name == 'invoices':
+        rec['lines'] = [l['id'] for l in rec['lines']]
+    return rec
 
 def sync_stream(stream_name):
     """
@@ -305,7 +311,7 @@ def sync_stream(stream_name):
                 rec = transformer.transform(unwrap_data_objects(stream_obj.to_dict_recursive()),
                                             Context.get_catalog_entry(stream_name)['schema'],
                                             stream_metadata)
-
+                rec = reduce_foreign_keys(rec, stream_name)
                 singer.write_record(stream_name,
                                     rec,
                                     time_extracted=extraction_time)
@@ -418,6 +424,7 @@ def sync_event_updates():
                     Context.get_catalog_entry(stream_name)['schema'],
                     event_resource_metadata
                 )
+                rec = reduce_foreign_keys(rec, stream_name)
 
                 if events_obj.created > bookmark_value:
                     object_id = rec.get('id')

@@ -837,15 +837,6 @@
         "string"
       ]
     },
-    "subscriptions": {
-      "type": [
-        "null",
-        "array"
-      ],
-      "items": {
-        "$ref": "subscriptions.json"
-      }
-    },
     "discount": {
       "type": [
         "null",

@@ -843,7 +843,10 @@
         "array"
       ],
       "items": {
-        "$ref": "subscriptions.json"
+        "type": [
+          "null",
+          "string"
+        ]
       }
     },
     "discount": {
@@ -1041,6 +1044,13 @@
         "null",
         "string"
       ]
+    },
+    "updated": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "date-time"
     }
   }
 }

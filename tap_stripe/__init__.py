@@ -219,7 +219,7 @@ def get_discovery_metadata(schema, key_property, replication_method, replication
         mdata = metadata.write(mdata, (), 'valid-replication-keys', [replication_key])
 
     for field_name in schema['properties'].keys():
-        if field_name == key_property or field_name == replication_key:
+        if field_name in [key_property, replication_key]:
             mdata = metadata.write(mdata, ('properties', field_name), 'inclusion', 'automatic')
         else:
             mdata = metadata.write(mdata, ('properties', field_name), 'inclusion', 'available')
@@ -270,7 +270,8 @@ def sync_stream(stream_name):
     # Invoice Items bookmarks on `date`, but queries on `created`
     filter_key = 'created' if stream_name == 'invoice_items' else replication_key
     stream_bookmark = singer.get_bookmark(Context.state, stream_name, replication_key)
-    bookmark = stream_bookmark or int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
+    bookmark = stream_bookmark or \
+               int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
     max_bookmark = bookmark
     # if this stream has a sub_stream, compare the bookmark
     sub_stream_name = SUB_STREAMS.get(stream_name)

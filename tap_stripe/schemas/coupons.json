@@ -102,6 +102,13 @@
         "null",
         "number"
       ]
+    },
+    "updated": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "date-time"
     }
   }
 }

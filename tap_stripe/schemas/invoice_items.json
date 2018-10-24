@@ -182,7 +182,7 @@
             "null",
             "string"
           ],
-          "format": "date-time"          
+          "format": "date-time"
         },
         "start": {
           "type": [
@@ -271,6 +271,13 @@
         "null",
         "string"
       ]
+    },
+    "updated": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "date-time"
     }
   }
 }

@@ -10,6 +10,7 @@ from singer import utils, Transformer
 from singer import metadata
 
 REQUIRED_CONFIG_KEYS = [
+    "start_date",
     "account_id",
     "client_secret"
 ]
@@ -269,7 +270,7 @@ def sync_stream(stream_name):
     # Invoice Items bookmarks on `date`, but queries on `created`
     filter_key = 'created' if stream_name == 'invoice_items' else replication_key
     stream_bookmark = singer.get_bookmark(Context.state, stream_name, replication_key)
-    bookmark = stream_bookmark or 0
+    bookmark = stream_bookmark or int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
     max_bookmark = bookmark
     # if this stream has a sub_stream, compare the bookmark
     sub_stream_name = SUB_STREAMS.get(stream_name)
@@ -310,9 +311,11 @@ def sync_stream(stream_name):
             if should_sync_stream:
                 rec = unwrap_data_objects(stream_obj.to_dict_recursive())
                 rec = reduce_foreign_keys(rec, stream_name)
+                rec["updated"] = rec[replication_key]
                 rec = transformer.transform(rec,
                                             Context.get_catalog_entry(stream_name)['schema'],
                                             stream_metadata)
+
                 singer.write_record(stream_name,
                                     rec,
                                     time_extracted=extraction_time)
@@ -396,7 +399,8 @@ def sync_event_updates():
     LOGGER.info("Started syncing event based updates")
 
     extraction_time = singer.utils.now()
-    bookmark_value = singer.get_bookmark(Context.state, 'events', 'updates_created') or 0
+    bookmark_value = singer.get_bookmark(Context.state, 'events', 'updates_created') or \
+                     int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
     max_created = bookmark_value
 
     for events_obj in STREAM_SDK_OBJECTS['events'].list(
@@ -420,6 +424,7 @@ def sync_event_updates():
                 )
                 rec = unwrap_data_objects(event_resource_obj.to_dict_recursive())
                 rec = reduce_foreign_keys(rec, stream_name)
+                rec["updated"] = events_obj.created
                 rec = transformer.transform(
                     rec,
                     Context.get_catalog_entry(stream_name)['schema'],

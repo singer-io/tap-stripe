@@ -27,7 +27,8 @@
         "properties": {
           "application": {
             "type": [
-              "null"
+              "null",
+              "string"
             ]
           },
           "type": {
@@ -87,7 +88,8 @@
     },
     "exchange_rate": {
       "type": [
-        "null"
+        "null",
+        "number"
       ]
     },
     "type": {

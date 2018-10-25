@@ -8,7 +8,8 @@
       "type": [
         "null",
         "object"
-      ]
+      ],
+      "properties": {}
     },
     "fraud_details": {
       "type": [
@@ -67,7 +68,8 @@
           "type": [
             "null",
             "object"
-          ]
+          ],
+          "properties": {}
         },
         "exp_month": {
           "type": [
@@ -388,7 +390,8 @@
           "type": [
             "null",
             "object"
-          ]
+          ],
+          "properties": {}
         },
         "exp_month": {
           "type": [

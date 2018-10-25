@@ -182,7 +182,8 @@
     },
     "recipient": {
       "type": [
-        "null"
+        "null",
+        "string"
       ]
     },
     "destination": {
@@ -217,7 +218,8 @@
     },
     "transfer_group": {
       "type": [
-        "null"
+        "null",
+        "string"
       ]
     },
     "type": {

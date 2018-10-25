@@ -2,25 +2,46 @@ version: 2
 jobs:
   build:
     docker:
-      - image: ubuntu:16.04
+      - image: 218546966473.dkr.ecr.us-east-1.amazonaws.com/circle-ci:tap-tester
     steps:
       - checkout
       - run:
-          name: 'Install python 3.5.2'
+          name: 'Setup virtual env'
           command: |
-            apt update
-            apt install --yes python3 python3-pip python3-venv
-      - run:
-          name: 'Setup virtualenv'
-          command: |
-            mkdir -p ~/.virtualenvs
-            python3 -m venv ~/.virtualenvs/tap-stripe
+            virtualenv -p python3 ~/.virtualenvs/tap-stripe
             source ~/.virtualenvs/tap-stripe/bin/activate
-            pip install -U pip setuptools
-            pip install -e .[dev]
+            pip install .[dev]
       - run:
-          name: 'Run tests'
+          name: 'pylint'
           command: |
-            # Need to re-activate the virtualenv
             source ~/.virtualenvs/tap-stripe/bin/activate
             make test
+      - add_ssh_keys
+      - run:
+          name: 'Integration Tests'
+          command: |
+            aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/sandbox dev_env.sh
+            source dev_env.sh
+            source ~/.virtualenvs/tap-tester/bin/activate
+            run-a-test --tap=tap-stripe \
+                       --target=target-stitch \
+                       --orchestrator=stitch-orchestrator \
+                       --email=harrison+sandboxtest@stitchdata.com \
+                       --password=$SANDBOX_PASSWORD \
+                       --client-id=50 \
+                       tap_tester.suites.stripe
+workflows:
+  version: 2
+  commit:
+    jobs:
+      - build
+  build_daily:
+    triggers:
+      - schedule:
+          cron: "0 0 * * *"
+          filters:
+            branches:
+              only:
+                - master
+    jobs:
+      - build

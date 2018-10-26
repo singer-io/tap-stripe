@@ -137,11 +137,7 @@
       ]
     },
     "discount": {
-      "type": [
-        "null",
-        "object"
-      ],
-      "properties": {}
+      "$ref": "discount.json"
     },
     "number": {
       "type": [

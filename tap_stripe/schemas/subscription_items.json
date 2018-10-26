@@ -25,13 +25,7 @@
       ],
       "format": "date-time"
     },
-    "plan": {
-      "type": [
-        "null",
-        "object"
-      ],
-      "properties": {}
-    },
+    "plan": {"$ref": "plan.json"},
     "subscription": {
       "type": [
         "null",

@@ -82,11 +82,7 @@
       ]
     },
     "discount": {
-      "type": [
-        "null",
-        "object"
-      ],
-      "properties": {}
+      "$ref" : "discount.json"
     },
     "current_period_end": {
       "type": [

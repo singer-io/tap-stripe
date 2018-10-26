@@ -13,7 +13,10 @@
       ]
     },
     "source": {
-      "$ref" : "source.json"
+      "type": [
+        "null",
+        "string"
+      ]
     },
     "fee_details": {
       "type": [

@@ -196,6 +196,18 @@ def validate_dependencies():
 def get_abs_path(path):
     return os.path.join(os.path.dirname(os.path.realpath(__file__)), path)
 
+def load_shared_schema_refs():
+    shared_schemas_path = get_abs_path('schemas/shared')
+
+    shared_file_names = [f for f in os.listdir(shared_schemas_path)
+                         if os.path.isfile(os.path.join(shared_schemas_path, f))]
+
+    shared_schema_refs = {}
+    for shared_file in shared_file_names:
+        with open(os.path.join(shared_schemas_path, shared_file)) as data_file:
+            shared_schema_refs[shared_file] = json.load(data_file)
+
+    return shared_schema_refs
 
 # Load schemas from schemas folder
 def load_schemas():
@@ -208,7 +220,6 @@ def load_schemas():
             schemas[file_raw] = {'path': filename, 'schema': json.load(file)}
 
     return schemas
-
 
 def get_discovery_metadata(schema, key_property, replication_method, replication_key):
     mdata = metadata.new()
@@ -233,7 +244,7 @@ def discover():
 
     for stream_name in STREAM_SDK_OBJECTS:
         schema = raw_schemas[stream_name]['schema']
-        refs = {v['path']: v['schema'] for v in raw_schemas.values()}
+        refs = load_shared_schema_refs()
         # create and add catalog entry
         catalog_entry = {
             'stream': stream_name,
@@ -254,6 +265,8 @@ def discover():
 def reduce_foreign_keys(rec, stream_name):
     if stream_name == 'customers':
         rec['subscriptions'] = [s['id'] for s in rec['subscriptions']]
+    elif stream_name == 'subscriptions':
+        rec['items'] = [i['id'] for i in rec['items']]
     elif stream_name == 'invoices':
         rec['lines'] = [l['id'] for l in rec['lines']]
     return rec

@@ -457,18 +457,9 @@ def sync_event_updates():
                         Context.updated_counts[stream_name] += 1
 
                         if sub_stream_name and Context.is_selected(sub_stream_name):
-                            try:
-                                parent_object = STREAM_SDK_OBJECTS[stream_name].retrieve(object_id)
-                            except stripe.error.InvalidRequestError as ex:
-                                LOGGER.error("Failed to load %s (%s): %s",
-                                             stream_name,
-                                             object_id,
-                                             ex)
-                                parent_object = None
-
-                            if parent_object is not None:
+                            if event_resource_obj:
                                 sync_sub_stream(sub_stream_name,
-                                                parent_object,
+                                                event_resource_obj,
                                                 STREAM_REPLICATION_KEY[stream_name],
                                                 save_bookmarks=False,
                                                 updates=True)

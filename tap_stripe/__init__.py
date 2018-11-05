@@ -418,14 +418,19 @@ def sync_event_updates():
     bookmark_value = singer.get_bookmark(Context.state, 'events', 'updates_created') or \
                      int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
     max_created = bookmark_value
+    date_window = bookmark_value + 604800 # Number of seconds in a week
+
+    params = {
+        # If we want to increase the page size we can do
+        # `limit=N` as a second parameter here.
+        "stripe_account" : Context.config.get('account_id'),
+        # None passed to starting_after appears to retrieve
+        # all of them so this should always be safe.
+        "created[gte]": max_created,
+    }
 
     for events_obj in STREAM_SDK_OBJECTS['events'].list(
-            # If we want to increase the page size we can do
-            # `limit=N` as a second parameter here.
-            stripe_account=Context.config.get('account_id'),
-            # None passed to starting_after appears to retrieve
-            # all of them so this should always be safe.
-            **{"created[gte]": max_created}
+            **params
     ).auto_paging_iter():
         event_resource_obj = events_obj.data.object
         stream_name = EVENT_RESOURCE_TO_STREAM.get(event_resource_obj.object)
@@ -463,15 +468,15 @@ def sync_event_updates():
                                                 STREAM_REPLICATION_KEY[stream_name],
                                                 save_bookmarks=False,
                                                 updates=True)
-        if events_obj.created > max_created:
+        if events_obj.created > date_window:
             max_created = events_obj.created
+            date_window = events_obj.created + 604800
             singer.write_bookmark(Context.state,
                                   'events',
                                   'updates_created',
                                   max_created)
 
     singer.write_state(Context.state)
-
 
 def any_streams_selected():
     return any(s for s in STREAM_SDK_OBJECTS if Context.is_selected(s))

@@ -367,21 +367,21 @@ def sync_sub_stream(sub_stream_name,
     Given a parent object, retrieve its values for the specified substream.
     """
     extraction_time = singer.utils.now()
-    sdk_implementation = STREAM_SDK_OBJECTS[sub_stream_name]
 
-    if sdk_implementation == stripe.InvoiceLineItem:
-        object_list = parent_obj.lines.list()
+    if sub_stream_name == "invoice_line_items":
+        object_list = parent_obj.lines
+    elif sub_stream_name == "subscription_items":
+        # parent_obj.items is a function that returns a dict iterator, so use the attribute
+        object_list = parent_obj["items"]
     else:
-        # If we want to increase the page size we can do
-        # `limit=N` as a parameter here.
-        object_list = sdk_implementation.list(stripe_account=Context.config.get('account_id'),
-                                              subscription=parent_obj.id)
+        raise Exception("Attempted to sync substream that is not implemented: {}"
+                        .format(sub_stream_name))
 
     with Transformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
         for sub_stream_obj in object_list.auto_paging_iter():
             obj_ad_dict = sub_stream_obj.to_dict_recursive()
 
-            if sdk_implementation == stripe.InvoiceLineItem:
+            if sub_stream_name == "invoice_line_items":
                 obj_ad_dict["invoice"] = parent_obj.id
 
             rec = transformer.transform(unwrap_data_objects(obj_ad_dict),

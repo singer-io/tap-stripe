@@ -424,7 +424,8 @@ def sync_event_updates():
 
     while not stop_paging:
         extraction_time = singer.utils.now()
-        params = {
+
+        response = STREAM_SDK_OBJECTS['events'].list(**{
             # If we want to increase the page size we can do
             # `limit=N` as a second parameter here.
             "stripe_account" : Context.config.get('account_id'),
@@ -432,17 +433,13 @@ def sync_event_updates():
             # all of them so this should always be safe.
             "created[gte]": date_window_start,
             "created[lt]": date_window_end,
-        }
-
-        response =  STREAM_SDK_OBJECTS['events'].list(**params)
+        })
 
         # If no results, and we are not up to current time
-        if not len(response) and date_window_end > extraction_time.timestamp():
+        if not len(response) and date_window_end > extraction_time.timestamp(): # pylint: disable=len-as-condition
             stop_paging = True
 
-        for events_obj in STREAM_SDK_OBJECTS['events'].list(
-                **params
-        ).auto_paging_iter():
+        for events_obj in response.auto_paging_iter():
             event_resource_obj = events_obj.data.object
             stream_name = EVENT_RESOURCE_TO_STREAM.get(event_resource_obj.object)
             if event_resource_obj.object == 'transfer' and events_obj.type.startswith('payout'):
@@ -464,8 +461,7 @@ def sync_event_updates():
                     )
 
                     if events_obj.created >= bookmark_value:
-                        object_id = rec.get('id')
-                        if object_id is not None:
+                        if rec.get('id') is not None:
                             singer.write_record(stream_name,
                                                 rec,
                                                 time_extracted=extraction_time)
@@ -480,10 +476,6 @@ def sync_event_updates():
                                                     updates=True)
             if events_obj.created > max_created:
                 max_created = events_obj.created
-
-        # If we get no results, and we're still paging, advance the bookmark.
-        if not len(response) and not stop_paging:
-            max_created = date_window_end
 
         date_window_start = date_window_end
         date_window_end = date_window_end + 604800

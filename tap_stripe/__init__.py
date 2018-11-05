@@ -414,64 +414,78 @@ def sync_event_updates():
     '''
     LOGGER.info("Started syncing event based updates")
 
-    extraction_time = singer.utils.now()
     bookmark_value = singer.get_bookmark(Context.state, 'events', 'updates_created') or \
                      int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
     max_created = bookmark_value
+    date_window_start = max_created
+    date_window_end = max_created + 604800 # Number of seconds in a week
 
-    for events_obj in STREAM_SDK_OBJECTS['events'].list(
+    stop_paging = False
+
+    while not stop_paging:
+        extraction_time = singer.utils.now()
+
+        response = STREAM_SDK_OBJECTS['events'].list(**{
             # If we want to increase the page size we can do
             # `limit=N` as a second parameter here.
-            stripe_account=Context.config.get('account_id'),
+            "stripe_account" : Context.config.get('account_id'),
             # None passed to starting_after appears to retrieve
             # all of them so this should always be safe.
-            **{"created[gte]": max_created}
-    ).auto_paging_iter():
-        event_resource_obj = events_obj.data.object
-        stream_name = EVENT_RESOURCE_TO_STREAM.get(event_resource_obj.object)
-        if event_resource_obj.object == 'transfer' and events_obj.type.startswith('payout'):
-            stream_name = 'payouts'
-        sub_stream_name = SUB_STREAMS.get(stream_name)
-        # if we got an event for a selected stream, sync the updates for that stream
-        if Context.get_catalog_entry(stream_name) and Context.is_selected(stream_name):
-            with Transformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
-                event_resource_metadata = metadata.to_map(
-                    Context.get_catalog_entry(stream_name)['metadata']
-                )
-                rec = unwrap_data_objects(event_resource_obj.to_dict_recursive())
-                rec = reduce_foreign_keys(rec, stream_name)
-                rec["updated"] = events_obj.created
-                rec = transformer.transform(
-                    rec,
-                    Context.get_catalog_entry(stream_name)['schema'],
-                    event_resource_metadata
-                )
+            "created[gte]": date_window_start,
+            "created[lt]": date_window_end,
+        })
 
+        # If no results, and we are not up to current time
+        if not len(response) and date_window_end > extraction_time.timestamp(): # pylint: disable=len-as-condition
+            stop_paging = True
 
-                if events_obj.created >= bookmark_value:
-                    object_id = rec.get('id')
-                    if object_id is not None:
-                        singer.write_record(stream_name,
-                                            rec,
-                                            time_extracted=extraction_time)
-                        Context.updated_counts[stream_name] += 1
+        for events_obj in response.auto_paging_iter():
+            event_resource_obj = events_obj.data.object
+            stream_name = EVENT_RESOURCE_TO_STREAM.get(event_resource_obj.object)
+            if event_resource_obj.object == 'transfer' and events_obj.type.startswith('payout'):
+                stream_name = 'payouts'
+            sub_stream_name = SUB_STREAMS.get(stream_name)
+            # if we got an event for a selected stream, sync the updates for that stream
+            if Context.get_catalog_entry(stream_name) and Context.is_selected(stream_name):
+                with Transformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
+                    event_resource_metadata = metadata.to_map(
+                        Context.get_catalog_entry(stream_name)['metadata']
+                    )
+                    rec = unwrap_data_objects(event_resource_obj.to_dict_recursive())
+                    rec = reduce_foreign_keys(rec, stream_name)
+                    rec["updated"] = events_obj.created
+                    rec = transformer.transform(
+                        rec,
+                        Context.get_catalog_entry(stream_name)['schema'],
+                        event_resource_metadata
+                    )
 
-                        if sub_stream_name and Context.is_selected(sub_stream_name):
-                            if event_resource_obj:
-                                sync_sub_stream(sub_stream_name,
-                                                event_resource_obj,
-                                                STREAM_REPLICATION_KEY[stream_name],
-                                                save_bookmarks=False,
-                                                updates=True)
-        if events_obj.created > max_created:
-            max_created = events_obj.created
-            singer.write_bookmark(Context.state,
-                                  'events',
-                                  'updates_created',
-                                  max_created)
+                    if events_obj.created >= bookmark_value:
+                        if rec.get('id') is not None:
+                            singer.write_record(stream_name,
+                                                rec,
+                                                time_extracted=extraction_time)
+                            Context.updated_counts[stream_name] += 1
+
+                            if sub_stream_name and Context.is_selected(sub_stream_name):
+                                if event_resource_obj:
+                                    sync_sub_stream(sub_stream_name,
+                                                    event_resource_obj,
+                                                    STREAM_REPLICATION_KEY[stream_name],
+                                                    save_bookmarks=False,
+                                                    updates=True)
+            if events_obj.created > max_created:
+                max_created = events_obj.created
+
+        date_window_start = date_window_end
+        date_window_end = date_window_end + 604800
+        singer.write_bookmark(Context.state,
+                              'events',
+                              'updates_created',
+                              max_created)
+        singer.write_state(Context.state)
 
     singer.write_state(Context.state)
-
 
 def any_streams_selected():
     return any(s for s in STREAM_SDK_OBJECTS if Context.is_selected(s))

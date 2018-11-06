@@ -144,7 +144,6 @@ def unwrap_data_objects(rec):
     Looks for levels in the record that look like:
 
     {
-        "has_more": ...,
         "url": ...,
         "object": ...,
         "data": {...}|[...]|...,
@@ -159,8 +158,9 @@ def unwrap_data_objects(rec):
         return rec
 
     for k, v in rec.items(): #pylint: disable=invalid-name
-        if (k == "data" and all(c in rec for c in
-                                ["has_more", "url", "object"])):
+        if (k == "data" and
+            all(c in rec for c in ["url", "object"]) and
+            ("count" in rec or "total_count" in rec)):
             if isinstance(v, dict):
                 return unwrap_data_objects(v)
             if isinstance(v, list):
@@ -266,11 +266,11 @@ def discover():
 
 def reduce_foreign_keys(rec, stream_name):
     if stream_name == 'customers':
-        rec['subscriptions'] = [s['id'] for s in rec['subscriptions']]
+        rec['subscriptions'] = [s['id'] for s in rec.get('subscriptions', [])] or None
     elif stream_name == 'subscriptions':
-        rec['items'] = [i['id'] for i in rec['items']]
+        rec['items'] = [i['id'] for i in rec.get('items', [])] or None
     elif stream_name == 'invoices':
-        rec['lines'] = [l['id'] for l in rec['lines']]
+        rec['lines'] = [l['id'] for l in rec.get('lines', [])] or None
     return rec
 
 def sync_stream(stream_name):
@@ -372,13 +372,14 @@ def sync_sub_stream(sub_stream_name,
         object_list = parent_obj.lines
     elif sub_stream_name == "subscription_items":
         # parent_obj.items is a function that returns a dict iterator, so use the attribute
-        object_list = parent_obj["items"]
+        object_list = parent_obj.get("items")
     else:
         raise Exception("Attempted to sync substream that is not implemented: {}"
                         .format(sub_stream_name))
 
     with Transformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
-        for sub_stream_obj in object_list.auto_paging_iter():
+        iterator = object_list.auto_paging_iter() if object_list is not None else []
+        for sub_stream_obj in iterator:
             obj_ad_dict = sub_stream_obj.to_dict_recursive()
 
             if sub_stream_name == "invoice_line_items":

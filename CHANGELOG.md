@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.2
+  * Makes property accessors safer by using `.get()` with a default value
+  * Adds `type` to items in `customers.cards`
+
 ## 0.2.1
   * Fixes sub-stream requests to not use a separate call to retrieve `subscription_items` and `invoice_line_items` for a parent.
 

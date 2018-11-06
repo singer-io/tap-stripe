@@ -158,9 +158,9 @@ def unwrap_data_objects(rec):
         return rec
 
     for k, v in rec.items(): #pylint: disable=invalid-name
-        if (k == "data" and
-            all(c in rec for c in ["url", "object"]) and
-            ("count" in rec or "total_count" in rec)):
+        if k == "data" and \
+           all(c in rec for c in ["url", "object"]) and \
+           ("count" in rec or "total_count" in rec):
             if isinstance(v, dict):
                 return unwrap_data_objects(v)
             if isinstance(v, list):

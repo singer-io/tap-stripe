@@ -2,11 +2,12 @@
 import os
 import json
 import logging
+import re
 
 import stripe
 import stripe.error
 import singer
-from singer import utils, Transformer
+from singer import utils, Transformer, metrics
 from singer import metadata
 
 REQUIRED_CONFIG_KEYS = [
@@ -106,6 +107,13 @@ class Context():
 
     @classmethod
     def print_counts(cls):
+        # Separate loops for formatting.
+        for stream_name, stream_count in Context.new_counts.items():
+            with metrics.record_counter(stream_name) as counter:
+                updates_count = Context.updated_counts[stream_name]
+                total_replicated = stream_count + updates_count
+                counter.increment(total_replicated)
+
         LOGGER.info('------------------')
         for stream_name, stream_count in Context.new_counts.items():
             LOGGER.info('%s: %d new, %d updates',
@@ -114,6 +122,16 @@ class Context():
                         Context.updated_counts[stream_name])
         LOGGER.info('------------------')
 
+def apply_request_timer_to_client(client):
+    """ Instruments the Stripe SDK client object with a request timer. """
+    _original_request = client.request
+    def wrapped_request(*args, **kwargs):
+        url = args[1]
+        match = re.match('http[s]?://api\.stripe\.com/v1/(\w+)\??', url)
+        stream_name = match.groups()[0]
+        with metrics.http_request_timer(stream_name) as timer:
+            return _original_request(*args, **kwargs)
+    client.request = wrapped_request
 
 def configure_stripe_client():
     stripe.set_app_info(Context.config.get('user_agent', 'Singer.io Tap'),
@@ -129,6 +147,7 @@ def configure_stripe_client():
     # Configure client-side network timeout of 1 second
     # https://github.com/stripe/stripe-python/tree/a9a8d754b73ad47bdece6ac4b4850822fa19db4e#configuring-a-client
     client = stripe.http_client.RequestsClient(timeout=15)
+    apply_request_timer_to_client(client)
     stripe.default_http_client = client
     # Set stripe logging to INFO level
     # https://github.com/stripe/stripe-python/tree/a9a8d754b73ad47bdece6ac4b4850822fa19db4e#logging

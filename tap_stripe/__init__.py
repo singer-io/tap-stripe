@@ -127,9 +127,9 @@ def apply_request_timer_to_client(client):
     _original_request = client.request
     def wrapped_request(*args, **kwargs):
         url = args[1]
-        match = re.match('http[s]?://api\.stripe\.com/v1/(\w+)\??', url)
+        match = re.match(r'http[s]?://api\.stripe\.com/v1/(\w+)\??', url)
         stream_name = match.groups()[0]
-        with metrics.http_request_timer(stream_name) as timer:
+        with metrics.http_request_timer(stream_name):
             return _original_request(*args, **kwargs)
     client.request = wrapped_request
 

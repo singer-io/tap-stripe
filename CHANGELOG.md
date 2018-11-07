@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.3
+  * Unwraps data wrappers only if they are of type `list`
+  * Adds `type` to the remaining `sources` schemas
+
 ## 0.2.2
   * Makes property accessors safer by using `.get()` with a default value
   * Adds `type` to items in `customers.cards`

@@ -529,10 +529,6 @@ def sync():
     if any_streams_selected():
         sync_event_updates()
 
-    # Print counts
-    Context.print_counts()
-
-
 @utils.handle_top_exception(LOGGER)
 def main():
     # Parse command line arguments
@@ -554,7 +550,12 @@ def main():
         Context.state = args.state
         configure_stripe_client()
         validate_dependencies()
-        sync()
+        try:
+            sync()
+        finally:
+            # Print counts
+            Context.print_counts()
+
 
 
 if __name__ == "__main__":

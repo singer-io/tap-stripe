@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.2.4
+  * Adds standard Singer metrics [#11](https://github.com/singer-io/tap-stripe/pull/11)
+
 ## 0.2.3
   * Unwraps data wrappers only if they are of type `list`
   * Adds `type` to the remaining `sources` schemas

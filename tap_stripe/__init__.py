@@ -56,7 +56,7 @@ STREAM_TO_TYPE_FILTER = {
     'invoices': 'invoice.*',
     'invoice_items': 'invoiceitem.*',
     'coupons': 'coupon.*',
-    'subscriptions': 'subscription.*',
+    'subscriptions': 'customer.subscription.*',
     'payouts': 'payout.*',
     'transfers': 'transfer.*',
     # Cannot find evidence of these streams having events associated:
@@ -426,6 +426,24 @@ def sync_sub_stream(sub_stream_name,
                                       parent_replication_key,
                                       sub_stream_bookmark)
 
+
+def should_sync_event(events_obj, id_to_created_map):
+    """Checks to ensure the event's underlying object has an id and that the id_to_created_map contains an
+    entry for that id. Returns true the first time an id should be added to the map and when we're looking
+    at an event that is created later than one we've seen before."""
+    event_resource_dict =events_obj.data.object.to_dict_recursive()
+    event_resource_id = event_resource_dict.get('id')
+    current_max_created = id_to_created_map.get(event_resource_id)
+    event_created = events_obj.created
+
+    # The event's object had no id so throw it out!
+    if not event_resource_id:
+        return False
+
+    # If the event is the most recent one we've seen, we should sync it
+    return (not current_max_created or event_created >= current_max_created)
+
+
 def sync_event_updates(stream_name):
     '''
     Get updates via events endpoint
@@ -441,6 +459,10 @@ def sync_event_updates(stream_name):
     date_window_end = max_created + 604800 # Number of seconds in a week
 
     stop_paging = False
+
+
+    # Create a map to hold relate event object ids to timestamps
+    updated_object_timestamps = {}
 
     while not stop_paging:
         extraction_time = singer.utils.now()
@@ -460,11 +482,17 @@ def sync_event_updates(stream_name):
             stop_paging = True
 
         for events_obj in response.auto_paging_iter():
-
             event_resource_obj = events_obj.data.object
-
             sub_stream_name = SUB_STREAMS.get(stream_name)
 
+
+            event_resource_obj_dict = event_resource_obj.to_dict_recursive()
+            # Check whether we should sync the event based on its created time
+            if not should_sync_event(events_obj, updated_object_timestamps):
+                continue
+            updated_object_timestamps[event_resource_obj.id] = events_obj.created
+
+            # Syncing an event as its the first time we've seen it or its the most recent version
             with Transformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
                 event_resource_metadata = metadata.to_map(
                     Context.get_catalog_entry(stream_name)['metadata']

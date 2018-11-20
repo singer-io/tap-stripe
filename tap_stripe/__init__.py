@@ -428,10 +428,10 @@ def sync_sub_stream(sub_stream_name,
 
 
 def should_sync_event(events_obj, id_to_created_map):
-    """Checks to ensure the event's underlying object has an id and that the id_to_created_map contains an
-    entry for that id. Returns true the first time an id should be added to the map and when we're looking
-    at an event that is created later than one we've seen before."""
-    event_resource_dict =events_obj.data.object.to_dict_recursive()
+    """Checks to ensure the event's underlying object has an id and that the id_to_created_map
+    contains an entry for that id. Returns true the first time an id should be added to the map
+    and when we're looking at an event that is created later than one we've seen before."""
+    event_resource_dict = events_obj.data.object.to_dict_recursive()
     event_resource_id = event_resource_dict.get('id')
     current_max_created = id_to_created_map.get(event_resource_id)
     event_created = events_obj.created
@@ -441,7 +441,7 @@ def should_sync_event(events_obj, id_to_created_map):
         return False
 
     # If the event is the most recent one we've seen, we should sync it
-    return (not current_max_created or event_created >= current_max_created)
+    return not current_max_created or event_created >= current_max_created
 
 
 def sync_event_updates(stream_name):
@@ -452,7 +452,9 @@ def sync_event_updates(stream_name):
     '''
     LOGGER.info("Started syncing event based updates")
 
-    bookmark_value = singer.get_bookmark(Context.state, stream_name + '_events', 'updates_created') or \
+    bookmark_value = singer.get_bookmark(Context.state,
+                                         stream_name + '_events',
+                                         'updates_created') or \
                      int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
     max_created = bookmark_value
     date_window_start = max_created
@@ -485,8 +487,6 @@ def sync_event_updates(stream_name):
             event_resource_obj = events_obj.data.object
             sub_stream_name = SUB_STREAMS.get(stream_name)
 
-
-            event_resource_obj_dict = event_resource_obj.to_dict_recursive()
             # Check whether we should sync the event based on its created time
             if not should_sync_event(events_obj, updated_object_timestamps):
                 continue

@@ -50,15 +50,15 @@ STREAM_REPLICATION_KEY = {
 }
 
 STREAM_TO_TYPE_FILTER = {
-    'charges': 'charge.*',
-    'customers': 'customer.*',
-    'plans': 'plan.*',
-    'invoices': 'invoice.*',
-    'invoice_items': 'invoiceitem.*',
-    'coupons': 'coupon.*',
-    'subscriptions': 'customer.subscription.*',
-    'payouts': 'payout.*',
-    'transfers': 'transfer.*',
+    'charges': {'type': 'charge.*', 'object': 'charge'},
+    'customers': {'type': 'customer.*', 'object': 'customer'},
+    'plans': {'type': 'plan.*', 'object': 'plan'},
+    'invoices': {'type': 'invoice.*', 'object': 'invoice'},
+    'invoice_items': {'type': 'invoiceitem.*', 'object': 'invoiceitem'},
+    'coupons': {'type': 'coupon.*', 'object': 'coupon'},
+    'subscriptions': {'type': 'customer.subscription.*', 'object': 'subscription'},
+    'payouts': {'type': 'payout.*', 'object': 'transfer'},
+    'transfers': {'type': 'transfer.*', 'object': 'transfer'},
     # Cannot find evidence of these streams having events associated:
     # subscription_items - appears on subscriptions events
     # balance_transactions - seems to be immutable
@@ -250,7 +250,7 @@ def get_discovery_metadata(schema, key_property, replication_method, replication
         mdata = metadata.write(mdata, (), 'valid-replication-keys', [replication_key])
 
     for field_name in schema['properties'].keys():
-        if field_name in [key_property, replication_key]:
+        if field_name in [key_property, replication_key, "updated"]:
             mdata = metadata.write(mdata, ('properties', field_name), 'inclusion', 'automatic')
         else:
             mdata = metadata.write(mdata, ('properties', field_name), 'inclusion', 'available')
@@ -427,7 +427,7 @@ def sync_sub_stream(sub_stream_name,
                                       sub_stream_bookmark)
 
 
-def should_sync_event(events_obj, id_to_created_map):
+def should_sync_event(events_obj, object_type, id_to_created_map):
     """Checks to ensure the event's underlying object has an id and that the id_to_created_map
     contains an entry for that id. Returns true the first time an id should be added to the map
     and when we're looking at an event that is created later than one we've seen before."""
@@ -437,11 +437,14 @@ def should_sync_event(events_obj, id_to_created_map):
     event_created = events_obj.created
 
     # The event's object had no id so throw it out!
-    if not event_resource_id:
+    if not event_resource_id or event_resource_dict.get('object') != object_type:
         return False
 
     # If the event is the most recent one we've seen, we should sync it
-    return not current_max_created or event_created >= current_max_created
+    should_sync = not current_max_created or event_created >= current_max_created
+    if should_sync:
+        id_to_created_map[event_resource_id] = events_obj.created
+    return should_sync
 
 
 def sync_event_updates(stream_name):
@@ -471,7 +474,7 @@ def sync_event_updates(stream_name):
 
         response = STREAM_SDK_OBJECTS['events'].list(**{
             "limit": 100,
-            "type": STREAM_TO_TYPE_FILTER[stream_name],
+            "type": STREAM_TO_TYPE_FILTER[stream_name]['type'],
             "stripe_account" : Context.config.get('account_id'),
             # None passed to starting_after appears to retrieve
             # all of them so this should always be safe.
@@ -488,9 +491,10 @@ def sync_event_updates(stream_name):
             sub_stream_name = SUB_STREAMS.get(stream_name)
 
             # Check whether we should sync the event based on its created time
-            if not should_sync_event(events_obj, updated_object_timestamps):
+            if not should_sync_event(events_obj,
+                                     STREAM_TO_TYPE_FILTER[stream_name]['object'],
+                                     updated_object_timestamps):
                 continue
-            updated_object_timestamps[event_resource_obj.id] = events_obj.created
 
             # Syncing an event as its the first time we've seen it or its the most recent version
             with Transformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
@@ -532,9 +536,6 @@ def sync_event_updates(stream_name):
         singer.write_state(Context.state)
 
     singer.write_state(Context.state)
-
-def any_streams_selected():
-    return any(s for s in STREAM_SDK_OBJECTS if Context.is_selected(s))
 
 def sync():
     # Write all schemas and init count to 0

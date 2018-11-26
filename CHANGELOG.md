@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.0
+  * Adds proper support for Events to ensure only the most recent event is emitted [#13](https://github.com/singer-io/tap-stripe/pull/13)
+  * Fixes JSON Schema refs to be correct [#14](https://github.com/singer-io/tap-stripe/pull/14)
+
 ## 0.2.4
   * Adds standard Singer metrics [#11](https://github.com/singer-io/tap-stripe/pull/11)
 

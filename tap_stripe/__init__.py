@@ -49,15 +49,16 @@ STREAM_REPLICATION_KEY = {
     #'invoice_line_items': 'date'
 }
 
-EVENT_RESOURCE_TO_STREAM = {
-    'charge': 'charges',
-    'customer': 'customers',
-    'plan': 'plans',
-    'invoice': 'invoices',
-    'invoiceitem': 'invoice_items',
-    'transfer': 'transfers',
-    'coupon': 'coupons',
-    'subscription': 'subscriptions',
+STREAM_TO_TYPE_FILTER = {
+    'charges': {'type': 'charge.*', 'object': 'charge'},
+    'customers': {'type': 'customer.*', 'object': 'customer'},
+    'plans': {'type': 'plan.*', 'object': 'plan'},
+    'invoices': {'type': 'invoice.*', 'object': 'invoice'},
+    'invoice_items': {'type': 'invoiceitem.*', 'object': 'invoiceitem'},
+    'coupons': {'type': 'coupon.*', 'object': 'coupon'},
+    'subscriptions': {'type': 'customer.subscription.*', 'object': 'subscription'},
+    'payouts': {'type': 'payout.*', 'object': 'transfer'},
+    'transfers': {'type': 'transfer.*', 'object': 'transfer'},
     # Cannot find evidence of these streams having events associated:
     # subscription_items - appears on subscriptions events
     # balance_transactions - seems to be immutable
@@ -249,7 +250,7 @@ def get_discovery_metadata(schema, key_property, replication_method, replication
         mdata = metadata.write(mdata, (), 'valid-replication-keys', [replication_key])
 
     for field_name in schema['properties'].keys():
-        if field_name in [key_property, replication_key]:
+        if field_name in [key_property, replication_key, "updated"]:
             mdata = metadata.write(mdata, ('properties', field_name), 'inclusion', 'automatic')
         else:
             mdata = metadata.write(mdata, ('properties', field_name), 'inclusion', 'available')
@@ -319,13 +320,13 @@ def sync_stream(stream_name):
 
     with Transformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
         for stream_obj in STREAM_SDK_OBJECTS[stream_name].list(
-                # If we want to increase the page size we can do
-                # `limit=N` as a second parameter here.
+                limit=100,
                 stripe_account=Context.config.get('account_id'),
                 # None passed to starting_after appears to retrieve
                 # all of them so this should always be safe.
                 **{filter_key + "[gte]": bookmark}
         ).auto_paging_iter():
+
             if sub_stream_name:
                 sub_stream_bookmark = singer.get_bookmark(Context.state,
                                                           sub_stream_name,
@@ -400,6 +401,7 @@ def sync_sub_stream(sub_stream_name,
             obj_ad_dict = sub_stream_obj.to_dict_recursive()
 
             if sub_stream_name == "invoice_line_items":
+                # Synthetic addition of a key to the record we sync
                 obj_ad_dict["invoice"] = parent_obj.id
 
             rec = transformer.transform(unwrap_data_objects(obj_ad_dict),
@@ -424,7 +426,28 @@ def sync_sub_stream(sub_stream_name,
                                       parent_replication_key,
                                       sub_stream_bookmark)
 
-def sync_event_updates():
+
+def should_sync_event(events_obj, object_type, id_to_created_map):
+    """Checks to ensure the event's underlying object has an id and that the id_to_created_map
+    contains an entry for that id. Returns true the first time an id should be added to the map
+    and when we're looking at an event that is created later than one we've seen before."""
+    event_resource_dict = events_obj.data.object.to_dict_recursive()
+    event_resource_id = event_resource_dict.get('id')
+    current_max_created = id_to_created_map.get(event_resource_id)
+    event_created = events_obj.created
+
+    # The event's object had no id so throw it out!
+    if not event_resource_id or event_resource_dict.get('object') != object_type:
+        return False
+
+    # If the event is the most recent one we've seen, we should sync it
+    should_sync = not current_max_created or event_created >= current_max_created
+    if should_sync:
+        id_to_created_map[event_resource_id] = events_obj.created
+    return should_sync
+
+
+def sync_event_updates(stream_name):
     '''
     Get updates via events endpoint
 
@@ -432,7 +455,9 @@ def sync_event_updates():
     '''
     LOGGER.info("Started syncing event based updates")
 
-    bookmark_value = singer.get_bookmark(Context.state, 'events', 'updates_created') or \
+    bookmark_value = singer.get_bookmark(Context.state,
+                                         stream_name + '_events',
+                                         'updates_created') or \
                      int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
     max_created = bookmark_value
     date_window_start = max_created
@@ -440,12 +465,16 @@ def sync_event_updates():
 
     stop_paging = False
 
+
+    # Create a map to hold relate event object ids to timestamps
+    updated_object_timestamps = {}
+
     while not stop_paging:
         extraction_time = singer.utils.now()
 
         response = STREAM_SDK_OBJECTS['events'].list(**{
-            # If we want to increase the page size we can do
-            # `limit=N` as a second parameter here.
+            "limit": 100,
+            "type": STREAM_TO_TYPE_FILTER[stream_name]['type'],
             "stripe_account" : Context.config.get('account_id'),
             # None passed to starting_after appears to retrieve
             # all of them so this should always be safe.
@@ -459,54 +488,54 @@ def sync_event_updates():
 
         for events_obj in response.auto_paging_iter():
             event_resource_obj = events_obj.data.object
-            stream_name = EVENT_RESOURCE_TO_STREAM.get(event_resource_obj.object)
-            if event_resource_obj.object == 'transfer' and events_obj.type.startswith('payout'):
-                stream_name = 'payouts'
             sub_stream_name = SUB_STREAMS.get(stream_name)
-            # if we got an event for a selected stream, sync the updates for that stream
-            if Context.get_catalog_entry(stream_name) and Context.is_selected(stream_name):
-                with Transformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
-                    event_resource_metadata = metadata.to_map(
-                        Context.get_catalog_entry(stream_name)['metadata']
-                    )
-                    rec = unwrap_data_objects(event_resource_obj.to_dict_recursive())
-                    rec = reduce_foreign_keys(rec, stream_name)
-                    rec["updated"] = events_obj.created
-                    rec = transformer.transform(
-                        rec,
-                        Context.get_catalog_entry(stream_name)['schema'],
-                        event_resource_metadata
-                    )
 
-                    if events_obj.created >= bookmark_value:
-                        if rec.get('id') is not None:
-                            singer.write_record(stream_name,
-                                                rec,
-                                                time_extracted=extraction_time)
-                            Context.updated_counts[stream_name] += 1
+            # Check whether we should sync the event based on its created time
+            if not should_sync_event(events_obj,
+                                     STREAM_TO_TYPE_FILTER[stream_name]['object'],
+                                     updated_object_timestamps):
+                continue
 
-                            if sub_stream_name and Context.is_selected(sub_stream_name):
-                                if event_resource_obj:
-                                    sync_sub_stream(sub_stream_name,
-                                                    event_resource_obj,
-                                                    STREAM_REPLICATION_KEY[stream_name],
-                                                    save_bookmarks=False,
-                                                    updates=True)
+            # Syncing an event as its the first time we've seen it or its the most recent version
+            with Transformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
+                event_resource_metadata = metadata.to_map(
+                    Context.get_catalog_entry(stream_name)['metadata']
+                )
+                rec = unwrap_data_objects(event_resource_obj.to_dict_recursive())
+                rec = reduce_foreign_keys(rec, stream_name)
+                rec["updated"] = events_obj.created
+                rec = transformer.transform(
+                    rec,
+                    Context.get_catalog_entry(stream_name)['schema'],
+                    event_resource_metadata
+                )
+
+                if events_obj.created >= bookmark_value:
+                    if rec.get('id') is not None:
+                        singer.write_record(stream_name,
+                                            rec,
+                                            time_extracted=extraction_time)
+                        Context.updated_counts[stream_name] += 1
+
+                        if sub_stream_name and Context.is_selected(sub_stream_name):
+                            if event_resource_obj:
+                                sync_sub_stream(sub_stream_name,
+                                                event_resource_obj,
+                                                STREAM_REPLICATION_KEY[stream_name],
+                                                save_bookmarks=False,
+                                                updates=True)
             if events_obj.created > max_created:
                 max_created = events_obj.created
 
         date_window_start = date_window_end
         date_window_end = date_window_end + 604800
         singer.write_bookmark(Context.state,
-                              'events',
+                              stream_name + '_events',
                               'updates_created',
                               max_created)
         singer.write_state(Context.state)
 
     singer.write_state(Context.state)
-
-def any_streams_selected():
-    return any(s for s in STREAM_SDK_OBJECTS if Context.is_selected(s))
 
 def sync():
     # Write all schemas and init count to 0
@@ -524,10 +553,9 @@ def sync():
         # Sync records for stream
         if Context.is_selected(stream_name) and not Context.is_sub_stream(stream_name):
             sync_stream(stream_name)
-
-    # Get event updates
-    if any_streams_selected():
-        sync_event_updates()
+            # This prevents us from retrieving 'events.events'
+            if STREAM_TO_TYPE_FILTER.get(stream_name):
+                sync_event_updates(stream_name)
 
 @utils.handle_top_exception(LOGGER)
 def main():

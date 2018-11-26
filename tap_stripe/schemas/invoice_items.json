@@ -17,7 +17,7 @@
       ],
       "properties": {}
     },
-    "plan": {"$ref": "plan.json"},
+    "plan": {"$ref": "shared/plan.json#/"},
     "invoice": {
       "type": [
         "null",

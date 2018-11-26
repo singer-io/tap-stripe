@@ -25,7 +25,7 @@
       ],
       "format": "date-time"
     },
-    "plan": {"$ref": "plan.json"},
+    "plan": {"$ref": "shared/plan.json#/"},
     "subscription": {
       "type": [
         "null",

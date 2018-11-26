@@ -82,7 +82,7 @@
       ]
     },
     "discount": {
-      "$ref" : "discount.json"
+      "$ref" : "shared/discount.json#/"
     },
     "current_period_end": {
       "type": [

@@ -59,7 +59,7 @@
       ]
     },
     "source": {
-      "$ref" : "source.json"
+      "$ref" : "shared/source.json#/"
     },
     "destination": {
       "type": [

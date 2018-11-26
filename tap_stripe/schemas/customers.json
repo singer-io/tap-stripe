@@ -81,7 +81,7 @@
         "array"
       ],
       "items": {
-        "$ref" : "source.json"
+        "$ref" : "shared/source.json#/"
       }
     },
     "delinquent": {
@@ -292,7 +292,7 @@
       }
     },
     "discount": {
-      "$ref": "discount.json"
+      "$ref": "shared/discount.json#/"
     },
     "account_balance": {
       "type": [

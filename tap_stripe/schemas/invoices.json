@@ -209,14 +209,16 @@
     "lines": {
       "type": [
         "null",
-        "array"
+        "array",
+        "object"
       ],
       "items": {
         "type": [
           "null",
           "string"
         ]
-      }
+      },
+      "properties": {}
     },
     "forgiven": {
       "type": [

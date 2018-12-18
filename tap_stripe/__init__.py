@@ -6,6 +6,7 @@ import re
 
 import stripe
 import stripe.error
+from stripe.stripe_object import StripeObject
 import singer
 from singer import utils, Transformer, metrics
 from singer import metadata
@@ -288,7 +289,15 @@ def reduce_foreign_keys(rec, stream_name):
     elif stream_name == 'subscriptions':
         rec['items'] = [i['id'] for i in rec.get('items', [])] or None
     elif stream_name == 'invoices':
-        rec['lines'] = [l['id'] for l in rec.get('lines', [])] or None
+        lines = rec.get('lines')
+        if isinstance(lines, list):
+            rec['lines'] = [l['id'] for l in rec.get('lines', [])] or None
+        # Sometimes the lines key is a dict with a list of objects. This behavior may
+        # manifest for events of type 'invoice.payment_succeeded'
+        elif isinstance(lines, dict):
+            for k, val in lines.items():
+                if isinstance(val, list) and val and isinstance(val[0], StripeObject):
+                    rec['lines'][k] = [li.to_dict_recursive() for li in val]
     return rec
 
 def sync_stream(stream_name):

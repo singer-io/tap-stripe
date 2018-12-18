@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.0.1
+  * Fixes an issue where invoice events might have a different schema [#15](https://github.com/singer-io/tap-stripe/pull/15)
+
 ## 1.0.0
   * Adds proper support for Events to ensure only the most recent event is emitted [#13](https://github.com/singer-io/tap-stripe/pull/13)
   * Fixes JSON Schema refs to be correct [#14](https://github.com/singer-io/tap-stripe/pull/14)

@@ -154,7 +154,8 @@
           "items": {
             "type": [
               "null",
-              "integer"
+              "integer",
+              "object"
             ]
           }
         },

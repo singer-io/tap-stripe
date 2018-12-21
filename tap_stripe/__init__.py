@@ -300,6 +300,20 @@ def reduce_foreign_keys(rec, stream_name):
                     rec['lines'][k] = [li.to_dict_recursive() for li in val]
     return rec
 
+# Attempting to write my own to_dict_recursive function
+def recurse_objs(rec):
+    if hasattr(rec, 'to_dict'):
+        rec = rec.to_dict()
+
+    if isinstance(rec, dict):
+        for key, val in rec.items():
+            rec[key] = recurse_objs(val)
+    elif isinstance(rec, list):
+        rec = [recurse_objs(item) for item in rec]
+
+    return rec
+
+
 def sync_stream(stream_name):
     """
     Sync each stream, looking for newly created records. Updates are captured by events stream.
@@ -353,6 +367,11 @@ def sync_stream(stream_name):
             # if the bookmark equals the stream bookmark, sync stream records
             if should_sync_stream:
                 rec = unwrap_data_objects(stream_obj.to_dict_recursive())
+                if rec.get('id') == 'ID':
+                    import ipdb; ipdb.set_trace()
+                    1+1
+                    #rec['plan']['tiers'] = [t.to_dict() for t in rec['plan']['tiers']]
+
                 rec = reduce_foreign_keys(rec, stream_name)
                 rec["updated"] = rec[replication_key]
                 rec = transformer.transform(rec,

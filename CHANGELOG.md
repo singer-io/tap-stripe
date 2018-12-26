@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.0.2
+  * Fixes `tiers` subschema to include its object properties (when it is an object) [#16](https://github.com/singer-io/tap-stripe/pull/16)
+
 ## 1.0.1
   * Fixes an issue where invoice events might have a different schema [#15](https://github.com/singer-io/tap-stripe/pull/15)
 

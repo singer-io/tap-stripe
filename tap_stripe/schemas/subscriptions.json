@@ -156,7 +156,27 @@
               "null",
               "integer",
               "object"
-            ]
+            ],
+            "properties": {
+              "flat_amount": {
+                "type": [
+                  "null",
+                  "integer"
+                ]
+              },
+              "unit_amount": {
+                "type": [
+                  "null",
+                  "integer"
+                ]
+              },
+              "up_to": {
+                "type": [
+                  "null",
+                  "integer"
+                ]
+              }
+            }
           }
         },
         "created": {

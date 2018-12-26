@@ -18,8 +18,29 @@
       "items": {
         "type": [
           "null",
-          "string"
-        ]
+          "string",
+          "object"
+        ],
+        "properties": {
+          "flat_amount": {
+            "type": [
+              "null",
+              "integer"
+            ]
+          },
+          "unit_amount": {
+            "type": [
+              "null",
+              "integer"
+            ]
+          },
+          "up_to": {
+            "type": [
+              "null",
+              "integer"
+            ]
+          }
+        }
       }
     },
     "object": {

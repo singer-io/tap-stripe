@@ -329,7 +329,8 @@ def sync_stream(stream_name):
         sub_stream_bookmark = None
 
     with Transformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
-        for stream_obj in STREAM_SDK_OBJECTS[stream_name].list(
+        stream_map = STREAM_SDK_OBJECTS[stream_name]
+        for stream_obj in stream_map['sdk_object'].list(
                 limit=100,
                 stripe_account=Context.config.get('account_id'),
                 # None passed to starting_after appears to retrieve
@@ -482,7 +483,7 @@ def sync_event_updates(stream_name):
     while not stop_paging:
         extraction_time = singer.utils.now()
 
-        response = STREAM_SDK_OBJECTS['events'].list(**{
+        response = STREAM_SDK_OBJECTS['events']['sdk_object'].list(**{
             "limit": 100,
             "type": STREAM_TO_TYPE_FILTER[stream_name]['type'],
             "stripe_account" : Context.config.get('account_id'),

@@ -553,7 +553,7 @@ def sync():
     for catalog_entry in Context.catalog['streams']:
         stream_name = catalog_entry["tap_stream_id"]
         if Context.is_selected(stream_name):
-            singer.write_schema(stream_name, catalog_entry['schema'], 'id')
+            singer.write_schema(stream_name, catalog_entry['schema'], catalog_entry['key_properties'])
 
             Context.new_counts[stream_name] = 0
             Context.updated_counts[stream_name] = 0

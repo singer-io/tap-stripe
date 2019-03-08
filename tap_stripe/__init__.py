@@ -29,7 +29,9 @@ STREAM_SDK_OBJECTS = {
     'subscriptions': {'sdk_object': stripe.Subscription, 'key_properties': ['id']},
     'subscription_items': {'sdk_object': stripe.SubscriptionItem, 'key_properties': ['id']},
     'balance_transactions': {'sdk_object': stripe.BalanceTransaction, 'key_properties': ['id']},
-    'payouts': {'sdk_object': stripe.Payout, 'key_properties': ['id']}
+    'payouts': {'sdk_object': stripe.Payout, 'key_properties': ['id']},
+    # Each Payout has many transactions that are not accounted for unless you ask for balance/history with a payout id
+    'payout_transactions': {'sdk_object': stripe.BalanceTransaction, 'key_properties': ['id']}
 }
 
 # TODO: I think this can be merged into the above structure
@@ -69,7 +71,8 @@ STREAM_TO_TYPE_FILTER = {
 
 SUB_STREAMS = {
     'subscriptions': 'subscription_items',
-    'invoices': 'invoice_line_items'
+    'invoices': 'invoice_line_items',
+    'payouts': 'payout_transactions'
 }
 
 LOGGER = singer.get_logger()
@@ -402,6 +405,36 @@ def sync_sub_stream(sub_stream_name,
     elif sub_stream_name == "subscription_items":
         # parent_obj.items is a function that returns a dict iterator, so use the attribute
         object_list = parent_obj.get("items")
+    elif sub_stream_name == "payout_transactions":
+        # Hack for now.
+        stream_bookmark = singer.get_bookmark(Context.state, sub_stream_name, 'created')
+        bookmark = stream_bookmark or \
+            int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
+
+        payout_id = parent_obj['id']
+        # Balance transaction history with a payout id param provides the link of transactions to payouts
+        for payout_tran in stripe.BalanceTransaction.list(limit=100,
+                                                          stripe_account=Context.config.get('account_id'),
+                                                          payout=payout_id,
+                                                          **{'created' + "[gte]": bookmark}
+        ).auto_paging_iter():
+            # payout_transactions is a join table
+            rec = {"id": payout_tran['id'], "payout_id": payout_id}
+            singer.write_record(sub_stream_name, rec, time_extracted=extraction_time)
+            if updates:
+                Context.updated_counts[sub_stream_name] += 1
+            else:
+                Context.new_counts[sub_stream_name] += 1
+
+            sub_stream_bookmark = parent_obj.get(parent_replication_key)
+
+            if save_bookmarks:
+                singer.write_bookmark(Context.state,
+                                      sub_stream_name,
+                                      parent_replication_key,
+                                      sub_stream_bookmark)
+
+        return None
     else:
         raise Exception("Attempted to sync substream that is not implemented: {}"
                         .format(sub_stream_name))

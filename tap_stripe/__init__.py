@@ -23,7 +23,8 @@ STREAM_SDK_OBJECTS = {
     'plans': {'sdk_object': stripe.Plan, 'key_properties': ['id']},
     'invoices': {'sdk_object': stripe.Invoice, 'key_properties': ['id']},
     'invoice_items': {'sdk_object': stripe.InvoiceItem, 'key_properties': ['id']},
-    'invoice_line_items': {'sdk_object': stripe.InvoiceLineItem, 'key_properties': ['id', 'invoice']},
+    'invoice_line_items': {'sdk_object': stripe.InvoiceLineItem,
+                           'key_properties': ['id', 'invoice']},
     'transfers': {'sdk_object': stripe.Transfer, 'key_properties': ['id']},
     'coupons': {'sdk_object': stripe.Coupon, 'key_properties': ['id']},
     'subscriptions': {'sdk_object': stripe.Subscription, 'key_properties': ['id']},
@@ -32,7 +33,6 @@ STREAM_SDK_OBJECTS = {
     'payouts': {'sdk_object': stripe.Payout, 'key_properties': ['id']}
 }
 
-# TODO: I think this can be merged into the above structure
 STREAM_REPLICATION_KEY = {
     'charges': 'created',
     'events': 'created',
@@ -553,7 +553,8 @@ def sync():
     for catalog_entry in Context.catalog['streams']:
         stream_name = catalog_entry["tap_stream_id"]
         if Context.is_selected(stream_name):
-            singer.write_schema(stream_name, catalog_entry['schema'], catalog_entry['key_properties'])
+            singer.write_schema(stream_name, catalog_entry['schema'],
+                                catalog_entry['key_properties'])
 
             Context.new_counts[stream_name] = 0
             Context.updated_counts[stream_name] = 0

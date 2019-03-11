@@ -16,7 +16,7 @@ setup(
     extras_require={
         'dev': [
             'ipdb',
-            'pylint==2.1.1',
+            'pylint==2.3.1',
         ]
     },
     entry_points="""

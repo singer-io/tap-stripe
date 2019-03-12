@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.1.0
+  * Invoice Line Items now use a composite PK [#19](https://github.com/singer-io/tap-stripe/pull/19)
+
 ## 1.0.2
   * Fixes `tiers` subschema to include its object properties (when it is an object) [#16](https://github.com/singer-io/tap-stripe/pull/16)
 

@@ -17,19 +17,20 @@ REQUIRED_CONFIG_KEYS = [
     "client_secret"
 ]
 STREAM_SDK_OBJECTS = {
-    'charges': stripe.Charge,
-    'events': stripe.Event,
-    'customers': stripe.Customer,
-    'plans': stripe.Plan,
-    'invoices': stripe.Invoice,
-    'invoice_items': stripe.InvoiceItem,
-    'invoice_line_items': stripe.InvoiceLineItem,
-    'transfers': stripe.Transfer,
-    'coupons': stripe.Coupon,
-    'subscriptions': stripe.Subscription,
-    'subscription_items': stripe.SubscriptionItem,
-    'balance_transactions': stripe.BalanceTransaction,
-    'payouts': stripe.Payout
+    'charges': {'sdk_object': stripe.Charge, 'key_properties': ['id']},
+    'events': {'sdk_object': stripe.Event, 'key_properties': ['id']},
+    'customers': {'sdk_object': stripe.Customer, 'key_properties': ['id']},
+    'plans': {'sdk_object': stripe.Plan, 'key_properties': ['id']},
+    'invoices': {'sdk_object': stripe.Invoice, 'key_properties': ['id']},
+    'invoice_items': {'sdk_object': stripe.InvoiceItem, 'key_properties': ['id']},
+    'invoice_line_items': {'sdk_object': stripe.InvoiceLineItem,
+                           'key_properties': ['id', 'invoice']},
+    'transfers': {'sdk_object': stripe.Transfer, 'key_properties': ['id']},
+    'coupons': {'sdk_object': stripe.Coupon, 'key_properties': ['id']},
+    'subscriptions': {'sdk_object': stripe.Subscription, 'key_properties': ['id']},
+    'subscription_items': {'sdk_object': stripe.SubscriptionItem, 'key_properties': ['id']},
+    'balance_transactions': {'sdk_object': stripe.BalanceTransaction, 'key_properties': ['id']},
+    'payouts': {'sdk_object': stripe.Payout, 'key_properties': ['id']}
 }
 
 STREAM_REPLICATION_KEY = {
@@ -242,16 +243,16 @@ def load_schemas():
 
     return schemas
 
-def get_discovery_metadata(schema, key_property, replication_method, replication_key):
+def get_discovery_metadata(schema, key_properties, replication_method, replication_key):
     mdata = metadata.new()
-    mdata = metadata.write(mdata, (), 'table-key-properties', [key_property])
+    mdata = metadata.write(mdata, (), 'table-key-properties', key_properties)
     mdata = metadata.write(mdata, (), 'forced-replication-method', replication_method)
 
     if replication_key:
         mdata = metadata.write(mdata, (), 'valid-replication-keys', [replication_key])
 
     for field_name in schema['properties'].keys():
-        if field_name in [key_property, replication_key, "updated"]:
+        if field_name in key_properties or field_name in [replication_key, "updated"]:
             mdata = metadata.write(mdata, ('properties', field_name), 'inclusion', 'automatic')
         else:
             mdata = metadata.write(mdata, ('properties', field_name), 'inclusion', 'available')
@@ -263,7 +264,7 @@ def discover():
     raw_schemas = load_schemas()
     streams = []
 
-    for stream_name in STREAM_SDK_OBJECTS:
+    for stream_name, stream_map in STREAM_SDK_OBJECTS.items():
         schema = raw_schemas[stream_name]['schema']
         refs = load_shared_schema_refs()
         # create and add catalog entry
@@ -272,12 +273,12 @@ def discover():
             'tap_stream_id': stream_name,
             'schema': singer.resolve_schema_references(schema, refs),
             'metadata': get_discovery_metadata(schema,
-                                               'id',
+                                               stream_map['key_properties'],
                                                'INCREMENTAL',
                                                STREAM_REPLICATION_KEY.get(stream_name)),
             # Events may have a different key property than this. Change
             # if it's appropriate.
-            'key_properties': ['id']
+            'key_properties': stream_map['key_properties']
         }
         streams.append(catalog_entry)
 
@@ -328,7 +329,8 @@ def sync_stream(stream_name):
         sub_stream_bookmark = None
 
     with Transformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
-        for stream_obj in STREAM_SDK_OBJECTS[stream_name].list(
+        stream_map = STREAM_SDK_OBJECTS[stream_name]
+        for stream_obj in stream_map['sdk_object'].list(
                 limit=100,
                 stripe_account=Context.config.get('account_id'),
                 # None passed to starting_after appears to retrieve
@@ -481,7 +483,7 @@ def sync_event_updates(stream_name):
     while not stop_paging:
         extraction_time = singer.utils.now()
 
-        response = STREAM_SDK_OBJECTS['events'].list(**{
+        response = STREAM_SDK_OBJECTS['events']['sdk_object'].list(**{
             "limit": 100,
             "type": STREAM_TO_TYPE_FILTER[stream_name]['type'],
             "stripe_account" : Context.config.get('account_id'),
@@ -551,7 +553,8 @@ def sync():
     for catalog_entry in Context.catalog['streams']:
         stream_name = catalog_entry["tap_stream_id"]
         if Context.is_selected(stream_name):
-            singer.write_schema(stream_name, catalog_entry['schema'], 'id')
+            singer.write_schema(stream_name, catalog_entry['schema'],
+                                catalog_entry['key_properties'])
 
             Context.new_counts[stream_name] = 0
             Context.updated_counts[stream_name] = 0

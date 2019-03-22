@@ -394,10 +394,9 @@ def get_object_list_iterator(object_list):
     """
     if object_list is None:
         return []
-    elif isinstance(object_list, dict):
+    if isinstance(object_list, dict):
         return [object_list]
-    else:
-        return object_list.auto_paging_iter()
+    return object_list.auto_paging_iter()
 
 def sync_sub_stream(sub_stream_name,
                     parent_obj,

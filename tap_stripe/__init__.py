@@ -435,7 +435,7 @@ def sync_sub_stream(sub_stream_name,
                                         ))
             # NB: Older structures (such as invoice_line_items) may not have had their ID present.
             #     Skip these if they don't match the structure we expect.
-            if "id" not in rec:
+            if "id" in rec:
                 singer.write_record(sub_stream_name,
                                     rec,
                                     time_extracted=extraction_time)

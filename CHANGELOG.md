@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.1.1
+  * On event updates, handles when `invoice_line_items` comes back as a dictionary instead of a list.
+
 ## 1.1.0
   * Invoice Line Items now use a composite PK [#19](https://github.com/singer-io/tap-stripe/pull/19)
 

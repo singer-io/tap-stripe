@@ -387,6 +387,18 @@ def sync_stream(stream_name):
     singer.write_state(Context.state)
 
 
+def get_object_list_iterator(object_list):
+    """
+    The data of a child event may either be a list, dict,
+    or None. Handle all as a list.
+    """
+    if object_list is None:
+        return []
+    elif isinstance(object_list, dict):
+        return [object_list]
+    else:
+        return object_list.auto_paging_iter()
+
 def sync_sub_stream(sub_stream_name,
                     parent_obj,
                     parent_replication_key,
@@ -407,7 +419,7 @@ def sync_sub_stream(sub_stream_name,
                         .format(sub_stream_name))
 
     with Transformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
-        iterator = object_list.auto_paging_iter() if object_list is not None else []
+        iterator = get_object_list_iterator(object_list)
         for sub_stream_obj in iterator:
             obj_ad_dict = sub_stream_obj.to_dict_recursive()
 

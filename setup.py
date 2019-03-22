@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name="tap-stripe",
-    version="1.1.0",
+    version="1.1.1",
     description="Singer.io tap for extracting data",
     author="Stitch",
     url="http://singer.io",

@@ -394,9 +394,11 @@ def get_object_list_iterator(object_list):
     """
     if object_list is None:
         return []
+    if hasattr(object_list, "auto_paging_iter"):
+        return object_list.auto_paging_iter()
     if isinstance(object_list, dict):
         return [object_list]
-    return object_list.auto_paging_iter()
+    return object_list
 
 def sync_sub_stream(sub_stream_name,
                     parent_obj,
@@ -431,10 +433,12 @@ def sync_sub_stream(sub_stream_name,
                                         metadata.to_map(
                                             Context.get_catalog_entry(sub_stream_name)['metadata']
                                         ))
-
-            singer.write_record(sub_stream_name,
-                                rec,
-                                time_extracted=extraction_time)
+            # NB: Older structures (such as invoice_line_items) may not have had their ID present.
+            #     Skip these if they don't match the structure we expect.
+            if "id" not in rec:
+                singer.write_record(sub_stream_name,
+                                    rec,
+                                    time_extracted=extraction_time)
             if updates:
                 Context.updated_counts[sub_stream_name] += 1
             else:

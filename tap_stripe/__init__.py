@@ -454,7 +454,8 @@ def sync_sub_stream(sub_stream_name,
                 obj_ad_dict["invoice"] = parent_obj.id
             elif sub_stream_name == "payout_transactions":
                 # payout_transactions is a join table
-                data_ad_dict = {"id": payout_tran['id'], "payout_id": payout_id}
+
+                obj_ad_dict = {"id": obj_ad_dict['id'], "payout_id": parent_obj['id']}
 
             rec = transformer.transform(unwrap_data_objects(obj_ad_dict),
                                         Context.get_catalog_entry(sub_stream_name)['schema'],

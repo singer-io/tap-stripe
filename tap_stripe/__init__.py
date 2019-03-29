@@ -78,6 +78,7 @@ SUB_STREAMS = {
 
 LOGGER = singer.get_logger()
 
+DEFAULT_DATE_WINDOW_SIZE = 30 #days
 
 class Context():
     config = {}
@@ -358,11 +359,11 @@ def sync_stream(stream_name):
     with Transformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
         stream_map = STREAM_SDK_OBJECTS[stream_name]
         end_time = dt_to_epoch(utils.now())
-        window_size = 30
+
+        window_size = int(Context.config.get('date_window_size', DEFAULT_DATE_WINDOW_SIZE))
         start_window = bookmark
         while start_window < end_time:
             stop_window  = dt_to_epoch(epoch_to_dt(start_window) + timedelta(days=window_size))
-
             # cut off the last window at the end time
             if stop_window > end_time:
                 stop_window = end_time

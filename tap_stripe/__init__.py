@@ -284,6 +284,33 @@ def discover():
 
     return {'streams': streams}
 
+def value_at_breadcrumb(breadcrumb, rec):
+    if len(breadcrumb) == 1:
+        return rec.get(breadcrumb[0])
+    elif rec.get(breadcrumb[0]):
+        return value_at_breadcrumb(breadcrumb[1:], rec[breadcrumb[0]])
+    return None
+
+
+def insert_at_breadcrumb(breadcrumb, value, rec):
+    if len(breadcrumb) == 1:
+        rec[breadcrumb[0]] = value
+    else:
+        if rec.get(breadcrumb[0]):
+            insert_at_breadcrumb(breadcrumb[1:], value, rec[breadcrumb[0]])
+        else:
+            rec[breadcrumb[0]] = {}
+            insert_at_breadcrumb(breadcrumb[1:], value, rec[breadcrumb[0]])
+
+def apply_whitelist(rec, stream_field_whitelist):
+    filtered_rec = {}
+    for breadcrumb in stream_field_whitelist:
+        value_to_add = value_at_breadcrumb(breadcrumb, rec)
+        if value_to_add:
+            insert_at_breadcrumb(breadcrumb, value_to_add, filtered_rec)
+    return filtered_rec
+
+
 def reduce_foreign_keys(rec, stream_name):
     if stream_name == 'customers':
         rec['subscriptions'] = [s['id'] for s in rec.get('subscriptions', [])] or None
@@ -308,6 +335,8 @@ def sync_stream(stream_name):
     LOGGER.info("Started syncing stream %s", stream_name)
 
     stream_metadata = metadata.to_map(Context.get_catalog_entry(stream_name)['metadata'])
+    stream_field_whitelist = json.loads(Context.config.get('whitelist_map', '{}')).get(stream_name)
+
     extraction_time = singer.utils.now()
     replication_key = metadata.get(stream_metadata, (), 'valid-replication-keys')[0]
     # Invoice Items bookmarks on `date`, but queries on `created`
@@ -360,6 +389,9 @@ def sync_stream(stream_name):
                 rec = transformer.transform(rec,
                                             Context.get_catalog_entry(stream_name)['schema'],
                                             stream_metadata)
+
+                if stream_field_whitelist:
+                    rec = apply_whitelist(rec, stream_field_whitelist)
 
                 singer.write_record(stream_name,
                                     rec,

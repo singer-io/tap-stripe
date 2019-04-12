@@ -287,7 +287,7 @@ def discover():
 def value_at_breadcrumb(breadcrumb, rec):
     if len(breadcrumb) == 1:
         return rec.get(breadcrumb[0])
-    elif rec.get(breadcrumb[0]):
+    if rec.get(breadcrumb[0]):
         return value_at_breadcrumb(breadcrumb[1:], rec[breadcrumb[0]])
     return None
 

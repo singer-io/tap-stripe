@@ -322,7 +322,7 @@ def apply_whitelist(rec, stream_field_whitelist):
     filtered_rec = {}
 
     # Keep all the top level fields
-    for k, v in rec.items():
+    for k, v in rec.items(): #pylint: disable=invalid-name
         if not isinstance(v, (dict, list)):
             filtered_rec[k] = v
 

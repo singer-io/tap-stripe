@@ -302,9 +302,33 @@ def insert_at_breadcrumb(breadcrumb, value, rec):
             rec[breadcrumb[0]] = {}
             insert_at_breadcrumb(breadcrumb[1:], value, rec[breadcrumb[0]])
 
+
 def apply_whitelist(rec, stream_field_whitelist):
+    """The whitelist is a map from stream_name to a list of breadcrumbs that
+    indicates which nested fields should be persisted. There shouldn't be
+    any top-level fields in the whitelist since users can already remove
+    these fields via field selection. The shape of the whitelist is:
+    {
+       <stream_name>: [
+          [<field_1_breadcrumb>],
+          [<field_2_breadcrumb>],
+          ...
+          [<field_n_breadcrumb>]
+       ]
+    }
+    For now, the top level field should always be 'data' until we hear of
+    a need to extend this to other deeply nested objects
+    """
     filtered_rec = {}
+
+    # Keep all the top level fields
+    for k, v in rec.items():
+        if not isinstance(v, (dict, list)):
+            filtered_rec[k] = v
+
     for breadcrumb in stream_field_whitelist:
+        assert len(breadcrumb) > 1
+        assert breadcrumb[0] == 'data'
         value_to_add = value_at_breadcrumb(breadcrumb, rec)
         if value_to_add:
             insert_at_breadcrumb(breadcrumb, value_to_add, filtered_rec)
@@ -391,6 +415,9 @@ def sync_stream(stream_name):
                                             Context.get_catalog_entry(stream_name)['schema'],
                                             stream_metadata)
 
+                # At this point, the record has been transformed and so
+                # any de-selected fields have been pruned. Now, prune off
+                # any fields that aren't present in the whitelist.
                 if stream_field_whitelist:
                     rec = apply_whitelist(rec, stream_field_whitelist)
 

@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.1.2
+  * Add optional `whitelist_map` config param which allows users to define a nested field whitelist [#22](https://github.com/singer-io/tap-stripe/pull/22)
+
 ## 1.1.1
   * On event updates, handles when `invoice_line_items` comes back as a dictionary instead of a list.
   * On event updates, skip the record when a sub-stream object doesn't have an "id" (e.g., older event update structures)

@@ -508,8 +508,7 @@ def sync_sub_stream(sub_stream_name,
 
         object_list = stripe.BalanceTransaction.list(limit=100,
                                                      stripe_account=acct_id,
-                                                     payout=payout_id,
-                                                     **{'created' + "[gte]": bookmark})
+                                                     payout=payout_id)
     else:
         raise Exception("Attempted to sync substream that is not implemented: {}"
                         .format(sub_stream_name))

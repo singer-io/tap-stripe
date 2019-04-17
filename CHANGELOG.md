@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.2.0
+  * Add `payout_transactions` stream and add date windowing to fix bookmarking [#23](https://github.com/singer-io/tap-stripe/pull/23)
+
 ## 1.1.2
   * Add optional `whitelist_map` config param which allows users to define a nested field whitelist [#22](https://github.com/singer-io/tap-stripe/pull/22)
 

@@ -418,6 +418,10 @@ def sync_stream(stream_name):
         end_time = dt_to_epoch(utils.now())
         window_size = int(Context.config.get('date_window_size', DEFAULT_DATE_WINDOW_SIZE))
         start_window = bookmark
+
+        # NB: We observed records coming through newest->oldest and so
+        # date-windowing was added and the tap only bookmarks after it has
+        # gotten through a date window
         while start_window < end_time:
             stop_window = dt_to_epoch(epoch_to_dt(start_window) + timedelta(days=window_size))
             # cut off the last window at the end time
@@ -464,6 +468,7 @@ def sync_stream(stream_name):
                                       replication_key,
                                       stream_bookmark)
 
+            # the sub stream bookmarks on its parent
             if should_sync_sub_stream and stop_window > sub_stream_bookmark:
                 sub_stream_bookmark = stop_window
                 singer.write_bookmark(Context.state,

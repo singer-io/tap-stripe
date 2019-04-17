@@ -372,13 +372,15 @@ def paginate(sdk_obj, filter_key, start_date, end_date, limit=100):
     ).auto_paging_iter()
 
 
-
+# pylint: disable=invalid-name
 def dt_to_epoch(dt):
     return int(dt.timestamp())
+
 
 def epoch_to_dt(epoch_ts):
     return datetime.fromtimestamp(epoch_ts)
 
+# pylint: disable=too-many-locals
 def sync_stream(stream_name):
     """
     Sync each stream, looking for newly created records. Updates are captured by events stream.
@@ -436,6 +438,12 @@ def sync_stream(stream_name):
                     rec = transformer.transform(rec,
                                                 Context.get_catalog_entry(stream_name)['schema'],
                                                 stream_metadata)
+
+                    # At this point, the record has been transformed and so
+                    # any de-selected fields have been pruned. Now, prune off
+                    # any fields that aren't present in the whitelist.
+                    if stream_field_whitelist:
+                        rec = apply_whitelist(rec, stream_field_whitelist)
 
                     singer.write_record(stream_name,
                                         rec,
@@ -498,14 +506,10 @@ def sync_sub_stream(sub_stream_name,
         # parent_obj.items is a function that returns a dict iterator, so use the attribute
         object_list = parent_obj.get("items")
     elif sub_stream_name == "payout_transactions":
-        bookmark = singer.get_bookmark(Context.state, sub_stream_name, 'created') or \
-            int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
-
         payout_id = parent_obj['id']
         acct_id = Context.config.get('account_id')
         # Balance transaction history with a payout id param
         # provides the link of transactions to payouts
-
         object_list = stripe.BalanceTransaction.list(limit=100,
                                                      stripe_account=acct_id,
                                                      payout=payout_id)
@@ -540,7 +544,6 @@ def sync_sub_stream(sub_stream_name,
                 Context.updated_counts[sub_stream_name] += 1
             else:
                 Context.new_counts[sub_stream_name] += 1
-
 
 
 def should_sync_event(events_obj, object_type, id_to_created_map):

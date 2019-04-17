@@ -4,6 +4,7 @@ import json
 import logging
 import re
 
+from datetime import datetime, timedelta
 import stripe
 import stripe.error
 from stripe.stripe_object import StripeObject
@@ -29,10 +30,15 @@ STREAM_SDK_OBJECTS = {
     'coupons': {'sdk_object': stripe.Coupon, 'key_properties': ['id']},
     'subscriptions': {'sdk_object': stripe.Subscription, 'key_properties': ['id']},
     'subscription_items': {'sdk_object': stripe.SubscriptionItem, 'key_properties': ['id']},
-    'balance_transactions': {'sdk_object': stripe.BalanceTransaction, 'key_properties': ['id']},
-    'payouts': {'sdk_object': stripe.Payout, 'key_properties': ['id']}
+    'balance_transactions': {'sdk_object': stripe.BalanceTransaction,
+                             'key_properties': ['id']},
+    'payouts': {'sdk_object': stripe.Payout, 'key_properties': ['id']},
+    # Each Payout has many transactions that are not accounted
+    # for unless you ask for balance/history with a payout id
+    'payout_transactions': {'sdk_object': stripe.BalanceTransaction, 'key_properties': ['id']}
 }
 
+# I think this can be merged into the above structure
 STREAM_REPLICATION_KEY = {
     'charges': 'created',
     'events': 'created',
@@ -69,11 +75,13 @@ STREAM_TO_TYPE_FILTER = {
 
 SUB_STREAMS = {
     'subscriptions': 'subscription_items',
-    'invoices': 'invoice_line_items'
+    'invoices': 'invoice_line_items',
+    'payouts': 'payout_transactions'
 }
 
 LOGGER = singer.get_logger()
 
+DEFAULT_DATE_WINDOW_SIZE = 30 #days
 
 class Context():
     config = {}
@@ -352,6 +360,26 @@ def reduce_foreign_keys(rec, stream_name):
                     rec['lines'][k] = [li.to_dict_recursive() for li in val]
     return rec
 
+
+def paginate(sdk_obj, filter_key, start_date, end_date, limit=100):
+    yield from sdk_obj.list(
+        limit=limit,
+        stripe_account=Context.config.get('account_id'),
+        # None passed to starting_after appears to retrieve
+        # all of them so this should always be safe.
+        **{filter_key + "[gte]": start_date,
+           filter_key + "[lt]": end_date}
+    ).auto_paging_iter()
+
+
+# pylint: disable=invalid-name
+def dt_to_epoch(dt):
+    return int(dt.timestamp())
+
+
+def epoch_to_dt(epoch_ts):
+    return datetime.fromtimestamp(epoch_ts)
+
 # pylint: disable=too-many-locals
 def sync_stream(stream_name):
     """
@@ -366,83 +394,87 @@ def sync_stream(stream_name):
     replication_key = metadata.get(stream_metadata, (), 'valid-replication-keys')[0]
     # Invoice Items bookmarks on `date`, but queries on `created`
     filter_key = 'created' if stream_name == 'invoice_items' else replication_key
-    stream_bookmark = singer.get_bookmark(Context.state, stream_name, replication_key)
-    bookmark = stream_bookmark or \
-               int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
-    max_bookmark = bookmark
+    stream_bookmark = singer.get_bookmark(Context.state, stream_name, replication_key) or \
+        int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
+    bookmark = stream_bookmark
+
     # if this stream has a sub_stream, compare the bookmark
     sub_stream_name = SUB_STREAMS.get(stream_name)
 
-    if sub_stream_name:
-        sub_stream_bookmark = singer.get_bookmark(Context.state, sub_stream_name, replication_key)
+    # If there is a sub-stream and its selected, get its bookmark (or the start date if no bookmark)
+    should_sync_sub_stream = sub_stream_name and Context.is_selected(sub_stream_name)
+    if should_sync_sub_stream:
+        sub_stream_bookmark = singer.get_bookmark(Context.state, sub_stream_name, replication_key) \
+            or int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
+
         # if there is a sub stream, set bookmark to sub stream's bookmark
         # since we know it must be earlier than the stream's bookmark
-        if sub_stream_bookmark and sub_stream_bookmark != stream_bookmark:
+        if sub_stream_bookmark != stream_bookmark:
             bookmark = sub_stream_bookmark
     else:
         sub_stream_bookmark = None
 
     with Transformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
-        stream_map = STREAM_SDK_OBJECTS[stream_name]
-        for stream_obj in stream_map['sdk_object'].list(
-                limit=100,
-                stripe_account=Context.config.get('account_id'),
-                # None passed to starting_after appears to retrieve
-                # all of them so this should always be safe.
-                **{filter_key + "[gte]": bookmark}
-        ).auto_paging_iter():
+        end_time = dt_to_epoch(utils.now())
+        window_size = int(Context.config.get('date_window_size', DEFAULT_DATE_WINDOW_SIZE))
+        start_window = bookmark
+        while start_window < end_time:
+            stop_window = dt_to_epoch(epoch_to_dt(start_window) + timedelta(days=window_size))
+            # cut off the last window at the end time
+            if stop_window > end_time:
+                stop_window = end_time
 
-            if sub_stream_name:
-                sub_stream_bookmark = singer.get_bookmark(Context.state,
-                                                          sub_stream_name,
-                                                          replication_key)
+            for stream_obj in paginate(STREAM_SDK_OBJECTS[stream_name]['sdk_object'],
+                                       filter_key, start_window, stop_window):
 
-            # If there is no sub stream, or there is and it isn't selected,
-            # or the sub stream is up to date (bookmarks are equal),
-            # the stream should be sync'd
-            # Note: The parent stream is already checked if selected before we
-            #       call this function
-            should_sync_stream = not sub_stream_name \
-                                 or not Context.is_selected(sub_stream_name) \
-                                 or stream_bookmark == sub_stream_bookmark
-
-            # if the bookmark equals the stream bookmark, sync stream records
-            if should_sync_stream:
+                # get the replication key value from the object
                 rec = unwrap_data_objects(stream_obj.to_dict_recursive())
                 rec = reduce_foreign_keys(rec, stream_name)
-                rec["updated"] = rec[replication_key]
-                rec = transformer.transform(rec,
-                                            Context.get_catalog_entry(stream_name)['schema'],
-                                            stream_metadata)
+                stream_obj_created = rec[replication_key]
+                rec['updated'] = stream_obj_created
 
-                # At this point, the record has been transformed and so
-                # any de-selected fields have been pruned. Now, prune off
-                # any fields that aren't present in the whitelist.
-                if stream_field_whitelist:
-                    rec = apply_whitelist(rec, stream_field_whitelist)
+                # sync stream if object is greater than the bookmark
+                if stream_obj_created > stream_bookmark:
+                    rec = transformer.transform(rec,
+                                                Context.get_catalog_entry(stream_name)['schema'],
+                                                stream_metadata)
 
-                singer.write_record(stream_name,
-                                    rec,
-                                    time_extracted=extraction_time)
+                    # At this point, the record has been transformed and so
+                    # any de-selected fields have been pruned. Now, prune off
+                    # any fields that aren't present in the whitelist.
+                    if stream_field_whitelist:
+                        rec = apply_whitelist(rec, stream_field_whitelist)
 
-                Context.new_counts[stream_name] += 1
+                    singer.write_record(stream_name,
+                                        rec,
+                                        time_extracted=extraction_time)
 
-                stream_bookmark = stream_obj.get(replication_key)
+                    Context.new_counts[stream_name] += 1
 
-                if stream_bookmark > max_bookmark:
-                    max_bookmark = stream_bookmark
-                    singer.write_bookmark(Context.state,
-                                          stream_name,
-                                          replication_key,
-                                          max_bookmark)
+                # sync sub streams if its selected and the parent object
+                # is greater than its bookmark
+                if should_sync_sub_stream and stream_obj_created > sub_stream_bookmark:
+                    sync_sub_stream(sub_stream_name, stream_obj)
 
-                # sync sub streams
-                if sub_stream_name and Context.is_selected(sub_stream_name):
-                    sync_sub_stream(sub_stream_name, stream_obj, replication_key)
+            # Update stream/sub-streams bookmarks as stop window
+            if stop_window > stream_bookmark:
+                stream_bookmark = stop_window
+                singer.write_bookmark(Context.state,
+                                      stream_name,
+                                      replication_key,
+                                      stream_bookmark)
 
-            # write state after every 100 records
-            if (Context.new_counts[stream_name] % 100) == 0:
-                singer.write_state(Context.state)
+            if should_sync_sub_stream and stop_window > sub_stream_bookmark:
+                sub_stream_bookmark = stop_window
+                singer.write_bookmark(Context.state,
+                                      sub_stream_name,
+                                      replication_key,
+                                      sub_stream_bookmark)
+
+            singer.write_state(Context.state)
+
+            # update window for next iteration
+            start_window = stop_window
 
     singer.write_state(Context.state)
 
@@ -462,8 +494,6 @@ def get_object_list_iterator(object_list):
 
 def sync_sub_stream(sub_stream_name,
                     parent_obj,
-                    parent_replication_key,
-                    save_bookmarks=True,
                     updates=False):
     """
     Given a parent object, retrieve its values for the specified substream.
@@ -475,6 +505,14 @@ def sync_sub_stream(sub_stream_name,
     elif sub_stream_name == "subscription_items":
         # parent_obj.items is a function that returns a dict iterator, so use the attribute
         object_list = parent_obj.get("items")
+    elif sub_stream_name == "payout_transactions":
+        payout_id = parent_obj['id']
+        acct_id = Context.config.get('account_id')
+        # Balance transaction history with a payout id param
+        # provides the link of transactions to payouts
+        object_list = stripe.BalanceTransaction.list(limit=100,
+                                                     stripe_account=acct_id,
+                                                     payout=payout_id)
     else:
         raise Exception("Attempted to sync substream that is not implemented: {}"
                         .format(sub_stream_name))
@@ -487,6 +525,9 @@ def sync_sub_stream(sub_stream_name,
             if sub_stream_name == "invoice_line_items":
                 # Synthetic addition of a key to the record we sync
                 obj_ad_dict["invoice"] = parent_obj.id
+            elif sub_stream_name == "payout_transactions":
+                # payout_transactions is a join table
+                obj_ad_dict = {"id": obj_ad_dict['id'], "payout_id": parent_obj['id']}
 
             rec = transformer.transform(unwrap_data_objects(obj_ad_dict),
                                         Context.get_catalog_entry(sub_stream_name)['schema'],
@@ -503,14 +544,6 @@ def sync_sub_stream(sub_stream_name,
                 Context.updated_counts[sub_stream_name] += 1
             else:
                 Context.new_counts[sub_stream_name] += 1
-
-            sub_stream_bookmark = parent_obj.get(parent_replication_key)
-
-            if save_bookmarks:
-                singer.write_bookmark(Context.state,
-                                      sub_stream_name,
-                                      parent_replication_key,
-                                      sub_stream_bookmark)
 
 
 def should_sync_event(events_obj, object_type, id_to_created_map):
@@ -550,7 +583,6 @@ def sync_event_updates(stream_name):
     date_window_end = max_created + 604800 # Number of seconds in a week
 
     stop_paging = False
-
 
     # Create a map to hold relate event object ids to timestamps
     updated_object_timestamps = {}
@@ -607,8 +639,6 @@ def sync_event_updates(stream_name):
                             if event_resource_obj:
                                 sync_sub_stream(sub_stream_name,
                                                 event_resource_obj,
-                                                STREAM_REPLICATION_KEY[stream_name],
-                                                save_bookmarks=False,
                                                 updates=True)
             if events_obj.created > max_created:
                 max_created = events_obj.created
@@ -628,7 +658,8 @@ def sync():
     for catalog_entry in Context.catalog['streams']:
         stream_name = catalog_entry["tap_stream_id"]
         if Context.is_selected(stream_name):
-            singer.write_schema(stream_name, catalog_entry['schema'],
+            singer.write_schema(stream_name,
+                                catalog_entry['schema'],
                                 catalog_entry['key_properties'])
 
             Context.new_counts[stream_name] = 0

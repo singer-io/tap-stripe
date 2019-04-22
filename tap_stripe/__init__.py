@@ -565,7 +565,9 @@ def should_sync_event(events_obj, object_type, id_to_created_map):
         return False
 
     # If the event is the most recent one we've seen, we should sync it
-    should_sync = not current_max_created or event_created >= current_max_created
+    # Events can have the same created at time, so just use the first one
+    # (Since they are returned in reverse chronological order)
+    should_sync = not current_max_created or event_created > current_max_created
     if should_sync:
         id_to_created_map[event_resource_id] = events_obj.created
     return should_sync

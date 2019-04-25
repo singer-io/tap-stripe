@@ -52,6 +52,7 @@ STREAM_REPLICATION_KEY = {
     'subscription_items': 'created',
     'balance_transactions': 'created',
     'payouts': 'created',
+    'payout_transactions': 'id',
     # invoice_line_items is bookmarked based on parent invoices,
     # no replication key value on the object itself
     #'invoice_line_items': 'date'

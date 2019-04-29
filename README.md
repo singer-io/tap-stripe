@@ -6,12 +6,9 @@ spec](https://github.com/singer-io/getting-started/blob/master/SPEC.md).
 
 ## Installation
 
-```bash
-$ mkvirtualenv -p python3 tap-stripe
-$ pip install tap-stripe
-$ tap-stripe --config config.json --discover
-$ tap-stripe --config config.json --properties properties.json --state state.json
-```
+See the getting-started guide:
+
+https://github.com/singer-io/getting-started
 
 ## Usage
 
@@ -67,10 +64,10 @@ Redirect output from the tap's discovery mode to a file so that it can be
 modified:
 
 ```bash
-$ tap-stripe -c config.json --discover > properties.json
+$ tap-stripe --config config.json --discover > catalog.json
 ```
 
-Then edit `properties.json` to make selections. The stream's metadata entry (associated
+Then edit `catalog.json` to make selections. The stream's metadata entry (associated
 with `"breadcrumb": []`) gets a top-level `selected` flag, as does its columns' metadata
 entries.
 
@@ -94,10 +91,10 @@ entries.
 
 ### Sync mode
 
-With a properties catalog that describes field and table selections, the tap can be invoked in sync mode:
+With a `catalog.json` that describes field and table selections, the tap can be invoked in sync mode:
 
 ```bash
-$ tap-stripe -c config.json --properties properties.json
+$ tap-stripe --config config.json --catalog catalog.json
 ```
 
 Messages are written to standard output following the Singer specification. The

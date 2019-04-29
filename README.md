@@ -15,22 +15,6 @@ https://github.com/singer-io/getting-started
 This section dives into basic usage of `tap-stripe` by walking through extracting
 data from the api.
 
-### Install
-
-```bash
-$ mkvirtualenv -p python3 tap-stripe
-$ pip install tap-stripe
-```
-
-or
-
-```bash
-$ git clone git@github.com:singer-io/tap-stripe.git
-$ cd tap-stripe
-$ mkvirtualenv -p python3 tap-stripe
-$ python install .
-```
-
 ### Create the configuration file
 
 Create a config file containing the stripe credentials, e.g.:

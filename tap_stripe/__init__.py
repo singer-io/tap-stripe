@@ -418,6 +418,8 @@ def sync_stream(stream_name):
     with Transformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
         end_time = dt_to_epoch(utils.now())
         window_size = int(Context.config.get('date_window_size', DEFAULT_DATE_WINDOW_SIZE))
+        if DEFAULT_DATE_WINDOW_SIZE != window_size:
+            LOGGER.info('Using non-default date window size of %d', window_size)
         start_window = bookmark
 
         # NB: We observed records coming through newest->oldest and so

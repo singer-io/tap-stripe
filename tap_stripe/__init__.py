@@ -518,9 +518,17 @@ def sync_sub_stream(sub_stream_name,
         acct_id = Context.config.get('account_id')
         # Balance transaction history with a payout id param
         # provides the link of transactions to payouts
-        object_list = stripe.BalanceTransaction.list(limit=100,
-                                                     stripe_account=acct_id,
-                                                     payout=payout_id)
+        if 'automatic' in parent_obj and parent_obj['automatic']:
+            object_list = stripe.BalanceTransaction.list(limit=100,
+                                                         stripe_account=acct_id,
+                                                         payout=payout_id)
+        else:
+            # According to the API docs balance history is only available
+            # for automatic stripe payouts.
+            # https://stripe.com/docs/api/balance/balance_history#balance_history-payout
+            LOGGER.info('Skipping retrieval of balance history for manual payout %s',
+                        payout_id)
+            return
     else:
         raise Exception("Attempted to sync substream that is not implemented: {}"
                         .format(sub_stream_name))

@@ -533,9 +533,56 @@ def sync_sub_stream(sub_stream_name,
         raise Exception("Attempted to sync substream that is not implemented: {}"
                         .format(sub_stream_name))
 
+    substream_count = 0
+    expected_count = None
+    # The following code arose because we encountered a bug in the API
+    # whereby we enter an infinite loop based on what appears to be bad
+    # API behavior on Stripe's end, which is [acknowledged by their
+    # team][1]
+    #
+    # [1]: https://github.com/stripe/stripe-python/issues/567#issuecomment-490957400
+    #
+    # Our workaround is to rely on the `total_count` of the object_list if
+    # we have it (in the case of the affected sub stream,
+    # `invoice_line_items`, it has that attribute. Presumably they all
+    # have it but the following code was written out of an abundance of
+    # caution.) to track whether we've emitted more records than the API
+    # told us it had. This may be brittle but we'll have to prove that out
+    # in the wild. To make it as robust as possible we're currently
+    # restricting it to the `invoice_line_items` substream only. If it
+    # were to prove useful elsewhere we will need to increase the
+    # complexity of the ValueError generated in the event of an infinite
+    # loop to emit other urls.
+    if (sub_stream_name == 'invoice_line_items'
+        and hasattr(object_list, 'total_count')):
+        LOGGER.debug((
+            "Will verify substream sync using the object_list's"
+            " total_count."))
+        expected_count = object_list.total_count
+    else:
+        LOGGER.debug((
+            "Will not verify substream sync because object_list "
+            "has no total_count attribute or is not "
+            "invoice_line_items substream."))
+
     with Transformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
         iterator = get_object_list_iterator(object_list)
         for sub_stream_obj in iterator:
+            if expected_count:
+                substream_count += 1
+                if expected_count < substream_count:
+                    raise ValueError((
+                        "Infinite loop detected. Please contact Stripe "
+                        "support with the following curl request: `curl "
+                        "-v -H 'Stripe-Account: <redacted>' -H "
+                        "'Stripe-Version: {}' -u '<redacted>:' -G "
+                        "--data-urlencode 'limit=10' "
+                        "https://api.stripe.com/v1/invoices/{}/lines`. "
+                        "You can reference the following Github issue "
+                        "in your conversation with Stripe support: "
+                        "https://github.com/stripe/stripe-python/issues/567#issuecomment-490957400"
+                    ).format(stripe.api_version,
+                             parent_obj.id))
             obj_ad_dict = sub_stream_obj.to_dict_recursive()
 
             if sub_stream_name == "invoice_line_items":

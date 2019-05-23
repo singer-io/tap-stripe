@@ -500,9 +500,7 @@ def get_object_list_iterator(object_list):
         return [object_list]
     return object_list
 
-def sync_sub_stream(sub_stream_name,
-                    parent_obj,
-                    updates=False):
+def sync_sub_stream(sub_stream_name, parent_obj, updates=False):
     """
     Given a parent object, retrieve its values for the specified substream.
     """

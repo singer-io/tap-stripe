@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.2.8
+  * Add subsciption and subscription_item to line_item PK [#28](https://github.com/singer-io/tap-stripe/pull/28)
+
 ## 1.2.0
   * Add `payout_transactions` stream and add date windowing to fix bookmarking [#23](https://github.com/singer-io/tap-stripe/pull/23)
 

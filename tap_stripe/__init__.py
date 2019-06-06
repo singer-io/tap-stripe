@@ -38,7 +38,8 @@ STREAM_SDK_OBJECTS = {
     'payouts': {'sdk_object': stripe.Payout, 'key_properties': ['id']},
     # Each Payout has many transactions that are not accounted
     # for unless you ask for balance/history with a payout id
-    'payout_transactions': {'sdk_object': stripe.BalanceTransaction, 'key_properties': ['id']}
+    'payout_transactions': {'sdk_object': stripe.BalanceTransaction, 'key_properties': ['id']},
+    'disputes': {'sdk_object': stripe.Dispute, 'key_properties': ['id']}
 }
 
 # I think this can be merged into the above structure
@@ -59,6 +60,7 @@ STREAM_REPLICATION_KEY = {
     # invoice_line_items is bookmarked based on parent invoices,
     # no replication key value on the object itself
     #'invoice_line_items': 'date'
+    'disputes': 'created',
 }
 
 STREAM_TO_TYPE_FILTER = {

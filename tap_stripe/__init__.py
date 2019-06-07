@@ -385,7 +385,7 @@ def epoch_to_dt(epoch_ts):
     return datetime.fromtimestamp(epoch_ts)
 
 # pylint: disable=too-many-locals
-def sync_stream(stream_name):
+def sync_stream(stream_name, table_name=None):
     """
     Sync each stream, looking for newly created records. Updates are captured by events stream.
     """
@@ -457,6 +457,7 @@ def sync_stream(stream_name):
 
                     singer.write_record(stream_name,
                                         rec,
+                                        stream_alias=table_name,
                                         time_extracted=extraction_time)
 
                     Context.new_counts[stream_name] += 1
@@ -728,8 +729,9 @@ def sync():
     # Write all schemas and init count to 0
     for catalog_entry in Context.catalog['streams']:
         stream_name = catalog_entry["tap_stream_id"]
+        table_name = catalog_entry.get("table_name")
         if Context.is_selected(stream_name):
-            singer.write_schema(stream_name,
+            singer.write_schema(table_name if table_name else stream_name,
                                 catalog_entry['schema'],
                                 catalog_entry['key_properties'])
 
@@ -741,7 +743,7 @@ def sync():
         stream_name = catalog_entry['tap_stream_id']
         # Sync records for stream
         if Context.is_selected(stream_name) and not Context.is_sub_stream(stream_name):
-            sync_stream(stream_name)
+            sync_stream(stream_name, table_name=table_name)
             # This prevents us from retrieving 'events.events'
             if STREAM_TO_TYPE_FILTER.get(stream_name):
                 sync_event_updates(stream_name)

@@ -73,6 +73,7 @@ STREAM_TO_TYPE_FILTER = {
     'subscriptions': {'type': 'customer.subscription.*', 'object': 'subscription'},
     'payouts': {'type': 'payout.*', 'object': 'transfer'},
     'transfers': {'type': 'transfer.*', 'object': 'transfer'},
+    'disputes': {'type': 'charge.dispute.*', 'object': 'dispute'}
     # Cannot find evidence of these streams having events associated:
     # subscription_items - appears on subscriptions events
     # balance_transactions - seems to be immutable

@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.3.0
+  * Add `disputes` stream [#29](https://github.com/singer-io/tap-stripe/pull/29)
+
 ## 1.2.8
   * Add subsciption and subscription_item to line_item PK [#28](https://github.com/singer-io/tap-stripe/pull/28)
 

@@ -21,6 +21,12 @@
         "integer"
       ]
     },
+    "balance_transaction": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
     "balance_transactions": {
       "type": [
         "null",
@@ -166,6 +172,13 @@
           "type": ["null", "integer"]
         }
       }
+    },
+    "evidence_due_by": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "date-time"
     },
     "is_charge_refundable": {
       "type": ["null", "boolean"]

@@ -734,6 +734,7 @@ def sync():
     # Loop over streams in catalog
     for catalog_entry in Context.catalog['streams']:
         stream_name = catalog_entry['tap_stream_id']
+        table_name = catalog_entry.get('table_name')
         # Sync records for stream
         if Context.is_selected(stream_name) and not Context.is_sub_stream(stream_name):
             sync_stream(stream_name, table_name=table_name)

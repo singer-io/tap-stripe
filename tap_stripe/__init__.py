@@ -499,6 +499,11 @@ def get_object_list_iterator(object_list):
     if object_list is None:
         return []
     if hasattr(object_list, "auto_paging_iter"):
+        # If this is an auto_paging_iter, we want to page by 100. This
+        # grabs more data at once, and mitigates an infinite loop scenario
+        # where legacy line_items may have the same id of `sub_1234abc`,
+        # which breaks pagination. (see below)
+        object_list._retrieve_params["limit"] = 100
         return object_list.auto_paging_iter()
     if isinstance(object_list, dict):
         return [object_list]

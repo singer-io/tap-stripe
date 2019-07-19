@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.3.3
+  * Mitigate potential for infinite loop by increasing `limit` on second request for sub-objects (e.g., `invoice_line_items`) [#39](https://github.com/singer-io/tap-stripe/pull/39)
+
 ## 1.3.0
   * Add `disputes` stream [#29](https://github.com/singer-io/tap-stripe/pull/29)
 

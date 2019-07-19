@@ -499,10 +499,22 @@ def get_object_list_iterator(object_list):
     if object_list is None:
         return []
     if hasattr(object_list, "auto_paging_iter"):
+        # If this is an auto_paging_iter, we want to page by 100. This
+        # grabs more data at once, and mitigates an infinite loop scenario
+        # where legacy line_items may have the same id of `sub_1234abc`,
+        # which breaks pagination. (see below)
+        object_list._retrieve_params["limit"] = 100 # pylint:disable=protected-access
         return object_list.auto_paging_iter()
     if isinstance(object_list, dict):
         return [object_list]
     return object_list
+
+# For Cycle Detection Below: In order to reliably detect cycles with
+# sub-stream objects while mitigating the impact by requesting 100 on the
+# second request, we need to check the expected count plus the initial
+# set, against the actual count. If this is greater, we can reliably say
+# we are in a cycle.
+INITIAL_SUB_STREAM_OBJECT_LIST_LENGTH = 10
 
 def sync_sub_stream(sub_stream_name, parent_obj, updates=False):
     """
@@ -569,13 +581,16 @@ def sync_sub_stream(sub_stream_name, parent_obj, updates=False):
         for sub_stream_obj in iterator:
             if expected_count:
                 substream_count += 1
-                if expected_count < substream_count:
+                if (expected_count + INITIAL_SUB_STREAM_OBJECT_LIST_LENGTH) < substream_count:
+                    # If we detect that the total records are greater than
+                    # the first page length (10) plus the expected total,
+                    # we can confidently say we are in an infinite loop.
                     raise ValueError((
                         "Infinite loop detected. Please contact Stripe "
                         "support with the following curl request: `curl "
                         "-v -H 'Stripe-Account: <redacted>' -H "
                         "'Stripe-Version: {}' -u '<redacted>:' -G "
-                        "--data-urlencode 'limit=10' "
+                        "--data-urlencode 'limit=100' "
                         "https://api.stripe.com/v1/invoices/{}/lines`. "
                         "You can reference the following Github issue "
                         "in your conversation with Stripe support: "

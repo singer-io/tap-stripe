@@ -704,7 +704,7 @@ def sync_event_updates(stream_name):
                 # `unique_line_item_id` field we will copy in
 
                 # Does this events_obj have line items?
-                if events_obj.get('data',{}).get('object',{}).get('lines',{}).get('data'):
+                if events_obj.get('data', {}).get('object', {}).get('lines', {}).get('data'):
 
                     invoice_obj = events_obj.get('data').get('object')
                     line_items = invoice_obj.get('lines').get('data')

@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.3.4
+  * Filter out invoice line items with null ids in the Events stream because we don't know what to use as the primary key in those cases [#40](https://github.com/singer-io/tap-stripe/pull/40)
+
 ## 1.3.3
   * Mitigate potential for infinite loop by increasing `limit` on second request for sub-objects (e.g., `invoice_line_items`) [#39](https://github.com/singer-io/tap-stripe/pull/39)
 

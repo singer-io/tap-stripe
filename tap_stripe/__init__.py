@@ -699,35 +699,15 @@ def sync_event_updates(stream_name):
                     Context.get_catalog_entry(stream_name)['metadata']
                 )
 
-                # Sometimes events for invoices have invoice line items
-                # with null ids, but there is an undocumented
-                # `unique_line_item_id` field we will copy in
-
-                # Does this events_obj have line items?
+                # Filter out line items with null ids
                 if events_obj.get('data', {}).get('object', {}).get('lines', {}).get('data'):
 
                     invoice_obj = events_obj.get('data').get('object')
                     line_items = invoice_obj.get('lines').get('data')
+                    filtered_line_items = [line_item for line_item in line_items
+                                           if line_item.get('id')]
 
-                    for line_item in line_items:
-                        if line_item.get('id') is None:
-                            if line_item.get('unique_line_item_id'):
-                                LOGGER.info(
-                                    ('WARNING: Found an event with '
-                                     'nested objects(s) with null IDs: '
-                                     'Event ID: %s, Invoice ID: %s'),
-                                    events_obj.get('id'),
-                                    invoice_obj.get('id')
-                                )
-                                # If the line_item object has a null id, set it
-                                # equal the undocumented `unique_line_item_id`
-                                # field if it exists.
-                                line_item['id'] = line_item.get('unique_line_item_id')
-                            else:
-                                raise Exception(('Encountered an event object '
-                                                 'with nested object(s) with '
-                                                 'null IDs and no suitable '
-                                                 'replacement identifier'))
+                    invoice_obj['lines']['data'] = filtered_line_items
 
                 rec = unwrap_data_objects(event_resource_obj.to_dict_recursive())
                 rec = reduce_foreign_keys(rec, stream_name)

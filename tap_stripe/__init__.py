@@ -699,15 +699,17 @@ def sync_event_updates(stream_name):
                     Context.get_catalog_entry(stream_name)['metadata']
                 )
 
+
                 # Filter out line items with null ids
-                if events_obj.get('data', {}).get('object', {}).get('lines', {}).get('data'):
+                if isinstance(events_obj.get('data').get('object'), stripe.Invoice):
+                    invoice_obj = events_obj.get('data',{}).get('object',{})
+                    line_items = invoice_obj.get('lines',{}).get('data')
 
-                    invoice_obj = events_obj.get('data').get('object')
-                    line_items = invoice_obj.get('lines').get('data')
-                    filtered_line_items = [line_item for line_item in line_items
-                                           if line_item.get('id')]
+                    if line_items:
+                        filtered_line_items = [line_item for line_item in line_items
+                                               if line_item.get('id')]
 
-                    invoice_obj['lines']['data'] = filtered_line_items
+                        invoice_obj['lines']['data'] = filtered_line_items
 
                 rec = unwrap_data_objects(event_resource_obj.to_dict_recursive())
                 rec = reduce_foreign_keys(rec, stream_name)

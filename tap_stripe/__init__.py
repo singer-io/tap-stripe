@@ -699,11 +699,10 @@ def sync_event_updates(stream_name):
                     Context.get_catalog_entry(stream_name)['metadata']
                 )
 
-
                 # Filter out line items with null ids
                 if isinstance(events_obj.get('data').get('object'), stripe.Invoice):
-                    invoice_obj = events_obj.get('data',{}).get('object',{})
-                    line_items = invoice_obj.get('lines',{}).get('data')
+                    invoice_obj = events_obj.get('data', {}).get('object', {})
+                    line_items = invoice_obj.get('lines', {}).get('data')
 
                     if line_items:
                         filtered_line_items = [line_item for line_item in line_items

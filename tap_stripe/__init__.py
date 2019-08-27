@@ -730,7 +730,7 @@ def sync_event_updates(stream_name):
                         Context.updated_counts[stream_name] += 1
 
                         # Delete events should be synced but not their subobjects
-                        if events_obj.get('type', '').endswith('deleted'):
+                        if events_obj.get('type', '').endswith('.deleted'):
                             continue
 
                         if sub_stream_name and Context.is_selected(sub_stream_name):

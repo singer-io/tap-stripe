@@ -2,6 +2,7 @@
 
 ## 1.3.5
   * Add "string" as a valid type for `plan` subschema, to support historical data [#42](https://github.com/singer-io/tap-stripe/pull/42)
+  * `Deleted` events will not cause the tap to request their sub-objects to prevent 404 errors [#41](https://github.com/singer-io/tap-stripe/pull/41)
 
 ## 1.3.4
   * Filter out invoice line items with null ids in the Events stream because we don't know what to use as the primary key in those cases [#40](https://github.com/singer-io/tap-stripe/pull/40)

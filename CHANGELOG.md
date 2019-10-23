@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.3.6
+  * Use inclusive comparison for comparing bookmarks in the initial sync phase. [#44](https://github.com/singer-io/tap-stripe/pull/44)
+
 ## 1.3.5
   * Add "string" as a valid type for `plan` subschema, to support historical data [#42](https://github.com/singer-io/tap-stripe/pull/42)
   * `Deleted` events will not cause the tap to request their sub-objects to prevent 404 errors [#41](https://github.com/singer-io/tap-stripe/pull/41)

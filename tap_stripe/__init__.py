@@ -447,8 +447,8 @@ def sync_stream(stream_name):
                 stream_obj_created = rec[replication_key]
                 rec['updated'] = stream_obj_created
 
-                # sync stream if object is greater than the bookmark
-                if stream_obj_created > stream_bookmark:
+                # sync stream if object is greater than or equal to the bookmark
+                if stream_obj_created >= stream_bookmark:
                     rec = transformer.transform(rec,
                                                 Context.get_catalog_entry(stream_name)['schema'],
                                                 stream_metadata)

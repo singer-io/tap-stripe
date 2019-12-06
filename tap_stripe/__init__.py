@@ -437,10 +437,11 @@ def sync_stream(stream_name):
         # observed a short lag period between when records are created and
         # when they are available via the API, so these streams will need
         # a short lookback window.
-        # TODO: This may be an issue for other streams' created_at
-        # entries, but to keep the surface small, doing this only for
-        # immutable streams at first to confirm the suspicion.
         if stream_name in IMMUTABLE_STREAMS:
+            # pylint:disable=fixme
+            # TODO: This may be an issue for other streams' created_at
+            # entries, but to keep the surface small, doing this only for
+            # immutable streams at first to confirm the suspicion.
             start_window -= IMMUTABLE_STREAM_LOOKBACK
 
         # NB: We observed records coming through newest->oldest and so

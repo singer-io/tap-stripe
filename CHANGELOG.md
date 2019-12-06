@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.3.7
+  * Add 5 minute lookback window on `events` and `balance_transactions` requests to catch an edge case. [#45](https://github.com/singer-io/tap-stripe/pull/45)
+
 ## 1.3.6
   * Use inclusive comparison for comparing bookmarks in the initial sync phase. [#44](https://github.com/singer-io/tap-stripe/pull/44)
 

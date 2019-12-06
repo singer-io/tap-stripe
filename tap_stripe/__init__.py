@@ -87,6 +87,10 @@ SUB_STREAMS = {
     'payouts': 'payout_transactions'
 }
 
+# NB: These streams will only sync through once for creates, never updates.
+IMMUTABLE_STREAMS = {'balance_transactions', 'events'}
+IMMUTABLE_STREAM_LOOKBACK = 300 # 5 min in epoch time, Stripe accuracy is to the second
+
 LOGGER = singer.get_logger()
 
 DEFAULT_DATE_WINDOW_SIZE = 30 #days
@@ -428,6 +432,17 @@ def sync_stream(stream_name):
         if DEFAULT_DATE_WINDOW_SIZE != window_size:
             LOGGER.info('Using non-default date window size of %d', window_size)
         start_window = bookmark
+
+        # NB: Immutable streams are never synced for updates. We've
+        # observed a short lag period between when records are created and
+        # when they are available via the API, so these streams will need
+        # a short lookback window.
+        if stream_name in IMMUTABLE_STREAMS:
+            # pylint:disable=fixme
+            # TODO: This may be an issue for other streams' created_at
+            # entries, but to keep the surface small, doing this only for
+            # immutable streams at first to confirm the suspicion.
+            start_window -= IMMUTABLE_STREAM_LOOKBACK
 
         # NB: We observed records coming through newest->oldest and so
         # date-windowing was added and the tap only bookmarks after it has

@@ -554,7 +554,7 @@
                   "properties": {}
                 },
                 "masterpass": {
-                  "type": ["null", "object"]
+                  "type": ["null", "object"],
                   "properties": {
                     "billing_address": {
                       "type": ["null", "object"],

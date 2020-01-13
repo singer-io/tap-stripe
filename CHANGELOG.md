@@ -1,5 +1,8 @@
 # Changelog
 
+** 1.4.0
+  * Added the `payment_method_details` field to the charges stream. [#49](https://github.com/singer-io/tap-stripe/pull/49)
+
 ## 1.3.7
   * Add 5 minute lookback window on `events` and `balance_transactions` requests to catch an edge case. [#45](https://github.com/singer-io/tap-stripe/pull/45)
 

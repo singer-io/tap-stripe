@@ -21,8 +21,8 @@ jobs:
           name: 'JSON Validator'
           command: |
             source /usr/local/share/virtualenvs/tap-tester/bin/activate
-            stitch-validate-json ~/.virtualenvs/tap-stripe/lib/python3.5/site-packages/tap_stripe/schemas/*.json
-            stitch-validate-json ~/.virtualenvs/tap-stripe/lib/python3.5/site-packages/tap_stripe/schemas/shared/*.json
+            stitch-validate-json /usr/local/share/virtualenvs/tap-stripe/lib/python3.5/site-packages/tap_stripe/schemas/*.json
+            stitch-validate-json /usr/local/share/virtualenvs/tap-stripe/lib/python3.5/site-packages/tap_stripe/schemas/shared/*.json
       - add_ssh_keys
       - run:
           name: 'Integration Tests'

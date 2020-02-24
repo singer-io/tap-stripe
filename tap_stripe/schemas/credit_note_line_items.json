@@ -1,0 +1,93 @@
+{
+    "type": [
+      "null",
+      "object"
+    ],
+    "properties": {
+      "amount": {
+        "type": [
+          "null",
+          "integer"
+        ]
+      },
+      "description": {
+        "type": [
+          "null",
+          "string"
+        ]
+      },
+      "discount_amount": {
+        "type": [
+          "null",
+          "integer"
+        ]
+      },
+      "id": {
+        "type": [
+          "null",
+          "string"
+        ]
+      },
+      "invoice_line_item": {
+        "type": [
+          "null",
+          "string"
+        ]
+      },
+      "livemode": {
+        "type": [
+          "null",
+          "boolean"
+        ]
+      },
+      "quantity": {
+        "type": [
+          "null",
+          "integer"
+        ]
+      },
+      "tax_amounts": {
+        "type": [
+          "null",
+          "array"
+        ],
+        "items": {
+          "type": [
+            "null",
+            "object"
+          ]
+        }
+      },
+      "tax_rates": {
+        "type": [
+          "null",
+          "array"
+        ],
+        "items": {
+          "type": [
+            "null",
+            "object"
+          ]
+        }
+      },
+      "type": {
+        "type": [
+          "null",
+          "string"
+        ]
+      },
+      "unit_amount": {
+        "type": [
+          "null",
+          "integer"
+        ]
+      },
+      "unit_amount_decimal": {
+        "type": [
+          "null",
+          "number"
+        ]
+      }
+    }
+  }
+  

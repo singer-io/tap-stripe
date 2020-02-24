@@ -21,6 +21,8 @@ STREAM_SDK_OBJECTS = {
     'charges': {'sdk_object': stripe.Charge, 'key_properties': ['id']},
     'events': {'sdk_object': stripe.Event, 'key_properties': ['id']},
     'customers': {'sdk_object': stripe.Customer, 'key_properties': ['id']},
+    'customer_balance_transactions': {'sdk_object': stripe.CustomerBalanceTransaction, 
+                                      'key_properties': ['id']},
     'credit_notes': {'sdk_object': stripe.CreditNote, 'key_properties': ['id']},
     'credit_note_line_items': {'sdk_object': stripe.CreditNoteLineItem, 'key_properties': ['id']},
     'plans': {'sdk_object': stripe.Plan, 'key_properties': ['id']},
@@ -62,6 +64,7 @@ STREAM_REPLICATION_KEY = {
     #'invoice_line_items': 'date'
     # credit_notes is bookmarked based on parent invoices
     # credit_note_line_items is bookmarked based on parent credit notes
+    # customer_balance_transactions is bookmarked on parent customers
     'disputes': 'created',
     'products': 'created',
 }
@@ -88,6 +91,7 @@ STREAM_TO_TYPE_FILTER = {
 SUB_STREAMS = {
     'subscriptions': ['subscription_items'],
     'credit_notes': ['credit_note_line_items'], # NB: credit notes is substream of invoices
+    'customers': ['customer_balance_transactions'],
     'invoices': ['invoice_line_items', 'credit_notes'],
     'payouts': ['payout_transactions']
 }
@@ -548,11 +552,15 @@ def sync_sub_stream(sub_stream_name, parent_obj, updates=False):
     if sub_stream_name == "credit_notes":
         invoice_id = parent_obj['id']
         object_list = stripe.CreditNote.list(limit=100, invoice=invoice_id)
+        # credit_note_line_items is a substream of credit_notes
         if Context.is_selected('credit_note_line_items'):
             for obj in object_list:
                 sync_sub_stream('credit_note_line_items', obj, updates=True)
     elif sub_stream_name == "credit_note_line_items":
         object_list = parent_obj.lines
+    elif sub_stream_name == "customer_balance_transactions":
+        customer_id = parent_obj['id']
+        object_list = stripe.Customer.list_balance_transactions(customer_id, limit=100)
     elif sub_stream_name == "invoice_line_items":
         object_list = parent_obj.lines
     elif sub_stream_name == "subscription_items":
@@ -634,6 +642,8 @@ def sync_sub_stream(sub_stream_name, parent_obj, updates=False):
                 obj_ad_dict["invoice"] = parent_obj.id
             elif sub_stream_name == "credit_note_line_items":
                 obj_ad_dict['credit_note'] = parent_obj.id
+            elif sub_stream_name == "customer_balance_transactions":
+                obj_ad_dict['customer'] = parent_obj.id
             elif sub_stream_name == "invoice_line_items":
                 # Synthetic addition of a key to the record we sync
                 obj_ad_dict["invoice"] = parent_obj.id

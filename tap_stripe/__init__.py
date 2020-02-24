@@ -632,6 +632,8 @@ def sync_sub_stream(sub_stream_name, parent_obj, updates=False):
 
             if sub_stream_name == "credit_notes":
                 obj_ad_dict["invoice"] = parent_obj.id
+            elif sub_stream_name == "credit_note_line_items":
+                obj_ad_dict['credit_note'] = parent_obj.id
             elif sub_stream_name == "invoice_line_items":
                 # Synthetic addition of a key to the record we sync
                 obj_ad_dict["invoice"] = parent_obj.id

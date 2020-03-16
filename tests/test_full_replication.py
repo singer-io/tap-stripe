@@ -6,7 +6,7 @@ import json
 from tap_tester import menagerie, runner
 
 from tap_tester.scenario import SCENARIOS
-from tap_tester.suites.stripe.base import BaseTapTest
+from base import BaseTapTest
 
 
 class FullReplicationTest(BaseTapTest):

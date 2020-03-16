@@ -7,7 +7,7 @@ from datetime import time, timedelta
 import stripe as stripe_client
 
 from tap_tester import menagerie
-from tap_tester.suites.stripe.base import BaseTapTest
+from base import BaseTapTest
 
 
 midnight = int(dt.combine(dt.today(), time.min).timestamp())

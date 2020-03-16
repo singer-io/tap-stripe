@@ -11,8 +11,8 @@ from dateutil.parser import parse
 
 from tap_tester import menagerie, runner
 from tap_tester.scenario import SCENARIOS
-from tap_tester.suites.stripe.base import BaseTapTest
-from tap_tester.suites.stripe.util_stripe import \
+from base import BaseTapTest
+from util_stripe import \
     create_object, update_object, delete_object, get_hidden_objects, activate_tracking
 
 

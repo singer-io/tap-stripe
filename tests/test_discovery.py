@@ -6,7 +6,7 @@ import re
 from tap_tester import menagerie
 
 from tap_tester.scenario import SCENARIOS
-from tap_tester.suites.stripe.base import BaseTapTest
+from base import BaseTapTest
 
 
 class DiscoveryTest(BaseTapTest):

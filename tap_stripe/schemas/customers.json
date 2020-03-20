@@ -76,6 +76,7 @@
       }
     },
     "sources": {
+      "anyOf": [
         {
           "type": [
             "null",
@@ -86,6 +87,14 @@
           }
         },
         {
+          "type": [
+            "null",
+            "object"
+          ],
+          "properties": {
+            "$ref" : "shared/source.json#/"
+          }
+        },
         {
           "type": [
             "null",
@@ -115,6 +124,7 @@
             }
           }
         }
+      ]
     },
     "delinquent": {
       "type": [

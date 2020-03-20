@@ -86,6 +86,35 @@
           }
         },
         {
+        {
+          "type": [
+            "null",
+            "object"
+          ],
+          "properties": {
+            "object": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "has_more": {
+              "type": [
+                "null",
+                "boolean"
+              ]
+            },
+            "url": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "data": {
+              "$ref" : "shared/source.json#/"
+            }
+          }
+        }
     },
     "delinquent": {
       "type": [

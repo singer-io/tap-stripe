@@ -11,7 +11,6 @@ jobs:
             python3 -mvenv /usr/local/share/virtualenvs/tap-stripe
             source /usr/local/share/virtualenvs/tap-stripe/bin/activate
             pip install -U 'pip<19.2' setuptools
-            pip install .[dev]
             pip install .[test]
       - run:
           name: 'pylint'

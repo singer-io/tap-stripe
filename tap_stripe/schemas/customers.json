@@ -76,6 +76,16 @@
       }
     },
     "sources": {
+        {
+          "type": [
+            "null",
+            "array"
+          ],
+          "items": {
+            "$ref" : "shared/source.json#/"
+          }
+        },
+        {
     },
     "delinquent": {
       "type": [

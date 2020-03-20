@@ -662,6 +662,18 @@ def should_sync_event(events_obj, object_type, id_to_created_map):
         id_to_created_map[event_resource_id] = events_obj.created
     return should_sync
 
+def recursive_to_dict(some_obj):
+    if isinstance(some_obj, stripe.stripe_object.StripeObject):
+        return recursive_to_dict(dict(some_obj))
+
+    if isinstance(some_obj, list):
+        return [recursive_to_dict(item) for item in some_obj]
+
+    if isinstance(some_obj, dict):
+        return {key: recursive_to_dict(value) for key, value in some_obj.items()}
+
+    # Else just return
+    return some_obj
 
 def sync_event_updates(stream_name):
     '''
@@ -728,7 +740,8 @@ def sync_event_updates(stream_name):
 
                         invoice_obj['lines']['data'] = filtered_line_items
 
-                rec = unwrap_data_objects(event_resource_obj.to_dict_recursive())
+                rec = recursive_to_dict(events_obj)
+                rec = unwrap_data_objects(rec)
                 rec = reduce_foreign_keys(rec, stream_name)
                 rec["updated"] = events_obj.created
                 rec = transformer.transform(

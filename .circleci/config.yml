@@ -30,6 +30,7 @@ jobs:
             aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/sandbox dev_env.sh
             source dev_env.sh
             source /usr/local/share/virtualenvs/tap-tester/bin/activate
+            pip install 'stripe==2.42.0'
             run-test --tap=tap-stripe \
                        --target=target-stitch \
                        --orchestrator=stitch-orchestrator \

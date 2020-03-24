@@ -46,18 +46,18 @@ class BaseTapTest(unittest.TestCase):
         """Configuration properties required for the tap."""
         return_value = {
             'start_date': dt.strftime(dt.today(), "%Y-%m-%dT00:00:00Z"),
-            #'2017-07-01 00:00:00',
             'account_id': os.getenv('TAP_STRIPE_ACCOUNT_ID'),
         }
 
-        if original:
-            return return_value
-
-        # This test needs the new connections start date to be larger than the default
-        assert self.start_date > return_value["start_date"]
-
-        return_value["start_date"] = self.start_date
         return return_value
+        # if original:
+        #     return return_value
+        
+        # # This test needs the new connections start date to be larger than the default
+        # assert self.start_date > return_value["start_date"]
+
+        # return_value["start_date"] = self.start_date
+        # return return_value
 
     @staticmethod
     def get_credentials():

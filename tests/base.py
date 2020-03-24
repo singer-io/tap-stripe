@@ -372,4 +372,4 @@ class BaseTapTest(unittest.TestCase):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.start_date = dt.strftime(dt.today() - timedelta(days=1), "%Y-%m-%dT00:00:00Z")
+        self.start_date = dt.strftime(dt.today() - timedelta(days=3), "%Y-%m-%dT00:00:00Z")

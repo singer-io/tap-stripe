@@ -5,6 +5,7 @@ Run discovery for as a prerequisite for most tests
 import unittest
 import os
 from datetime import datetime as dt
+from datetime import timedelta
 from datetime import timezone as tz
 from singer import utils
 
@@ -45,7 +46,7 @@ class BaseTapTest(unittest.TestCase):
     def get_properties(self, original: bool = True):
         """Configuration properties required for the tap."""
         return_value = {
-            'start_date': dt.strftime(dt.today(), "%Y-%m-%dT00:00:01Z"),
+            'start_date': dt.strftime(dt.today(), "%Y-%m-%dT00:00:00Z"),
             'account_id': os.getenv('TAP_STRIPE_ACCOUNT_ID'),
         }
 
@@ -371,4 +372,4 @@ class BaseTapTest(unittest.TestCase):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.start_date = dt.strftime(dt.today(), "%Y-%m-%dT00:00:00Z")
+        self.start_date = dt.strftime(dt.today() - timedelta(days=1), "%Y-%m-%dT00:00:00Z")

@@ -90,6 +90,7 @@ class StartDateTest(BaseTapTest):
                             untested_streams)]
         self.select_all_streams_and_fields(conn_id, our_catalogs, select_all_fields=True)
 
+        # TODO remove the updates, this is unnecessary. Verify with Harvest
         # Update a record for each stream under test prior to the 2nd sync
         first_sync_created, _ = self.split_records_into_created_and_updated(first_sync_records)
         updated = {}  # holds id for updated objects in each stream
@@ -112,7 +113,7 @@ class StartDateTest(BaseTapTest):
 
         # verify that at least one record synced and less records synced than the 1st connection
         self.assertGreater(second_total_records, 0)
-        self.assertLess(second_total_records, first_total_records)
+        self.assertLess(first_total_records, second_total_records)
 
         # validate that all newly created records are greater than the start_date
         for stream in incremental_streams.difference(untested_streams):

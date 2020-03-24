@@ -45,7 +45,7 @@ class BaseTapTest(unittest.TestCase):
     def get_properties(self, original: bool = True):
         """Configuration properties required for the tap."""
         return_value = {
-            'start_date': dt.strftime(dt.today(), "%Y-%m-%d 00:00:00"),
+            'start_date': dt.strftime(dt.today(), "%Y-%m-%d 00:00:00Z"),
             #'2017-07-01 00:00:00',
             'account_id': os.getenv('TAP_STRIPE_ACCOUNT_ID'),
         }

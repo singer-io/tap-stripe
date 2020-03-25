@@ -26,7 +26,7 @@ class BaseTapTest(unittest.TestCase):
     API_LIMIT = 100 # "max-row-limit"
     INCREMENTAL = "INCREMENTAL"
     FULL = "FULL_TABLE"
-    START_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
+    START_DATE_FORMAT = "%Y-%m-%dT00:00:00Z"
 
     @staticmethod
     def name():
@@ -47,7 +47,7 @@ class BaseTapTest(unittest.TestCase):
         """Configuration properties required for the tap."""
             # 'start_date': dt.strftime(dt.today() - timedelta(days=1), "%Y-%m-%dT00:00:00Z"),
         return_value = {
-            'start_date': dt.strftime(dt.today(), "%Y-%m-%dT00:00:00Z"),
+            'start_date': dt.strftime(dt.today() - timedelta(days=1), self.START_DATE_FORMAT),
             'account_id': os.getenv('TAP_STRIPE_ACCOUNT_ID'),
         }
 

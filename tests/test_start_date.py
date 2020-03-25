@@ -113,7 +113,7 @@ class StartDateTest(BaseTapTest):
 
         # verify that at least one record synced and less records synced than the 1st connection
         self.assertGreater(second_total_records, 0)
-        self.assertLess(first_total_records, second_total_records)
+        self.assertLess(second_total_records, first_total_records)
 
         # validate that all newly created records are greater than the start_date
         for stream in incremental_streams.difference(untested_streams):

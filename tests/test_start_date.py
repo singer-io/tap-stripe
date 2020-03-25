@@ -3,12 +3,13 @@ Test that the start_date configuration is respected
 """
 
 from functools import reduce
-
+from datetime import datetime as dt
+from datetime import timedelta
 from dateutil.parser import parse
 
 from tap_tester import menagerie, runner
-
 from tap_tester.scenario import SCENARIOS
+
 from base import BaseTapTest
 from util_stripe import create_object, update_object, delete_object, get_catalogs
 
@@ -77,8 +78,10 @@ class StartDateTest(BaseTapTest):
             # REMOVE CODE TO FIND A START DATE AND ENTER ONE MANUALLY
             raise ValueError
 
-        largest_bookmark = reduce(lambda a, b: a if a > b else b, bookmark_dates)
-        self.start_date = self.local_to_utc(largest_bookmark).strftime(self.START_DATE_FORMAT)
+        # largest_bookmark = reduce(lambda a, b: a if a > b else b, bookmark_dates)
+        # self.start_date = self.local_to_utc(largest_bookmark).strftime(self.START_DATE_FORMAT)
+
+        self.start_date = dt.strftime(dt.today() - timedelta(days=1), self.START_DATE_FORMAT)
 
         # create a new connection with the new start_date
         conn_id = self.create_connection(original_properties=False)
@@ -113,17 +116,17 @@ class StartDateTest(BaseTapTest):
 
         # verify that at least one record synced and less records synced than the 1st connection
         self.assertGreater(second_total_records, 0)
-        self.assertLess(second_total_records, first_total_records)
+        self.assertLess(first_total_records, second_total_records)
 
         # validate that all newly created records are greater than the start_date
         for stream in incremental_streams.difference(untested_streams):
             with self.subTest(stream=stream):
 
-                # verify that each stream has less records than the first connection sync
+                # verify that each stream has less records in the first sync than the second
                 self.assertGreater(
-                    first_sync_record_count.get(stream, 0),
                     second_sync_record_count.get(stream, 0),
-                    msg="second had more records, start_date usage not verified")
+                    first_sync_record_count.get(stream, 0),
+                    msg="first had more records, start_date usage not verified")
 
                 # verify all data from 2nd sync >= start_date
                 target_mark = second_min_bookmarks.get(stream, {"mark": None})

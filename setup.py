@@ -18,9 +18,6 @@ setup(
             'ipdb==0.11',
             'pylint==2.1.1',
             'astroid==2.1.0'
-        ],
-        'test': [
-            'stripe==2.42.0',
         ]
     },
     entry_points="""

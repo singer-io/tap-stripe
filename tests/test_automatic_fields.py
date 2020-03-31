@@ -39,7 +39,7 @@ class MinimumSelectionTest(BaseTapTest):
 
         actual_fields_by_stream = runner.examine_target_output_for_fields()
 
-        for stream in self.expected_streams():
+        for stream in self.expected_streams().difference(untested_streams):
             with self.subTest(stream=stream):
 
                 # verify that you get more than a page of data

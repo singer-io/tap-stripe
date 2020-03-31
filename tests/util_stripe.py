@@ -92,7 +92,7 @@ def create_payment_method(cust, meta_val):
     pay_method = stripe_client.PaymentMethod.create(
         type="card",
         card={
-            "number": "4242{}42".format(round(NOW.timestamp())),
+            "number": "4242424242424242",
             "exp_month": 2,
             "exp_year": dt.today().year + 2,
             "cvc": "666",
@@ -361,14 +361,14 @@ def create_object(stream):
             src = stripe_client.Source.create(
                 type='card',
                 card={
-                    "number": "4242{}42".format(round(NOW.timestamp())),
+                    "number": "4242424242424242",
                     "exp_month": 2,
                     "exp_year": dt.today().year + 2,
                     "cvc": "666",
                 },
                 currency='usd',
                 owner={'email': "senor_bob@stitchdata.com"},
-                metadata=metadata_value
+                metadata=metadata_value,
             )
 
             cust = stripe_client.Customer.create(

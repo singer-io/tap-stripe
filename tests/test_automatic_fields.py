@@ -40,19 +40,19 @@ class MinimumSelectionTest(BaseTapTest):
                 # verify that you get more than a page of data
                 # SKIP THIS ASSERTION FOR STREAMS WHERE YOU CANNOT GET
                 # MORE THAN 1 PAGE OF DATA IN THE TEST ACCOUNT
-                #self.assertGreater(
-                    #record_count_by_stream.get(stream, -1),
-                    #self.expected_metadata().get(stream, {}).get(self.API_LIMIT, 0),
-                    #msg="The number of records is not over the stream max limit")
+                self.assertGreater(
+                    record_count_by_stream.get(stream, -1),
+                    self.expected_metadata().get(stream, {}).get(self.API_LIMIT, 0),
+                    msg="The number of records is not over the stream max limit")
 
                 # verify that only the automatic fields are sent to the target
                 actual = actual_fields_by_stream.get(stream) or set()
                 expected = self.expected_automatic_fields().get(stream, set())
-                #self.assertEqual(
-                    #actual, expected,
-                    #msg=("The fields sent to the target are not the automatic fields. Expected: {}, Actual: {}"
-                         #.format(actual, expected))
-                #)
+                self.assertEqual(
+                    actual, expected,
+                    msg=("The fields sent to the target are not the automatic fields. Expected: {}, Actual: {}"
+                         .format(actual, expected))
+                )
 
 
 SCENARIOS.add(MinimumSelectionTest)

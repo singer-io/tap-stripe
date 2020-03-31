@@ -358,6 +358,7 @@ def create_object(stream):
 
         if stream == 'charges':
             # Create a Source, attach to new customer, then charge them.
+            sleep(0.5)
             src = stripe_client.Source.create(
                 type='card',
                 card={

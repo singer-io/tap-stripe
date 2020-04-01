@@ -3,9 +3,11 @@ Test that with no fields selected for a stream automatic fields are still replic
 """
 
 from tap_tester import runner, menagerie
-
 from tap_tester.scenario import SCENARIOS
+
 from base import BaseTapTest
+from util_stripe import create_object
+
 
 class MinimumSelectionTest(BaseTapTest):
     """Test that with no fields selected for a stream automatic fields are still replicated"""

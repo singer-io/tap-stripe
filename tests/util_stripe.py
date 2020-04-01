@@ -385,11 +385,19 @@ def create_object(stream):
                     owner={'email': "senor_bob@stitchdata.com"},
                     metadata=metadata_value
                 )
-            cust = stripe_client.Customer.create(
-                email="senor_bob@stitchdata.com",
-                source=src['id'],
-                metadata=metadata_value,
-            )
+            try:
+                cust = stripe_client.Customer.create(
+                    email="senor_bob@stitchdata.com",
+                    source=src['id'],
+                    metadata=metadata_value,
+                )
+            except stripe_client.error.InvalidRequestError:
+                sleep(0.5) # We are failing to create this source too often
+                cust = stripe_client.Customer.create(
+                    email="senor_bob@stitchdata.com",
+                    source=src['id'],
+                    metadata=metadata_value,
+                )
             add_to_hidden('customers', cust['id'])
             return client[stream].create(
                 amount=50,

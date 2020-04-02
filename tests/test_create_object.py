@@ -9,7 +9,7 @@ import requests
 from tap_tester import menagerie, runner
 from tap_tester.scenario import SCENARIOS
 from base import BaseTapTest
-from util_stripe import \
+from utils import \
     create_object, delete_object, get_catalogs
 
 

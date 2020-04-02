@@ -1,8 +1,9 @@
 import logging
-import requests
 import random
+import backoff
 from datetime import datetime as dt
 from datetime import time, timedelta
+from time import sleep
 
 import stripe as stripe_client
 
@@ -139,8 +140,7 @@ def rand_len(resp):
     return random.randint(0, len(resp) -1) if len(resp) > 0 else None
 
 
-def list_all_object(stream,
-                    max_limit: int = 100):
+def list_all_object(stream, max_limit: int = 100):
     """Retrieve all records for an object"""
     if stream in client:
         return client[stream].list(limit=max_limit, created={"gte": midnight})
@@ -238,7 +238,11 @@ def standard_create(stream):
 
     return None
 
-
+@backoff.on_exception(backoff.expo,
+                      (stripe_client.error.InvalidRequestError),
+                      max_tries=2,
+                      factor=2,
+                      jitter=None)
 def create_object(stream):
     """Logic for creating a record for a given  object stream"""
     
@@ -443,3 +447,4 @@ def delete_object(stream, oid):
                 logging.info("DELETE FAILED of record {} in stream {}".format(oid, stream))
 
     return None
+

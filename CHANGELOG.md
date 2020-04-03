@@ -1,5 +1,8 @@
 # Changelog
 
+** 1.4.1
+  * Add functionality that recursively converts `StripeObject`s to dictionaries. [#53](https://github.com/singer-io/tap-stripe/pull/53)
+
 ** 1.4.0
   * Added the `payment_method_details` field to the charges stream. [#49](https://github.com/singer-io/tap-stripe/pull/49)
 

@@ -17,7 +17,8 @@ setup(
         'dev': [
             'ipdb==0.11',
             'pylint==2.1.1',
-            'astroid==2.1.0'
+            'astroid==2.1.0',
+            'nose==1.3.7'
         ]
     },
     entry_points="""

@@ -740,7 +740,7 @@ def sync_event_updates(stream_name):
 
                         invoice_obj['lines']['data'] = filtered_line_items
 
-                rec = recursive_to_dict(events_obj)
+                rec = recursive_to_dict(event_resource_obj)
                 rec = unwrap_data_objects(rec)
                 rec = reduce_foreign_keys(rec, stream_name)
                 rec["updated"] = events_obj.created

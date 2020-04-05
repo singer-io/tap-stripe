@@ -1,0 +1,89 @@
+{
+    "type": [
+      "null",
+      "object"
+    ],
+    "properties": {
+      "amount": {
+        "type": [
+          "null",
+          "integer"
+        ]
+      },
+      "created": {
+        "type": [
+          "null",
+          "integer"
+        ],
+        "format": "date-time"
+      },
+      "credit_note": {
+        "type": [
+          "null",
+          "string"
+        ]
+      },
+      "currency": {
+        "type": [
+          "null",
+          "string"
+        ]
+      },
+      "customer": {
+        "type": [
+          "null",
+          "string"
+        ]
+      },
+      "description": {
+        "type": [
+          "null",
+          "string"
+        ]
+      },
+      "ending_balance": {
+        "type": [
+          "null",
+          "integer"
+        ]
+      },
+      "metadata": {
+        "type": [
+          "null",
+          "object"
+        ],
+        "properties": {}
+      },
+      "livemode": {
+        "type": [
+          "null",
+          "boolean"
+        ]
+      },
+      "type": {
+        "type": [
+          "null",
+          "string"
+        ]
+      },
+      "object": {
+        "type": [
+          "null",
+          "string"
+        ]
+      },
+      "invoice": {
+        "type": [
+          "null",
+          "string"
+        ]
+      },
+      "id": {
+        "type": [
+          "null",
+          "string"
+        ]
+      }
+    }
+  }
+  

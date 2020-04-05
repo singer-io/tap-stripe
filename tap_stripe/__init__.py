@@ -21,6 +21,10 @@ STREAM_SDK_OBJECTS = {
     'charges': {'sdk_object': stripe.Charge, 'key_properties': ['id']},
     'events': {'sdk_object': stripe.Event, 'key_properties': ['id']},
     'customers': {'sdk_object': stripe.Customer, 'key_properties': ['id']},
+    'customer_balance_transactions': {'sdk_object': stripe.CustomerBalanceTransaction, 
+                                      'key_properties': ['id']},
+    'credit_notes': {'sdk_object': stripe.CreditNote, 'key_properties': ['id']},
+    'credit_note_line_items': {'sdk_object': stripe.CreditNoteLineItem, 'key_properties': ['id']},
     'plans': {'sdk_object': stripe.Plan, 'key_properties': ['id']},
     'invoices': {'sdk_object': stripe.Invoice, 'key_properties': ['id']},
     'invoice_items': {'sdk_object': stripe.InvoiceItem, 'key_properties': ['id']},
@@ -58,6 +62,9 @@ STREAM_REPLICATION_KEY = {
     # invoice_line_items is bookmarked based on parent invoices,
     # no replication key value on the object itself
     #'invoice_line_items': 'date'
+    # credit_notes is bookmarked based on parent invoices
+    # credit_note_line_items is bookmarked based on parent credit notes
+    # customer_balance_transactions is bookmarked on parent customers
     'disputes': 'created',
     'products': 'created',
 }
@@ -82,9 +89,11 @@ STREAM_TO_TYPE_FILTER = {
 }
 
 SUB_STREAMS = {
-    'subscriptions': 'subscription_items',
-    'invoices': 'invoice_line_items',
-    'payouts': 'payout_transactions'
+    'subscriptions': ['subscription_items'],
+    'credit_notes': ['credit_note_line_items'], # NB: credit notes is substream of invoices
+    'customers': ['customer_balance_transactions'],
+    'invoices': ['invoice_line_items', 'credit_notes'],
+    'payouts': ['payout_transactions']
 }
 
 # NB: These streams will only sync through once for creates, never updates.
@@ -123,7 +132,7 @@ class Context():
 
     @classmethod
     def is_sub_stream(cls, stream_name):
-        for sub_stream_id in SUB_STREAMS.values():
+        for sub_stream_id in sum(SUB_STREAMS.values(), []):
             if stream_name == sub_stream_id:
                 return True
         return False
@@ -223,11 +232,11 @@ def validate_dependencies():
 
     for catalog_entry in Context.catalog['streams']:
         stream_id = catalog_entry['tap_stream_id']
-        sub_stream_id = SUB_STREAMS.get(stream_id)
-        if sub_stream_id:
-            if Context.is_selected(sub_stream_id) and not Context.is_selected(stream_id):
-                # throw error here
-                errs.append(msg_tmpl.format(sub_stream_id, stream_id))
+        for sub_stream_id in SUB_STREAMS.get(stream_id, []):
+            if sub_stream_id:
+                if Context.is_selected(sub_stream_id) and not Context.is_selected(stream_id):
+                    # throw error here
+                    errs.append(msg_tmpl.format(sub_stream_id, stream_id))
 
     if errs:
         raise DependencyException(" ".join(errs))
@@ -411,100 +420,100 @@ def sync_stream(stream_name):
     bookmark = stream_bookmark
 
     # if this stream has a sub_stream, compare the bookmark
-    sub_stream_name = SUB_STREAMS.get(stream_name)
+    for sub_stream_name in SUB_STREAMS.get(stream_name):
 
-    # If there is a sub-stream and its selected, get its bookmark (or the start date if no bookmark)
-    should_sync_sub_stream = sub_stream_name and Context.is_selected(sub_stream_name)
-    if should_sync_sub_stream:
-        sub_stream_bookmark = singer.get_bookmark(Context.state, sub_stream_name, replication_key) \
-            or int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
+        # If there is a sub-stream and its selected, get its bookmark (or the start date if no bookmark)
+        should_sync_sub_stream = sub_stream_name and Context.is_selected(sub_stream_name)
+        if should_sync_sub_stream:
+            sub_stream_bookmark = singer.get_bookmark(Context.state, sub_stream_name, replication_key) \
+                or int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
 
-        # if there is a sub stream, set bookmark to sub stream's bookmark
-        # since we know it must be earlier than the stream's bookmark
-        if sub_stream_bookmark != stream_bookmark:
-            bookmark = sub_stream_bookmark
-    else:
-        sub_stream_bookmark = None
+            # if there is a sub stream, set bookmark to sub stream's bookmark
+            # since we know it must be earlier than the stream's bookmark
+            if sub_stream_bookmark != stream_bookmark:
+                bookmark = sub_stream_bookmark
+        else:
+            sub_stream_bookmark = None
 
-    with Transformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
-        end_time = dt_to_epoch(utils.now())
-        window_size = int(Context.config.get('date_window_size', DEFAULT_DATE_WINDOW_SIZE))
-        if DEFAULT_DATE_WINDOW_SIZE != window_size:
-            LOGGER.info('Using non-default date window size of %d', window_size)
-        start_window = bookmark
+        with Transformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
+            end_time = dt_to_epoch(utils.now())
+            window_size = int(Context.config.get('date_window_size', DEFAULT_DATE_WINDOW_SIZE))
+            if DEFAULT_DATE_WINDOW_SIZE != window_size:
+                LOGGER.info('Using non-default date window size of %d', window_size)
+            start_window = bookmark
 
-        # NB: Immutable streams are never synced for updates. We've
-        # observed a short lag period between when records are created and
-        # when they are available via the API, so these streams will need
-        # a short lookback window.
-        if stream_name in IMMUTABLE_STREAMS:
-            # pylint:disable=fixme
-            # TODO: This may be an issue for other streams' created_at
-            # entries, but to keep the surface small, doing this only for
-            # immutable streams at first to confirm the suspicion.
-            start_window -= IMMUTABLE_STREAM_LOOKBACK
+            # NB: Immutable streams are never synced for updates. We've
+            # observed a short lag period between when records are created and
+            # when they are available via the API, so these streams will need
+            # a short lookback window.
+            if stream_name in IMMUTABLE_STREAMS:
+                # pylint:disable=fixme
+                # TODO: This may be an issue for other streams' created_at
+                # entries, but to keep the surface small, doing this only for
+                # immutable streams at first to confirm the suspicion.
+                start_window -= IMMUTABLE_STREAM_LOOKBACK
 
-        # NB: We observed records coming through newest->oldest and so
-        # date-windowing was added and the tap only bookmarks after it has
-        # gotten through a date window
-        while start_window < end_time:
-            stop_window = dt_to_epoch(epoch_to_dt(start_window) + timedelta(days=window_size))
-            # cut off the last window at the end time
-            if stop_window > end_time:
-                stop_window = end_time
+            # NB: We observed records coming through newest->oldest and so
+            # date-windowing was added and the tap only bookmarks after it has
+            # gotten through a date window
+            while start_window < end_time:
+                stop_window = dt_to_epoch(epoch_to_dt(start_window) + timedelta(days=window_size))
+                # cut off the last window at the end time
+                if stop_window > end_time:
+                    stop_window = end_time
 
-            for stream_obj in paginate(STREAM_SDK_OBJECTS[stream_name]['sdk_object'],
-                                       filter_key, start_window, stop_window):
+                for stream_obj in paginate(STREAM_SDK_OBJECTS[stream_name]['sdk_object'],
+                                        filter_key, start_window, stop_window):
 
-                # get the replication key value from the object
-                rec = unwrap_data_objects(stream_obj.to_dict_recursive())
-                rec = reduce_foreign_keys(rec, stream_name)
-                stream_obj_created = rec[replication_key]
-                rec['updated'] = stream_obj_created
+                    # get the replication key value from the object
+                    rec = unwrap_data_objects(stream_obj.to_dict_recursive())
+                    rec = reduce_foreign_keys(rec, stream_name)
+                    stream_obj_created = rec[replication_key]
+                    rec['updated'] = stream_obj_created
 
-                # sync stream if object is greater than or equal to the bookmark
-                if stream_obj_created >= stream_bookmark:
-                    rec = transformer.transform(rec,
-                                                Context.get_catalog_entry(stream_name)['schema'],
-                                                stream_metadata)
+                    # sync stream if object is greater than or equal to the bookmark
+                    if stream_obj_created >= stream_bookmark:
+                        rec = transformer.transform(rec,
+                                                    Context.get_catalog_entry(stream_name)['schema'],
+                                                    stream_metadata)
 
-                    # At this point, the record has been transformed and so
-                    # any de-selected fields have been pruned. Now, prune off
-                    # any fields that aren't present in the whitelist.
-                    if stream_field_whitelist:
-                        rec = apply_whitelist(rec, stream_field_whitelist)
+                        # At this point, the record has been transformed and so
+                        # any de-selected fields have been pruned. Now, prune off
+                        # any fields that aren't present in the whitelist.
+                        if stream_field_whitelist:
+                            rec = apply_whitelist(rec, stream_field_whitelist)
 
-                    singer.write_record(stream_name,
-                                        rec,
-                                        time_extracted=extraction_time)
+                        singer.write_record(stream_name,
+                                            rec,
+                                            time_extracted=extraction_time)
 
-                    Context.new_counts[stream_name] += 1
+                        Context.new_counts[stream_name] += 1
 
-                # sync sub streams if its selected and the parent object
-                # is greater than its bookmark
-                if should_sync_sub_stream and stream_obj_created > sub_stream_bookmark:
-                    sync_sub_stream(sub_stream_name, stream_obj)
+                    # sync sub streams if its selected and the parent object
+                    # is greater than its bookmark
+                    if should_sync_sub_stream and stream_obj_created > sub_stream_bookmark:
+                        sync_sub_stream(sub_stream_name, stream_obj)
 
-            # Update stream/sub-streams bookmarks as stop window
-            if stop_window > stream_bookmark:
-                stream_bookmark = stop_window
-                singer.write_bookmark(Context.state,
-                                      stream_name,
-                                      replication_key,
-                                      stream_bookmark)
+                # Update stream/sub-streams bookmarks as stop window
+                if stop_window > stream_bookmark:
+                    stream_bookmark = stop_window
+                    singer.write_bookmark(Context.state,
+                                        stream_name,
+                                        replication_key,
+                                        stream_bookmark)
 
-            # the sub stream bookmarks on its parent
-            if should_sync_sub_stream and stop_window > sub_stream_bookmark:
-                sub_stream_bookmark = stop_window
-                singer.write_bookmark(Context.state,
-                                      sub_stream_name,
-                                      replication_key,
-                                      sub_stream_bookmark)
+                # the sub stream bookmarks on its parent
+                if should_sync_sub_stream and stop_window > sub_stream_bookmark:
+                    sub_stream_bookmark = stop_window
+                    singer.write_bookmark(Context.state,
+                                        sub_stream_name,
+                                        replication_key,
+                                        sub_stream_bookmark)
 
-            singer.write_state(Context.state)
+                singer.write_state(Context.state)
 
-            # update window for next iteration
-            start_window = stop_window
+                # update window for next iteration
+                start_window = stop_window
 
     singer.write_state(Context.state)
 
@@ -540,7 +549,19 @@ def sync_sub_stream(sub_stream_name, parent_obj, updates=False):
     """
     extraction_time = singer.utils.now()
 
-    if sub_stream_name == "invoice_line_items":
+    if sub_stream_name == "credit_notes":
+        invoice_id = parent_obj['id']
+        object_list = stripe.CreditNote.list(limit=100, invoice=invoice_id)
+        # credit_note_line_items is a substream of credit_notes
+        if Context.is_selected('credit_note_line_items'):
+            for obj in object_list:
+                sync_sub_stream('credit_note_line_items', obj, updates=True)
+    elif sub_stream_name == "credit_note_line_items":
+        object_list = parent_obj.lines
+    elif sub_stream_name == "customer_balance_transactions":
+        customer_id = parent_obj['id']
+        object_list = stripe.Customer.list_balance_transactions(customer_id, limit=100)
+    elif sub_stream_name == "invoice_line_items":
         object_list = parent_obj.lines
     elif sub_stream_name == "subscription_items":
         # parent_obj.items is a function that returns a dict iterator, so use the attribute
@@ -617,7 +638,13 @@ def sync_sub_stream(sub_stream_name, parent_obj, updates=False):
                              parent_obj.id))
             obj_ad_dict = sub_stream_obj.to_dict_recursive()
 
-            if sub_stream_name == "invoice_line_items":
+            if sub_stream_name == "credit_notes":
+                obj_ad_dict["invoice"] = parent_obj.id
+            elif sub_stream_name == "credit_note_line_items":
+                obj_ad_dict['credit_note'] = parent_obj.id
+            elif sub_stream_name == "customer_balance_transactions":
+                obj_ad_dict['customer'] = parent_obj.id
+            elif sub_stream_name == "invoice_line_items":
                 # Synthetic addition of a key to the record we sync
                 obj_ad_dict["invoice"] = parent_obj.id
             elif sub_stream_name == "payout_transactions":
@@ -703,58 +730,58 @@ def sync_event_updates(stream_name):
 
         for events_obj in response.auto_paging_iter():
             event_resource_obj = events_obj.data.object
-            sub_stream_name = SUB_STREAMS.get(stream_name)
+            for sub_stream_name in SUB_STREAMS.get(stream_name):
 
-            # Check whether we should sync the event based on its created time
-            if not should_sync_event(events_obj,
-                                     STREAM_TO_TYPE_FILTER[stream_name]['object'],
-                                     updated_object_timestamps):
-                continue
+                # Check whether we should sync the event based on its created time
+                if not should_sync_event(events_obj,
+                                        STREAM_TO_TYPE_FILTER[stream_name]['object'],
+                                        updated_object_timestamps):
+                    continue
 
-            # Syncing an event as its the first time we've seen it or its the most recent version
-            with Transformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
-                event_resource_metadata = metadata.to_map(
-                    Context.get_catalog_entry(stream_name)['metadata']
-                )
+                # Syncing an event as its the first time we've seen it or its the most recent version
+                with Transformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
+                    event_resource_metadata = metadata.to_map(
+                        Context.get_catalog_entry(stream_name)['metadata']
+                    )
 
-                # Filter out line items with null ids
-                if isinstance(events_obj.get('data').get('object'), stripe.Invoice):
-                    invoice_obj = events_obj.get('data', {}).get('object', {})
-                    line_items = invoice_obj.get('lines', {}).get('data')
+                    # Filter out line items with null ids
+                    if isinstance(events_obj.get('data').get('object'), stripe.Invoice):
+                        invoice_obj = events_obj.get('data', {}).get('object', {})
+                        line_items = invoice_obj.get('lines', {}).get('data')
 
-                    if line_items:
-                        filtered_line_items = [line_item for line_item in line_items
-                                               if line_item.get('id')]
+                        if line_items:
+                            filtered_line_items = [line_item for line_item in line_items
+                                                if line_item.get('id')]
 
-                        invoice_obj['lines']['data'] = filtered_line_items
+                            invoice_obj['lines']['data'] = filtered_line_items
 
-                rec = unwrap_data_objects(event_resource_obj.to_dict_recursive())
-                rec = reduce_foreign_keys(rec, stream_name)
-                rec["updated"] = events_obj.created
-                rec = transformer.transform(
-                    rec,
-                    Context.get_catalog_entry(stream_name)['schema'],
-                    event_resource_metadata
-                )
+                    rec = unwrap_data_objects(event_resource_obj.to_dict_recursive())
+                    rec = reduce_foreign_keys(rec, stream_name)
+                    rec["updated"] = events_obj.created
+                    rec = transformer.transform(
+                        rec,
+                        Context.get_catalog_entry(stream_name)['schema'],
+                        event_resource_metadata
+                    )
 
-                if events_obj.created >= bookmark_value:
-                    if rec.get('id') is not None:
-                        singer.write_record(stream_name,
-                                            rec,
-                                            time_extracted=extraction_time)
-                        Context.updated_counts[stream_name] += 1
+                    if events_obj.created >= bookmark_value:
+                        if rec.get('id') is not None:
+                            singer.write_record(stream_name,
+                                                rec,
+                                                time_extracted=extraction_time)
+                            Context.updated_counts[stream_name] += 1
 
-                        # Delete events should be synced but not their subobjects
-                        if events_obj.get('type', '').endswith('.deleted'):
-                            continue
+                            # Delete events should be synced but not their subobjects
+                            if events_obj.get('type', '').endswith('.deleted'):
+                                continue
 
-                        if sub_stream_name and Context.is_selected(sub_stream_name):
-                            if event_resource_obj:
-                                sync_sub_stream(sub_stream_name,
-                                                event_resource_obj,
-                                                updates=True)
-            if events_obj.created > max_created:
-                max_created = events_obj.created
+                            if sub_stream_name and Context.is_selected(sub_stream_name):
+                                if event_resource_obj:
+                                    sync_sub_stream(sub_stream_name,
+                                                    event_resource_obj,
+                                                    updates=True)
+                if events_obj.created > max_created:
+                    max_created = events_obj.created
 
         date_window_start = date_window_end
         date_window_end = date_window_end + 604800

@@ -11,6 +11,13 @@
       ],
       "format": "date-time"
     },
+    "created": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "date-time"
+    },
     "next_payment_attempt": {
       "type": [
         "null",
@@ -32,6 +39,12 @@
       "properties": {}
     },
     "charge": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "collection_method": {
       "type": [
         "null",
         "string"
@@ -61,7 +74,61 @@
         "string"
       ]
     },
+    "default_payment_method": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "default_source": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "default_tax_rates": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "items": {
+        "type": [
+          "null",
+          "object"
+        ]
+      }
+    },
+    "total_tax_amounts": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "items": {
+        "type": [
+          "null",
+          "object"
+        ]
+      }
+    },
+    "payment_intent": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
     "amount_paid": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "post_payment_credit_notes_amount": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "pre_payment_credit_notes_amount": {
       "type": [
         "null",
         "integer"
@@ -91,6 +158,18 @@
       "type": [
         "null",
         "string"
+      ]
+    },
+    "status_transitions": {
+      "type": [
+        "null",
+        "object"
+      ]
+    },
+    "subscription_proration_date": {
+      "type": [
+        "null",
+        "integer"
       ]
     },
     "hosted_invoice_url": {
@@ -151,6 +230,12 @@
         "string"
       ]
     },
+    "threshold_reason": {
+      "type": [
+        "null",
+        "object"
+      ]
+    },
     "ending_balance": {
       "type": [
         "null",
@@ -194,6 +279,42 @@
         "string"
       ]
     },
+    "customer_address": {
+      "type": [
+        "null",
+        "object"
+      ]
+    },
+    "customer_email": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "customer_name": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "customer_phone": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "customer_shipping": {
+      "type": [
+        "null",
+        "object"
+      ]
+    },
+    "customer_tax_exempt": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
     "subtotal": {
       "type": [
         "null",
@@ -220,6 +341,18 @@
       },
       "properties": {}
     },
+    "custom_fields": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "items": {
+        "type": [
+          "null",
+          "object"
+        ]
+      }
+    },
     "forgiven": {
       "type": [
         "null",
@@ -245,6 +378,30 @@
       ]
     },
     "currency": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "customer_tax_ids": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "items": {
+        "type": [
+          "null",
+          "object"
+        ]
+      }
+    },
+    "account_country": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "account_name": {
       "type": [
         "null",
         "string"
@@ -280,6 +437,12 @@
         "string"
       ],
       "format": "date-time"
+    },
+    "footer": {
+      "type": [
+        "null",
+        "string"
+      ]
     }
   }
 }

@@ -1,8 +1,5 @@
 # Changelog
 
-** 1.4.2
-  * Revert 1.4.1
-
 ** 1.4.1
   * Add functionality that recursively converts `StripeObject`s to dictionaries. [#53](https://github.com/singer-io/tap-stripe/pull/53)
 

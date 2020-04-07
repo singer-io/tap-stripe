@@ -76,13 +76,20 @@
       }
     },
     "sources": {
-      "type": [
-        "null",
-        "array"
-      ],
-      "items": {
-        "$ref" : "shared/source.json#/"
-      }
+      "anyOf": [
+        {
+          "type": [
+            "null",
+            "array"
+          ],
+          "items": {
+            "$ref" : "shared/source.json#/"
+          }
+        },
+        {
+          "$ref" : "shared/source.json#/"
+        }
+      ]
     },
     "delinquent": {
       "type": [

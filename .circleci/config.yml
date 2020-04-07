@@ -16,13 +16,18 @@ jobs:
           name: 'pylint'
           command: |
             source /usr/local/share/virtualenvs/tap-stripe/bin/activate
-            make test
+            pylint tap_stripe -d missing-docstring,too-many-branches
       - run:
           name: 'JSON Validator'
           command: |
             source /usr/local/share/virtualenvs/tap-tester/bin/activate
             stitch-validate-json /usr/local/share/virtualenvs/tap-stripe/lib/python3.5/site-packages/tap_stripe/schemas/*.json
             stitch-validate-json /usr/local/share/virtualenvs/tap-stripe/lib/python3.5/site-packages/tap_stripe/schemas/shared/*.json
+      - run:
+          name: 'Unit Tests'
+          command: |
+            source /usr/local/share/virtualenvs/tap-stripe/bin/activate
+            nosetests tests/unittests
       - add_ssh_keys
       - run:
           name: 'Integration Tests'

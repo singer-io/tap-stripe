@@ -169,7 +169,7 @@ def configure_stripe_client():
     stripe.max_network_retries = 15
     # Configure client-side network timeout of 1 second
     # https://github.com/stripe/stripe-python/tree/a9a8d754b73ad47bdece6ac4b4850822fa19db4e#configuring-a-client
-    client = stripe.http_client.RequestsClient(timeout=15)
+    client = stripe.http_client.RequestsClient()
     apply_request_timer_to_client(client)
     stripe.default_http_client = client
     # Set stripe logging to INFO level

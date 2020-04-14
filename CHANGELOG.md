@@ -1,5 +1,8 @@
 # Changelog
 
+** 1.4.4
+  * Use the default timeout in the stripe client [#61](https://github.com/singer-io/tap-stripe/pull/61)
+
 ** 1.4.3
   * Revert 1.4.2 changes from #59 [#60](https://github.com/singer-io/tap-stripe/pull/60)
   * Remove invalid and unused schema pieces [#60](https://github.com/singer-io/tap-stripe/pull/60)

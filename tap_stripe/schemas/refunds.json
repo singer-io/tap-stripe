@@ -44,6 +44,12 @@
         "null"
       ]
     },
+  "description": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
     "metadata": {
       "type": [
         "null",
@@ -61,6 +67,12 @@
       "type": [
         "null",
         "string"
+      ]
+    },
+  "failure_reason": {
+      "type": [
+        "string",
+        "null"
       ]
     },
     "receipt_number": {

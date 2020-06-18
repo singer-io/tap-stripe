@@ -35,8 +35,7 @@
       "type": [
         "integer",
         "null"
-      ],
-      "format": "date-time"
+      ]
     },
     "currency": {
       "type": [
@@ -103,8 +102,7 @@
       "type": [
         "integer",
         "null"
-      ],
-      "format": "date-time"
+      ]
     }
   }
 }

@@ -3,20 +3,20 @@
   "properties": {
     "id": {
       "type": [
-        "string",
-        "null"
+        "null",
+        "string"
       ]
     },
     "object": {
       "type": [
-        "string",
-        "null"
+        "null",
+        "string"
       ]
     },
     "amount": {
       "type": [
-        "integer",
-        "null"
+        "null",
+        "integer"
       ]
     },
     "balance_transaction": {
@@ -27,26 +27,27 @@
     },
     "charge": {
       "type": [
-        "string",
-        "null"
+        "null",
+        "string"
       ]
     },
     "created": {
       "type": [
-        "integer",
-        "null"
-      ]
+        "null",
+        "string"
+      ],
+      "format": "date-time"
     },
     "currency": {
       "type": [
-        "string",
-        "null"
+        "null",
+        "string"
       ]
     },
   "description": {
       "type": [
-        "string",
-        "null"
+        "null",
+        "string"
       ]
     },
     "metadata": {
@@ -58,8 +59,8 @@
     },
     "payment_intent": {
       "type": [
-        "string",
-        "null"
+        "null",
+        "string"
       ]
     },
     "reason": {
@@ -70,8 +71,8 @@
     },
   "failure_reason": {
       "type": [
-        "string",
-        "null"
+        "null",
+        "string"
       ]
     },
     "receipt_number": {
@@ -88,8 +89,8 @@
     },
     "status": {
       "type": [
-        "string",
-        "null"
+        "null",
+        "string"
       ]
     },
     "transfer_reversal": {
@@ -100,9 +101,10 @@
     },
     "updated": {
       "type": [
-        "integer",
-        "null"
-      ]
+        "null",
+        "string"
+      ],
+      "format": "date-time"
     }
   }
 }

@@ -18,6 +18,7 @@ REQUIRED_CONFIG_KEYS = [
     "client_secret"
 ]
 STREAM_SDK_OBJECTS = {
+    'accounts': {'sdk_object': stripe.Account, 'key_properties': ['id']},
     'charges': {'sdk_object': stripe.Charge, 'key_properties': ['id']},
     'events': {'sdk_object': stripe.Event, 'key_properties': ['id']},
     'customers': {'sdk_object': stripe.Customer, 'key_properties': ['id']},
@@ -42,6 +43,7 @@ STREAM_SDK_OBJECTS = {
 
 # I think this can be merged into the above structure
 STREAM_REPLICATION_KEY = {
+    'accounts': 'created',
     'charges': 'created',
     'events': 'created',
     'customers': 'created',
@@ -63,6 +65,7 @@ STREAM_REPLICATION_KEY = {
 }
 
 STREAM_TO_TYPE_FILTER = {
+    'accounts': {'type': 'account.*', 'object': 'account'},
     'charges': {'type': 'charge.*', 'object': 'charge'},
     'customers': {'type': 'customer.*', 'object': 'customer'},
     'plans': {'type': 'plan.*', 'object': 'plan'},
@@ -89,7 +92,7 @@ SUB_STREAMS = {
 
 # NB: These streams will only sync through once for creates, never updates.
 IMMUTABLE_STREAMS = {'balance_transactions', 'events'}
-IMMUTABLE_STREAM_LOOKBACK = 300 # 5 min in epoch time, Stripe accuracy is to the second
+IMMUTABLE_STREAM_LOOKBACK = 300  # 5 min in epoch time, Stripe accuracy is to the second
 
 LOGGER = singer.get_logger()
 

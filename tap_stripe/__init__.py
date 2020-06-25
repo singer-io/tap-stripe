@@ -261,7 +261,22 @@ def load_schemas():
         path = get_abs_path('schemas') + '/' + filename
         file_raw = filename.replace('.json', '')
         with open(path) as file:
-            schemas[file_raw] = {'path': filename, 'schema': json.load(file)}
+            # Ensure account ID is added to each stream so that we can
+            # differentiate data per account origin.
+            schema_raw = json.load(file)
+            try:
+                schema_raw['properties']['account_id'] = {
+                    'type': ['string']
+                }
+            except KeyError:
+                LOGGER.warning(
+                    'Could not add the account_id to schema from file="%s" '
+                    'as it does not contain a properties key. It could be a '
+                    'referenced schema obj and OK to ignore.',
+                    filename
+                )
+
+            schemas[file_raw] = {'path': filename, 'schema': schema_raw}
 
     return schemas
 
@@ -464,6 +479,9 @@ def sync_stream(stream_name):
                 stream_obj_created = rec[replication_key]
                 rec['updated'] = stream_obj_created
 
+                # Ensure the account ID is added to the rec
+                rec['account_id'] = Context.config.get('account_id')
+
                 # sync stream if object is greater than or equal to the bookmark
                 if stream_obj_created >= stream_bookmark:
                     rec = transformer.transform(rec,
@@ -634,6 +652,9 @@ def sync_sub_stream(sub_stream_name, parent_obj, updates=False):
             # NB: Older structures (such as invoice_line_items) may not have had their ID present.
             #     Skip these if they don't match the structure we expect.
             if "id" in rec:
+                # Ensure the account ID is added to the rec
+                rec['account_id'] = Context.config.get('account_id')
+
                 singer.write_record(sub_stream_name,
                                     rec,
                                     time_extracted=extraction_time)
@@ -746,6 +767,10 @@ def sync_event_updates(stream_name):
                 rec = unwrap_data_objects(rec)
                 rec = reduce_foreign_keys(rec, stream_name)
                 rec["updated"] = events_obj.created
+                
+                # Ensure the account ID is added to the rec
+                rec['account_id'] = Context.config.get('account_id')
+
                 rec = transformer.transform(
                     rec,
                     Context.get_catalog_entry(stream_name)['schema'],

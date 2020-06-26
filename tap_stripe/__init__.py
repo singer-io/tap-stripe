@@ -315,7 +315,9 @@ def load_schemas():
             # differentiate data per account origin.
             schema_raw = json.load(file)
             try:
-                schema_raw['properties']['account_id'] = {'type': ['string']}
+                # Ignore for accounts stream as this is irrelevant.
+                if file_raw != 'accounts':
+                    schema_raw['properties']['account_id'] = {'type': ['string']}
             except KeyError:
                 LOGGER.warning(
                     'Could not add the account_id to schema from file="%s" '

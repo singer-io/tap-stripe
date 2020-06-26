@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-import os
 import json
 import logging
+import os
 import re
-
 from datetime import datetime, timedelta
+
 import stripe
 import stripe.error
 from stripe.stripe_object import StripeObject
+
 import singer
-from singer import utils, Transformer, metrics
-from singer import metadata
+from singer import Transformer, metadata, metrics, utils
 
 REQUIRED_CONFIG_KEYS = [
     "start_date",
@@ -24,25 +24,24 @@ STREAM_SDK_OBJECTS = {
     'balance_transactions': {'sdk_object': stripe.BalanceTransaction,
                              'key_properties': ['id']},
     'charges': {'sdk_object': stripe.Charge, 'key_properties': ['id']},
-    'events': {'sdk_object': stripe.Event, 'key_properties': ['id']},
+    'coupons': {'sdk_object': stripe.Coupon, 'key_properties': ['id']},
     'customers': {'sdk_object': stripe.Customer, 'key_properties': ['id']},
-    'plans': {'sdk_object': stripe.Plan, 'key_properties': ['id']},
+    'disputes': {'sdk_object': stripe.Dispute, 'key_properties': ['id']},
+    'events': {'sdk_object': stripe.Event, 'key_properties': ['id']},
     'invoices': {'sdk_object': stripe.Invoice, 'key_properties': ['id']},
     'invoice_items': {'sdk_object': stripe.InvoiceItem, 'key_properties': ['id']},
     'invoice_line_items': {'sdk_object': stripe.InvoiceLineItem,
                            'key_properties': ['id', 'invoice']},
-    'transfers': {'sdk_object': stripe.Transfer, 'key_properties': ['id']},
-    'coupons': {'sdk_object': stripe.Coupon, 'key_properties': ['id']},
-    'subscriptions': {'sdk_object': stripe.Subscription, 'key_properties': ['id']},
-    'subscription_items': {'sdk_object': stripe.SubscriptionItem, 'key_properties': ['id']},
-    'balance_transactions': {'sdk_object': stripe.BalanceTransaction,
-                             'key_properties': ['id']},
     'payouts': {'sdk_object': stripe.Payout, 'key_properties': ['id']},
     # Each Payout has many transactions that are not accounted
     # for unless you ask for balance/history with a payout id
     'payout_transactions': {'sdk_object': stripe.BalanceTransaction, 'key_properties': ['id']},
-    'disputes': {'sdk_object': stripe.Dispute, 'key_properties': ['id']},
+    'plans': {'sdk_object': stripe.Plan, 'key_properties': ['id']},
     'products': {'sdk_object': stripe.Product, 'key_properties': ['id']},
+    'refunds': {'sdk_object': stripe.Refund, 'key_properties': ['id']},
+    'subscriptions': {'sdk_object': stripe.Subscription, 'key_properties': ['id']},
+    'subscription_items': {'sdk_object': stripe.SubscriptionItem, 'key_properties': ['id']},
+    'transfers': {'sdk_object': stripe.Transfer, 'key_properties': ['id']},
 }
 
 # I think this can be merged into the above structure
@@ -50,24 +49,25 @@ STREAM_REPLICATION_KEY = {
     'accounts': 'created',
     'application_fees': 'created',
     'application_fee_refunds': 'created',
+    'balance_transactions': 'created',
     'charges': 'created',
-    'events': 'created',
     'customers': 'created',
-    'plans': 'created',
+    'coupons': 'created',
+    'disputes': 'created',
+    'events': 'created',
     'invoices': 'date',
     'invoice_items': 'date',
-    'transfers': 'created',
-    'coupons': 'created',
-    'subscriptions': 'created',
-    'subscription_items': 'created',
-    'balance_transactions': 'created',
-    'payouts': 'created',
-    'payout_transactions': 'id',
     # invoice_line_items is bookmarked based on parent invoices,
     # no replication key value on the object itself
-    #'invoice_line_items': 'date'
-    'disputes': 'created',
+    # 'invoice_line_items': 'date'
+    'payouts': 'created',
+    'payout_transactions': 'id',
+    'plans': 'created',
     'products': 'created',
+    'refunds': 'created',
+    'subscriptions': 'created',
+    'subscription_items': 'created',
+    'transfers': 'created',
 }
 
 STREAM_TO_TYPE_FILTER = {
@@ -75,21 +75,22 @@ STREAM_TO_TYPE_FILTER = {
     'application_fees': {'type': 'application_fee.*', 'object': 'applicationfee'},
     'application_fee_refunds': {'type': 'application_fee.refund.*', 'object': 'applicationfeerefund'},
     'charges': {'type': 'charge.*', 'object': 'charge'},
+    'coupons': {'type': 'coupon.*', 'object': 'coupon'},
     'customers': {'type': 'customer.*', 'object': 'customer'},
-    'plans': {'type': 'plan.*', 'object': 'plan'},
+    'disputes': {'type': 'charge.dispute.*', 'object': 'dispute'},
     'invoices': {'type': 'invoice.*', 'object': 'invoice'},
     'invoice_items': {'type': 'invoiceitem.*', 'object': 'invoiceitem'},
-    'coupons': {'type': 'coupon.*', 'object': 'coupon'},
-    'subscriptions': {'type': 'customer.subscription.*', 'object': 'subscription'},
+    'plans': {'type': 'plan.*', 'object': 'plan'},
     # payouts - these are called transfers with an event type of payout.*
     'payouts': {'type': 'payout.*', 'object': 'transfer'},
-    'transfers': {'type': 'transfer.*', 'object': 'transfer'},
-    'disputes': {'type': 'charge.dispute.*', 'object': 'dispute'},
     'products': {'type': 'product.*', 'object': 'product'},
+    'refunds': {'type': 'charge.refund.*', 'object': 'refund'},
+    'subscriptions': {'type': 'customer.subscription.*', 'object': 'subscription'},
+    'transfers': {'type': 'transfer.*', 'object': 'transfer'},
     # pylint: disable=bad-continuation
     # Cannot find evidence of these streams having events associated:
-    # subscription_items - appears on subscriptions events
     # balance_transactions - seems to be immutable
+    # subscription_items - appears on subscriptions events
 }
 
 SUB_STREAMS = {

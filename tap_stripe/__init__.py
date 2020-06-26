@@ -19,6 +19,10 @@ REQUIRED_CONFIG_KEYS = [
 ]
 STREAM_SDK_OBJECTS = {
     'accounts': {'sdk_object': stripe.Account, 'key_properties': ['id']},
+    'application_fees': {'sdk_object': stripe.ApplicationFee, 'key_properties': ['id']},
+    'application_fee_refunds': {'sdk_object': stripe.ApplicationFeeRefund, 'key_properties': ['id']},
+    'balance_transactions': {'sdk_object': stripe.BalanceTransaction,
+                             'key_properties': ['id']},
     'charges': {'sdk_object': stripe.Charge, 'key_properties': ['id']},
     'events': {'sdk_object': stripe.Event, 'key_properties': ['id']},
     'customers': {'sdk_object': stripe.Customer, 'key_properties': ['id']},
@@ -44,6 +48,8 @@ STREAM_SDK_OBJECTS = {
 # I think this can be merged into the above structure
 STREAM_REPLICATION_KEY = {
     'accounts': 'created',
+    'application_fees': 'created',
+    'application_fee_refunds': 'created',
     'charges': 'created',
     'events': 'created',
     'customers': 'created',
@@ -66,6 +72,8 @@ STREAM_REPLICATION_KEY = {
 
 STREAM_TO_TYPE_FILTER = {
     'accounts': {'type': 'account.*', 'object': 'account'},
+    'application_fees': {'type': 'application_fee.*', 'object': 'applicationfee'},
+    'application_fee_refunds': {'type': 'application_fee.refund.*', 'object': 'applicationfeerefund'},
     'charges': {'type': 'charge.*', 'object': 'charge'},
     'customers': {'type': 'customer.*', 'object': 'customer'},
     'plans': {'type': 'plan.*', 'object': 'plan'},
@@ -73,6 +81,7 @@ STREAM_TO_TYPE_FILTER = {
     'invoice_items': {'type': 'invoiceitem.*', 'object': 'invoiceitem'},
     'coupons': {'type': 'coupon.*', 'object': 'coupon'},
     'subscriptions': {'type': 'customer.subscription.*', 'object': 'subscription'},
+    # payouts - these are called transfers with an event type of payout.*
     'payouts': {'type': 'payout.*', 'object': 'transfer'},
     'transfers': {'type': 'transfer.*', 'object': 'transfer'},
     'disputes': {'type': 'charge.dispute.*', 'object': 'dispute'},
@@ -81,10 +90,10 @@ STREAM_TO_TYPE_FILTER = {
     # Cannot find evidence of these streams having events associated:
     # subscription_items - appears on subscriptions events
     # balance_transactions - seems to be immutable
-    # payouts - these are called transfers with an event type of payout.*
 }
 
 SUB_STREAMS = {
+    'application_fees': 'application_fee_refunds',
     'subscriptions': 'subscription_items',
     'invoices': 'invoice_line_items',
     'payouts': 'payout_transactions'
@@ -562,6 +571,8 @@ def sync_sub_stream(sub_stream_name, parent_obj, updates=False):
 
     if sub_stream_name == "invoice_line_items":
         object_list = parent_obj.lines
+    elif sub_stream_name == "application_fee_refunds":
+        object_list = parent_obj.refunds
     elif sub_stream_name == "subscription_items":
         # parent_obj.items is a function that returns a dict iterator, so use the attribute
         object_list = parent_obj.get("items")

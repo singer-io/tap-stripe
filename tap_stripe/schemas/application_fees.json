@@ -1,0 +1,94 @@
+{
+  "type": [
+    "null",
+    "object"
+  ],
+  "properties":{
+    "id": {
+      "type": [
+        "string"
+      ]
+    },
+    "object": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "account": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "amount": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "amount_refunded": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "application": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "balance_transaction": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "charge": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "created": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "date-time"
+    },
+    "currency": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "livemode": {
+      "type": ["null", "boolean"]
+    },
+    "originating_transaction": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "refunded": {
+      "type": ["null", "boolean"]
+    },
+    "refunds": {
+      "type": [
+        "null",
+        "array",
+        "object"
+      ],
+      "items": {
+        "type": [
+          "null",
+          "string"
+        ],
+        "properties": {}
+      }
+    }
+  }
+}

@@ -60,7 +60,6 @@
     "evidence": {
       "type": [
         "null",
-        "string",
         "object"
       ],
       "properties": {

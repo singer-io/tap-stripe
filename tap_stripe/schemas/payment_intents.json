@@ -24,15 +24,18 @@
     "charges": {
       "type": [
         "null",
-        "array",
-        "object"
+        "array"
       ],
       "items": {
         "type": [
           "null",
-          "string"
+          "object"
         ],
-        "properties": {}
+        "properties": {
+          "id": {
+            "type": ["string"]
+          }
+        }
       }
     },
     "currency": {

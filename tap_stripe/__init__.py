@@ -35,6 +35,7 @@ STREAM_SDK_OBJECTS = {
         'sdk_object': stripe.InvoiceLineItem,
         'key_properties': ['id', 'invoice'],
     },
+    'payment_intents': {'sdk_object': stripe.PaymentIntent, 'key_properties': ['id']},
     'payouts': {'sdk_object': stripe.Payout, 'key_properties': ['id']},
     # Each Payout has many transactions that are not accounted
     # for unless you ask for balance/history with a payout id
@@ -69,6 +70,7 @@ STREAM_REPLICATION_KEY = {
     # invoice_line_items is bookmarked based on parent invoices,
     # no replication key value on the object itself
     # 'invoice_line_items': 'date'
+    'payment_intents': 'created',
     'payouts': 'created',
     'payout_transactions': 'id',
     'plans': 'created',
@@ -92,9 +94,10 @@ STREAM_TO_TYPE_FILTER = {
     'disputes': {'type': 'charge.dispute.*', 'object': 'dispute'},
     'invoices': {'type': 'invoice.*', 'object': 'invoice'},
     'invoice_items': {'type': 'invoiceitem.*', 'object': 'invoiceitem'},
-    'plans': {'type': 'plan.*', 'object': 'plan'},
+    'payment_intents': {'type': 'payment_intent.*', 'object': 'paymentintent'},
     # payouts - these are called transfers with an event type of payout.*
     'payouts': {'type': 'payout.*', 'object': 'transfer'},
+    'plans': {'type': 'plan.*', 'object': 'plan'},
     'products': {'type': 'product.*', 'object': 'product'},
     'refunds': {'type': 'charge.refund.*', 'object': 'refund'},
     'subscriptions': {'type': 'customer.subscription.*', 'object': 'subscription'},
@@ -107,9 +110,9 @@ STREAM_TO_TYPE_FILTER = {
 
 SUB_STREAMS = {
     'application_fees': 'application_fee_refunds',
-    'subscriptions': 'subscription_items',
     'invoices': 'invoice_line_items',
     'payouts': 'payout_transactions',
+    'subscriptions': 'subscription_items',
 }
 
 # NB: These streams will only sync through once for creates, never updates.

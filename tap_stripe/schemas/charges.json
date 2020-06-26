@@ -28,6 +28,17 @@
         "string"
       ]
     },
+    "transfer_data": {
+      "type": ["null", "object"],
+      "properties": {
+        "amount": {
+          "type": ["null", "integer"]
+        },
+        "destination": {
+          "type": ["null", "string"]
+        }
+      }
+    },
     "transfer_group": {
       "type": [
         "null",

@@ -449,7 +449,7 @@ def reduce_foreign_keys(rec, stream_name):
 
 
 def paginate(sdk_obj, filter_key, start_date, end_date, limit=100):
-    # If the SDK Obj is the accounts stream and we also want to retrieve the
+    # If the SDK Obj is the accounts stream and we also want to retrieve the 
     # account itself from the API as the list call, will only return connected
     # accounts and not the account in use.
     if sdk_obj == stripe.Account:
@@ -561,8 +561,10 @@ def sync_stream(stream_name):
                 stream_obj_created = rec[replication_key]
                 rec['updated'] = stream_obj_created
 
-                # Ensure the account ID is added to the rec
-                rec['account_id'] = Context.config.get('account_id')
+                # Ensure the account ID is added to the rec if not the accounts
+                # stream.
+                if stream_name != 'accounts':
+                    rec['account_id'] = Context.config.get('account_id')
 
                 # sync stream if object is greater than or equal to the bookmark
                 if stream_obj_created >= stream_bookmark:

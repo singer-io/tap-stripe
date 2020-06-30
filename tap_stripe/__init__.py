@@ -449,6 +449,16 @@ def reduce_foreign_keys(rec, stream_name):
 
 
 def paginate(sdk_obj, filter_key, start_date, end_date, limit=100):
+    # If the SDK Obj is the accounts stream and we also want to retrieve the
+    # account itself from the API as the list call, will only return connected
+    # accounts and not the account in use.
+    if sdk_obj == stripe.Account:
+        # Set this as a list so we can yield from it.
+        _context_account = [
+            sdk_obj.retrieve(Context.config.get('account_id'))
+        ]
+        yield from _context_account
+
     yield from sdk_obj.list(
         limit=limit,
         stripe_account=Context.config.get('account_id'),

@@ -554,11 +554,22 @@ def sync_stream(stream_name):
                 start_window,
                 stop_window,
             ):
-
                 # get the replication key value from the object
                 rec = unwrap_data_objects(stream_obj.to_dict_recursive())
                 rec = reduce_foreign_keys(rec, stream_name)
-                stream_obj_created = rec[replication_key]
+
+                try:
+                    stream_obj_created = rec[replication_key]
+                except KeyError:
+                    # Not all account types have the "created" replication key
+                    # https://stripe.com/docs/api/accounts/object#account_object-created
+                    # But we do not want the sync to fail in this case so we set
+                    # this to the stop_window.
+                    if stream_name == 'accounts':
+                        stream_obj_created = stop_window
+                    else:
+                        raise
+
                 rec['updated'] = stream_obj_created
 
                 # Ensure the account ID is added to the rec if not the accounts

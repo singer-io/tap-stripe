@@ -449,6 +449,11 @@ def reduce_foreign_keys(rec, stream_name):
 
 
 def paginate(sdk_obj, filter_key, start_date, end_date, limit=100):
+    # Default API filters
+    # None passed to starting_after appears to retrieve
+    # all of them so this should always be safe.
+    filters = {filter_key + "[gte]": start_date, filter_key + "[lt]": end_date}
+
     # If the SDK Obj is the accounts stream and we also want to retrieve the 
     # account itself from the API as the list call, will only return connected
     # accounts and not the account in use.
@@ -459,12 +464,14 @@ def paginate(sdk_obj, filter_key, start_date, end_date, limit=100):
         ]
         yield from _context_account
 
+        # For account stream we should retrieve all accounts each time
+        # as a consistent replication key does not exist.
+        filters = {}
+
     yield from sdk_obj.list(
         limit=limit,
         stripe_account=Context.config.get('account_id'),
-        # None passed to starting_after appears to retrieve
-        # all of them so this should always be safe.
-        **{filter_key + "[gte]": start_date, filter_key + "[lt]": end_date}
+        **filters
     ).auto_paging_iter()
 
 

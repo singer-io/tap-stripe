@@ -468,6 +468,12 @@ def paginate(sdk_obj, filter_key, start_date, end_date, limit=100):
         # as a consistent replication key does not exist.
         filters = {}
 
+        # As accounts is not using a replication range on each call, using
+        # limit=100 produces a 500 error from Stripe. Suspect this is due to the
+        # amount of data in the response, so a lower limit will work to mitigate
+        # this, it just means more network calls to the API.
+        limit = 20
+
     yield from sdk_obj.list(
         limit=limit,
         stripe_account=Context.config.get('account_id'),

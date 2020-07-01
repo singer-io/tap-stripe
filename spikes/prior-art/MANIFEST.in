@@ -1,3 +1,0 @@
-include LICENSE
-include tap_stripe/schemas/*.json
-include tap_stripe/schemas/shared/*.json

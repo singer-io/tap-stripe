@@ -1,0 +1,210 @@
+{
+  "type": [
+    "null",
+    "object"
+  ],
+  "properties": {
+    "id": {
+      "type": [
+        "string"
+      ]
+    },
+    "object": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "amount": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "charges": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "items": {
+        "type": [
+          "null",
+          "object"
+        ],
+        "properties": {
+          "id": {
+            "type": ["string"]
+          }
+        }
+      }
+    },
+    "currency": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "created": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "date-time"
+    },
+    "customer": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "description": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "last_payment_error": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {}
+    },
+    "metadata": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {}
+    },
+    "payment_method": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "payment_method_types": {
+      "type": ["null", "array"],
+      "items": {}
+    },
+    "shipping": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {}
+    },
+    "statement_descriptor": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "statement_descriptor_suffix": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "status": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "amount_capturable": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "amount_received": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "application": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "application_fee_amount": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "canceled_at": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "date-time"
+    },
+    "cancellation_reason": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "capture_method": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "confirmation_method": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "invoice": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "livemode": {
+      "type": [
+        "null",
+        "boolean"
+      ]
+    },
+    "on_behalf_of": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "payment_method_details": {
+      "type": ["null", "object"],
+      "properties": {}
+    },
+    "review": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "transfer_data": {
+      "type": ["null", "object"],
+      "properties": {
+        "amount": {
+          "type": ["null", "integer"]
+        },
+        "destination": {
+          "type": ["null", "string"]
+        }
+      }
+    },
+    "transfer_group": {
+      "type": [
+        "null",
+        "string"
+      ]
+    }
+  }
+}

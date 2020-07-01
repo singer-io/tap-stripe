@@ -13,10 +13,22 @@
         "string"
       ]
     },
-    "account_balance": {
+    "amount": {
       "type": [
         "null",
         "integer"
+      ]
+    },
+    "balance_transaction": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "charge": {
+      "type": [
+        "null",
+        "string"
       ]
     },
     "created": {
@@ -32,41 +44,10 @@
         "string"
       ]
     },
-    "default_source": {
-      "type": [
-        "null",
-        "string"
-      ]
-    },
-    "delinquent": {
-      "type": [
-        "null",
-        "boolean"
-      ]
-    },
     "description": {
       "type": [
         "null",
         "string"
-      ]
-    },
-    "discount": { "$ref": "discount.json" },
-    "email": {
-      "type": [
-        "null",
-        "string"
-      ]
-    },
-    "invoice_prefix": {
-      "type": [
-        "null",
-        "string"
-      ]
-    },
-    "livemode": {
-      "type": [
-        "null",
-        "boolean"
       ]
     },
     "metadata": {
@@ -74,30 +55,56 @@
         "null",
         "object"
       ],
-      "additionalProperties": true,
       "properties": {}
     },
-    "shipping": {
+    "payment_intent": {
       "type": [
         "null",
-        "object"
-      ],
-      "additionalProperties": true,
-      "properties": {}
+        "string"
+      ]
     },
-    "sources": {
+    "reason": {
       "type": [
         "null",
-        "array"
-      ],
-      "items": { "$ref": "source.json" }
+        "string"
+      ]
     },
-    "subscriptions": {
+    "failure_reason": {
       "type": [
         "null",
-        "array"
+        "string"
+      ]
+    },
+    "receipt_number": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "source_transfer_reversal": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "status": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "transfer_reversal": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "updated": {
+      "type": [
+        "null",
+        "string"
       ],
-      "items": { "$ref": "subscription.json" }
+      "format": "date-time"
     }
   }
 }

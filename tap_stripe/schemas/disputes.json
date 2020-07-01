@@ -60,7 +60,6 @@
     "evidence": {
       "type": [
         "null",
-        "string",
         "object"
       ],
       "properties": {
@@ -180,6 +179,12 @@
         "object"
       ],
       "properties": {}
+    },
+    "payment_intent": {
+      "type": [
+        "null",
+        "string"
+      ]
     },
     "reason": {
       "type": [

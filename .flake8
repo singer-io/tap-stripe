@@ -1,0 +1,14 @@
+[flake8]
+ignore = D100,D101,D102,D203,E203,E266,W503,W504
+exclude =
+    .git,
+    __pycache__,
+    .cache,
+    .pytest_cache,
+    .virtualenv,
+    .virtualenvs,
+    */.virtualenv/*,
+    .eggs,
+    build,
+    dist,
+max-line-length = 120

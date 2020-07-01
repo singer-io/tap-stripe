@@ -1,0 +1,243 @@
+{
+  "type": ["null", "object"],
+  "properties": {
+    "metadata": {
+      "type": ["null", "object"],
+      "properties": {}
+    },
+    "id": {
+      "type": ["string"]
+    },
+    "created": {
+      "type": ["null", "string"],
+      "format": "date-time"
+    },
+    "business_profile": {
+      "type": ["null", "object"],
+      "properties": {
+        "mcc": {
+          "type": ["null", "integer"]
+        },
+        "name": {
+          "type": ["null", "string"]
+        },
+        "product_description": {
+          "type": ["null", "string"]
+        },
+        "support_address": {
+          "type": ["null", "object"],
+          "properties": {
+            "city": {
+              "type": ["null", "string"]
+            },
+            "country": {
+              "type": ["null", "string"]
+            },
+            "line1": {
+              "type": ["null", "string"]
+            },
+            "line2": {
+              "type": ["null", "string"]
+            },
+            "postal_code": {
+              "type": ["null", "string"]
+            },
+            "state": {
+              "type": ["null", "string"]
+            }
+          }
+        },
+        "support_email": {
+          "type": ["null", "string"]
+        },
+        "support_phone": {
+          "type": ["null", "string"]
+        },
+        "support_url": {
+          "type": ["null", "string"]
+        },
+        "url": {
+          "type": ["null", "string"]
+        }
+      }
+    },
+    "business_type": {
+      "type": ["null", "string"]
+    },
+    "capabilities": {
+      "type": ["null", "object"],
+      "properties": {
+        "card_payments": {
+          "type": ["null", "boolean"]
+        },
+        "transfers": {
+          "type": ["null", "boolean"]
+        }
+      }
+    },
+    "charges_enabled": {
+      "type": ["null", "boolean"]
+    },
+    "country": {
+      "type": ["null", "string"]
+    },
+    "default_currency": {
+      "type": ["null", "string"]
+    },
+    "details_submitted": {
+      "type": ["null", "boolean"]
+    },
+    "email": {
+      "type": ["null", "string"]
+    },
+    "payouts_enabled": {
+      "type": ["null", "boolean"]
+    },
+    "metadata": {
+      "type": ["null", "object"],
+      "properties": {}
+    },
+    "requirements": {
+      "type": ["null", "object"],
+      "properties": {
+        "current_deadline": {
+          "type": ["null", "string"],
+          "format": "date-time"
+        },
+        "currently_due": {
+          "type": ["null", "array"],
+          "items": {}
+        },
+        "disabled_reason": {
+          "type": ["null", "string"]
+        },
+        "errors": {
+          "type": ["null", "array"],
+          "items": {}
+        },
+        "eventually_due": {
+          "type": ["null", "array"],
+          "items": {}
+        },
+        "past_due": {
+          "type": ["null", "array"],
+          "items": {}
+        },
+        "pending_verification": {
+          "type": ["null", "array"],
+          "items": {}
+        }
+      }
+    },
+    "settings": {
+      "type": ["null", "object"],
+      "properties": {
+        "bacs_debit_payments": {
+          "type": ["null", "object"],
+          "properties": {}
+        },
+        "branding": {
+          "type": ["null", "object"],
+          "properties": {
+            "icon": {
+              "type": ["null", "string"]
+            },
+            "logo": {
+              "type": ["null", "string"]
+            },
+            "primary_color": {
+              "type": ["null", "string"]
+            },
+            "secondary_color": {
+              "type": ["null", "string"]
+            }
+          }
+        },
+        "card_payments": {
+          "type": ["null", "object"],
+          "properties": {
+            "decline_on": {
+              "type": ["null", "object"],
+              "properties": {
+                "avs_failure": {
+                  "type": ["null", "boolean"]
+                },
+                "cvs_failure": {
+                  "type": ["null", "boolean"]
+                }
+              }
+            },
+            "statement_descriptor_prefix": {
+              "type": ["null", "string"]
+            }
+          }
+        },
+        "dashboard": {
+          "type": ["null", "object"],
+          "properties": {
+            "display_name": {
+              "type": ["null", "string"]
+            },
+            "timezone": {
+              "type": ["null", "string"]
+            }
+          }
+        },
+        "payments": {
+          "type": ["null", "object"],
+          "properties": {
+            "statement_descriptor": {
+              "type": ["null", "string"]
+            },
+            "statement_descriptor_kana": {
+              "type": ["null", "string"]
+            },
+            "statement_descriptor_kanji": {
+              "type": ["null", "string"]
+            }
+          }
+        },
+        "payouts": {
+          "type": ["null", "object"],
+          "properties": {
+            "debit_negative_balances": {
+              "type": ["null", "boolean"]
+            },
+            "schedule": {
+              "type": ["null", "object"],
+              "properties": {
+                "delay_days": {
+                  "type": ["null", "integer"]
+                },
+                "interval": {
+                  "type": ["null", "string"]
+                }
+              }
+            },
+            "statement_descriptor": {
+              "type": ["null", "string"]
+            }
+          }
+        }
+      }
+    },
+    "tos_acceptance": {
+      "type": ["null", "object"],
+      "properties": {
+        "date": {
+          "type": ["null", "string"],
+          "format": "date-time"
+        },
+        "ip": {
+          "type": ["null", "string"]
+        },
+        "user_agent": {
+          "type": ["null", "string"]
+        }
+      }
+    },
+    "type": {
+      "type": ["null", "string"]
+    }
+  }
+}

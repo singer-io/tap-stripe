@@ -3,14 +3,25 @@
     "null",
     "object"
   ],
-  "properties": {
+  "properties":{
     "id": {
+      "type": [
+        "string"
+      ]
+    },
+    "object": {
       "type": [
         "null",
         "string"
       ]
     },
-    "object": {
+    "amount": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "balance_transaction": {
       "type": [
         "null",
         "string"
@@ -23,28 +34,24 @@
       ],
       "format": "date-time"
     },
+    "currency": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "fee": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
     "metadata": {
       "type": [
         "null",
         "object"
       ],
-      "additionalProperties": true,
       "properties": {}
-    },
-    "plan": {
-      "$ref": "plan.json"
-    },
-    "quantity": {
-      "type": [
-        "null",
-        "integer"
-      ]
-    },
-    "subscription": {
-      "type": [
-        "null",
-        "string"
-      ]
     }
   }
 }

@@ -60,7 +60,8 @@
     "evidence": {
       "type": [
         "null",
-        "object"
+        "object",
+        "string"
       ],
       "properties": {
         "refund_policy": {

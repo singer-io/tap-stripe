@@ -12,10 +12,11 @@ from utils import create_object, update_object, \
 class PaginationTest(BaseTapTest):
     """ Test the tap pagination to get multiple pages of data """
 
-    def name(self):
+    @staticmethod
+    def name():
         return "tap_tester_tap_stripe_pagination_test"
 
-    def do_test(self, conn_id):
+    def run_test(self):
         """
         Verify that for each stream you can get multiple pages of data
         and that when all fields are selected more than the automatic fields are replicated.
@@ -25,6 +26,8 @@ class PaginationTest(BaseTapTest):
         fetch of data.  For instance if you have a limit of 250 records ensure
         that 251 (or more) records have been posted for that stream.
         """
+        conn_id = self.create_connection()
+
         incremental_streams = {key for key, value in self.expected_replication_method().items()
                                if value == self.INCREMENTAL}
         untested_streams = self.child_streams().union({
@@ -49,8 +52,6 @@ class PaginationTest(BaseTapTest):
         # Select all streams and all fields within streams
         found_catalogs = menagerie.get_catalogs(conn_id)
         our_catalogs = get_catalogs(conn_id, tested_streams)
-        # our_catalogs = [catalog for catalog in found_catalogs if
-        #                 catalog.get('tap_stream_id') in tested_streams]
         self.select_all_streams_and_fields(conn_id, our_catalogs, select_all_fields=True)
 
         # Ensure tested streams have a record count which exceeds the API LIMIT
@@ -115,19 +116,5 @@ class PaginationTest(BaseTapTest):
                     # self.assertEqual(
                     #    actual, expected, msg="The fields sent to the target have an extra or missing field"
                     # )
-
-                    ##########################################################################
-                    ### Clean up records iff there are multiple pages of records
-                    ##########################################################################
-
-                    # logging.info("Ensuring record count does not exceed multiple pages")
-                    # records = list_all_object(stream)
-                    # count = 1
-                    # while records['has_more']:
-                    #     for record in records['data']:
-                    #         delete_object(stream, record['id'])
-                    #         logging.info("Deleting records for stream {} | {} records remaining".format(stream, count))
-                    #         count += 1
-                    #     records = list_all_object(stream)
 
 

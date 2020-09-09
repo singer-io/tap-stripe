@@ -11,10 +11,11 @@ from utils import create_object
 class MinimumSelectionTest(BaseTapTest):
     """Test that with no fields selected for a stream automatic fields are still replicated"""
 
-    def name(self):
+    @staticmethod
+    def name():
         return "tap_tester_tap_stripe_no_fields_test"
 
-    def do_test(self, conn_id):
+    def test_run(self):
         """
         Verify that for each stream you can get multiple pages of data
         when no fields are selected and only the automatic fields are replicated.
@@ -24,6 +25,7 @@ class MinimumSelectionTest(BaseTapTest):
         fetch of data.  For instance if you have a limit of 250 records ensure
         that 251 (or more) records have been posted for that stream.
         """
+        conn_id = self.create_connection()
         streams_to_create = {
             # "balance_transactions",  # should be created implicity with a create in the payouts or charges streams
             "charges",

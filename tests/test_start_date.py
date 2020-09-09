@@ -25,11 +25,13 @@ class StartDateTest(BaseTapTest):
       is greater than or equal to the start date
     """
 
-    def name(self):
+    @staticmethod
+    def name():
         return "tap_tester_tap_stripe_start_date_test"
 
-    def do_test(self, conn_id):
+    def run_test(self):
         """Test we get a lot of data back based on the start date configured in base"""
+        conn_id = self.create_connection()
 
         # Select all streams and all fields within streams
         found_catalogs = menagerie.get_catalogs(conn_id)
@@ -92,7 +94,6 @@ class StartDateTest(BaseTapTest):
                             untested_streams)]
         self.select_all_streams_and_fields(conn_id, our_catalogs, select_all_fields=True)
 
-        # TODO remove the updates, this is unnecessary. Verify with Harvest
         # Update a record for each stream under test prior to the 2nd sync
         first_sync_created, _ = self.split_records_into_created_and_updated(first_sync_records)
         updated = {}  # holds id for updated objects in each stream

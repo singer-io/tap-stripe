@@ -18,7 +18,8 @@ from utils import \
 class BookmarkTest(BaseTapTest):
     """Test tap sets a bookmark and respects it for the next sync of a stream"""
 
-    def name(self):
+    @staticmethod
+    def name():
         return "tap_tester_tap_stripe_bookmark_test"
 
     def parse_bookmark_to_date(self, value):
@@ -65,7 +66,7 @@ class BookmarkTest(BaseTapTest):
             for record in cls.new_objects[stream]:
                 delete_object(stream, record["id"])
 
-    def do_test(self, conn_id):
+    def run_test(self):
         """
         Verify that for each stream you can do a sync which records bookmarks.
         That the bookmark is the maximum value sent to the target for the replication key.
@@ -82,11 +83,11 @@ class BookmarkTest(BaseTapTest):
         For EACH stream that is incrementally replicated there are multiple rows of data with
             different values for the replication key
         """
-        
+        conn_id = self.create_connection()
 
         expected_records = {stream: [] for stream in self.streams_to_create}
 
-        # Create 3 records for each stream total 
+        # Create 3 records for each stream total
         for _ in range(2):
             for stream in self.streams_to_create:
                 self.new_objects[stream].append(create_object(stream))
@@ -120,7 +121,7 @@ class BookmarkTest(BaseTapTest):
         first_sync_start = self.local_to_utc(dt.utcnow())
         first_sync_record_count = self.run_sync(conn_id)
         first_sync_end = self.local_to_utc(dt.utcnow())
-        
+
         # verify that the sync only sent records to the target for selected streams (catalogs)
         self.assertEqual(set(first_sync_record_count.keys()),
                          incremental_streams.difference(untested_streams))
@@ -180,7 +181,7 @@ class BookmarkTest(BaseTapTest):
         # ADJUST IF NECESSARY
         for stream in incremental_streams.difference(untested_streams):
             with self.subTest(stream=stream):
-                
+
                 # Get bookmark values from state and target data.
                 # Recall that there are two bookmarks for every object stream: an events-based
                 # bookmark for updates, and a standard repliction key-based bookmark for creates.
@@ -354,5 +355,3 @@ class BookmarkTest(BaseTapTest):
 
                     self.assertEqual(actual_set.difference(expected_set), hidden_creates,
                                      msg="Some extra records sent to the target that were not in expected")
-
-

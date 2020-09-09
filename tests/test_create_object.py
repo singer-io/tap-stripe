@@ -13,19 +13,21 @@ from utils import \
 
 
 class CreateObjectTest(BaseTapTest):
-    """Test tap gets all creates for streams (as long as we can create an object)
-    """
+    """Test tap gets all creates for streams (as long as we can create an object)"""
 
-    def name(self):
+    @staticmethod
+    def name():
         return "tap_tester_tap_stripe_create_object_test"
 
-    def do_test(self, conn_id):
+    def run_test(self):
         """
         Verify that the sync only sent records to the target for selected streams
         Create a new object for each stream
         Verify that the second sync includes at least one create for each stream
         Verify that the created record was picked up on the second sync
         """
+        conn_id = self.create_connection()
+
         streams_to_create = {
             "balance_transactions",  # should be created implicity with a create in the payouts or charges streams
             "charges",

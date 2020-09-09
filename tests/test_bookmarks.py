@@ -10,7 +10,6 @@ from datetime import datetime as dt
 from dateutil.parser import parse
 
 from tap_tester import menagerie, runner
-from tap_tester.scenario import SCENARIOS
 from base import BaseTapTest
 from utils import \
     create_object, update_object, delete_object, get_hidden_objects, activate_tracking
@@ -357,4 +356,3 @@ class BookmarkTest(BaseTapTest):
                                      msg="Some extra records sent to the target that were not in expected")
 
 
-SCENARIOS.add(BookmarkTest)

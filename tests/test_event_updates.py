@@ -7,7 +7,6 @@ from random import random
 
 import requests
 from tap_tester import menagerie, runner
-from tap_tester.scenario import SCENARIOS
 from base import BaseTapTest
 from utils import \
     get_catalogs, update_object, create_object, delete_object
@@ -166,4 +165,3 @@ class EventUpdatesTest(BaseTapTest):
                     delete_object(stream, new_objects[stream]["id"])
                 
 
-SCENARIOS.add(EventUpdatesTest)

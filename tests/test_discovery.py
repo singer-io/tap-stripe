@@ -5,7 +5,6 @@ import re
 
 from tap_tester import menagerie
 
-from tap_tester.scenario import SCENARIOS
 from base import BaseTapTest
 
 
@@ -159,4 +158,3 @@ class DiscoveryTest(BaseTapTest):
                     msg="Not all non key properties are set to available in metadata")
 
 
-SCENARIOS.add(DiscoveryTest)

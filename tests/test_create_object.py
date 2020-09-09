@@ -7,7 +7,6 @@ from random import random
 
 import requests
 from tap_tester import menagerie, runner
-from tap_tester.scenario import SCENARIOS
 from base import BaseTapTest
 from utils import \
     create_object, delete_object, get_catalogs
@@ -123,5 +122,3 @@ class CreateObjectTest(BaseTapTest):
                 if stream in streams_to_create:
                     delete_object(stream, new_objects[stream]["id"])
 
-
-SCENARIOS.add(CreateObjectTest)

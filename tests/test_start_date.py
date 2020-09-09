@@ -8,7 +8,6 @@ from datetime import timedelta
 from dateutil.parser import parse
 
 from tap_tester import menagerie, runner
-from tap_tester.scenario import SCENARIOS
 
 from base import BaseTapTest
 from utils import create_object, update_object, delete_object, get_catalogs
@@ -150,4 +149,3 @@ class StartDateTest(BaseTapTest):
                     delete_object(stream, updated[stream])
 
 
-SCENARIOS.add(StartDateTest)

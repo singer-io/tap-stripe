@@ -4,7 +4,6 @@ Test tap pagination of streams
 import logging
 
 from tap_tester import menagerie, runner
-from tap_tester.scenario import SCENARIOS
 from base import BaseTapTest
 from utils import create_object, update_object, \
     delete_object, list_all_object, get_catalogs, get_schema
@@ -132,4 +131,3 @@ class PaginationTest(BaseTapTest):
                     #     records = list_all_object(stream)
 
 
-SCENARIOS.add(PaginationTest)

@@ -21,7 +21,7 @@ class EventUpdatesTest(BaseTapTest):
     def name():
         return "tap_tester_tap_stripe_event_updates_test"
 
-    def run_test(self):
+    def test_run(self):
         """
         Verify that the sync only sent records to the target for selected streams
         Update metadata[test] with a random number for each stream with event updates

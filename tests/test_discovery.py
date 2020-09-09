@@ -15,7 +15,7 @@ class DiscoveryTest(BaseTapTest):
     def name():
         return "tap_tester_tap_stripe_discovery_test"
 
-    def run_test(self):
+    def test_run(self):
         """
         Verify that discover creates the appropriate catalog, schema, metadata, etc.
 

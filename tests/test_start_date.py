@@ -29,7 +29,7 @@ class StartDateTest(BaseTapTest):
     def name():
         return "tap_tester_tap_stripe_start_date_test"
 
-    def run_test(self):
+    def test_run(self):
         """Test we get a lot of data back based on the start date configured in base"""
         conn_id = self.create_connection()
 

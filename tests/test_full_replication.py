@@ -15,7 +15,7 @@ class FullReplicationTest(BaseTapTest):
     def name():
         return "tap_tester_tap_stripe_full_test"
 
-    def run_test(self):
+    def test_run(self):
         """
         Verify that a bookmark doesn't exist for the stream
         Verify that the second sync includes the same number or more records than the first sync

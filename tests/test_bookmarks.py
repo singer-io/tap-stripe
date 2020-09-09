@@ -66,7 +66,7 @@ class BookmarkTest(BaseTapTest):
             for record in cls.new_objects[stream]:
                 delete_object(stream, record["id"])
 
-    def run_test(self):
+    def test_run(self):
         """
         Verify that for each stream you can do a sync which records bookmarks.
         That the bookmark is the maximum value sent to the target for the replication key.

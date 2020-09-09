@@ -16,7 +16,7 @@ class PaginationTest(BaseTapTest):
     def name():
         return "tap_tester_tap_stripe_pagination_test"
 
-    def run_test(self):
+    def test_run(self):
         """
         Verify that for each stream you can get multiple pages of data
         and that when all fields are selected more than the automatic fields are replicated.

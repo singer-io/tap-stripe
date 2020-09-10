@@ -169,20 +169,6 @@ class BaseTapTest(unittest.TestCase):
         if missing_envs:
             raise Exception("Set environment variables: {}".format(missing_envs))
 
-    # def test_run(self):
-    #     """
-    #     Default Test Setup
-    #     Remove previous connections (with the same name)
-    #     Create a new connection (with the properties and credentials above)
-    #     Run discovery and ensure it completes successfully
-    #     """
-    #     import pdb; pdb.set_trace()
-    #     self.do_test(self.create_connection())
-
-    # def do_test(self, conn_id):
-    #     """A placeholder test to override in sub-class tests"""
-    #     pass
-
     #########################
     #   Helper Methods      #
     #########################

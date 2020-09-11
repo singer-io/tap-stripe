@@ -7,26 +7,27 @@ from random import random
 
 import requests
 from tap_tester import menagerie, runner
-from tap_tester.scenario import SCENARIOS
 from base import BaseTapTest
 from utils import \
     create_object, delete_object, get_catalogs
 
 
 class CreateObjectTest(BaseTapTest):
-    """Test tap gets all creates for streams (as long as we can create an object)
-    """
+    """Test tap gets all creates for streams (as long as we can create an object)"""
 
-    def name(self):
+    @staticmethod
+    def name():
         return "tap_tester_tap_stripe_create_object_test"
 
-    def do_test(self, conn_id):
+    def test_run(self):
         """
         Verify that the sync only sent records to the target for selected streams
         Create a new object for each stream
         Verify that the second sync includes at least one create for each stream
         Verify that the created record was picked up on the second sync
         """
+        conn_id = self.create_connection()
+
         streams_to_create = {
             "balance_transactions",  # should be created implicity with a create in the payouts or charges streams
             "charges",
@@ -123,5 +124,3 @@ class CreateObjectTest(BaseTapTest):
                 if stream in streams_to_create:
                     delete_object(stream, new_objects[stream]["id"])
 
-
-SCENARIOS.add(CreateObjectTest)

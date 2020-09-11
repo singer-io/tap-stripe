@@ -7,7 +7,6 @@ from random import random
 
 import requests
 from tap_tester import menagerie, runner
-from tap_tester.scenario import SCENARIOS
 from base import BaseTapTest
 from utils import \
     get_catalogs, update_object, create_object, delete_object
@@ -18,10 +17,11 @@ class EventUpdatesTest(BaseTapTest):
     Test tap gets all updates for streams with updates published to the events stream
     """
 
-    def name(self):
+    @staticmethod
+    def name():
         return "tap_tester_tap_stripe_event_updates_test"
 
-    def do_test(self, conn_id):
+    def test_run(self):
         """
         Verify that the sync only sent records to the target for selected streams
         Update metadata[test] with a random number for each stream with event updates
@@ -33,6 +33,8 @@ class EventUpdatesTest(BaseTapTest):
         For EACH stream that gets updates through events stream, there's at least 1 row
             of data
         """
+        conn_id = self.create_connection()
+
         event_update_streams = {
             # "balance_transactions"  # Cannot be directly updated
             "charges",
@@ -57,7 +59,7 @@ class EventUpdatesTest(BaseTapTest):
             conn_id, our_catalogs, select_all_fields=True
         )
 
-        # Ensure each stream under test has data to start 
+        # Ensure each stream under test has data to start
         new_objects = {
             stream: create_object(stream)
             for stream in event_update_streams
@@ -164,6 +166,3 @@ class EventUpdatesTest(BaseTapTest):
 
                 if stream in new_objects:
                     delete_object(stream, new_objects[stream]["id"])
-                
-
-SCENARIOS.add(EventUpdatesTest)

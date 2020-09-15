@@ -356,5 +356,5 @@ class BookmarkTest(BaseTapTest):
                     # Many records are created implicitly and there are too many to track.
                     # For now we will just log
                     if not actual_set.difference(expected_set).issubset(hidden_creates):
-                        Logging.WARNING("Some extra records sent to the target that were not in expected."
+                        logging.warning("Some extra records sent to the target that were not in expected."
                                         "Unexpected records: {}".format(acutal_set.difference(expected_set).difference(hidden_creates)))

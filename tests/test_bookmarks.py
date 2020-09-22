@@ -357,4 +357,4 @@ class BookmarkTest(BaseTapTest):
                     # For now we will just log
                     if not actual_set.difference(expected_set).issubset(hidden_creates):
                         logging.warning("Some extra records sent to the target that were not in expected."
-                                        "Unexpected records: {}".format(acutal_set.difference(expected_set).difference(hidden_creates)))
+                                        "Unexpected records: {}".format(actual_set.difference(expected_set).difference(hidden_creates)))

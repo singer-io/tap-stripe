@@ -122,8 +122,8 @@ class StartDateTest(BaseTapTest):
         for stream in incremental_streams.difference(untested_streams):
             with self.subTest(stream=stream):
 
-                # verify that each stream has less records in the first sync than the second
-                self.assertGreater(
+                # verify that each stream has more or equal records in the second sync than in the first
+                self.assertGreaterEqual(
                     second_sync_record_count.get(stream, 0),
                     first_sync_record_count.get(stream, 0),
                     msg="first had more records, start_date usage not verified")

@@ -30,16 +30,6 @@ class BookmarkTest(BaseTapTest):
                 return self.local_to_utc(dt.utcfromtimestamp(value))
         return value
 
-    # TODO address all the import warnings
-    # def do_test(self, conn_id):
-    #     import warnings
-
-    #     def fxn():
-    #         warnings.warn("deprecated", DeprecationWarning)
-    #     with warnings.catch_warnings():
-    #         warnings.simplefilter("ignore")
-    #         fxn()
-
     @classmethod
     def setUpClass(cls):
         logging.info("Start Setup")
@@ -131,18 +121,16 @@ class BookmarkTest(BaseTapTest):
         # Get data about actual rows synced
         first_sync_records = runner.get_records_from_target_output()
         first_max_bookmarks = self.max_bookmarks_by_stream(first_sync_records)
-
         first_max_events = self.max_events_bookmarks_by_stream(first_sync_records)
         first_min_bookmarks = self.min_bookmarks_by_stream(first_sync_records)
 
         # Update one record from each stream prior to 2nd sync
         first_sync_created, _ = self.split_records_into_created_and_updated(first_sync_records)
-        updated_objects = {stream: [] for stream in self.streams_to_create}  # TODO Delete if never used
+        updated_objects = {stream: [] for stream in self.streams_to_create}
 
         for stream in self.streams_to_create:
             # There needs to be some test data for each stream, otherwise this will break
             record = expected_records[stream][0]
-            # record = first_sync_created[stream]["messages"][0]["data"]
             updated_objects[stream].append(update_object(stream, record["id"]))
             expected_records[stream].append({"id": updated_objects[stream][-1]['id']})
 

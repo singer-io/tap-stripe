@@ -27,6 +27,8 @@ class BaseTapTest(unittest.TestCase):
     FULL = "FULL_TABLE"
     START_DATE_FORMAT = "%Y-%m-%dT00:00:00Z"
 
+    COMPARISON_FORMAT = "%Y-%m-%dT%H:%M:%S.000000Z"
+
     @staticmethod
     def tap_name():
         """The name of the tap"""
@@ -161,6 +163,16 @@ class BaseTapTest(unittest.TestCase):
         return {table: properties.get(self.REPLICATION_METHOD, None)
                 for table, properties
                 in self.expected_metadata().items()}
+
+    def expected_incremental_streams(self):
+        return set(stream for stream, rep_meth in
+                   self.expected_replication_method().items()
+                   if rep_meth == self.INCREMENTAL)
+
+    def expected_full_table_streams(self):
+        return set(stream for stream, rep_meth in
+                   self.expected_replication_method().items()
+                   if rep_meth == self.FULL)
 
     def setUp(self):
         """Verify that you have set the prerequisites to run the tap (creds, etc.)"""

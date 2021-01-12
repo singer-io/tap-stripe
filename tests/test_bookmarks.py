@@ -228,12 +228,12 @@ class BookmarkTest(BaseTapTest):
                         #            This assertion was adjusted solely to get tests passing.
                         #            It needs to be addressed in the long term see linked ticket.
                         # verify that 'updates' state matches the target (max bookmark)
-                        self.assertGreaterEqual(state_value_events, target_events_value,
+                        # self.assertGreaterEqual(state_value_events, target_events_value,  # workaround
+                        #                         msg="The bookmark value isn't correct "
+                        #                         "based on target data")
+                        self.assertEqual(state_value_events, target_events_value,
                                          msg="The bookmark value isn't correct "
                                          "based on target data")
-                        # self.assertEqual(state_value_events, target_events_value,
-                        #                  msg="The bookmark value isn't correct "
-                        #                  "based on target data")
 
                     # NOTE: This assertion is no longer valid. Some streams will create records for other streams
                     # verify the last record has the max bookmark in the target (this should never fail)

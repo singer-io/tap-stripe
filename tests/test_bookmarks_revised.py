@@ -74,7 +74,7 @@ class BookmarkTest(BaseTapTest):
             'payout_transactions',  # BUG see create test
             'balance_transactions',  # join stream, can't be updated
             'disputes',
-        })  # TODO does this match self.streams_to_create?
+        })
 
         # Ensure tested streams have existing records
         expected_records_first_sync = {stream: [] for stream in self.streams_to_create}
@@ -126,36 +126,43 @@ class BookmarkTest(BaseTapTest):
         updated_records = {x: [] for x in self.expected_streams()}
         expected_records_second_sync = {x: [] for x in self.expected_streams()}
 
-        # We should expect any records with rep-keys equal to the bookmark from the first sync to be returned by the second
-        # TODO ^?
 
         # Update one record from each stream prior to 2nd sync
         first_sync_created, _ = self.split_records_into_created_and_updated(first_sync_records)
-        updated_objects = {stream: [] for stream in self.streams_to_create}
-
         for stream in self.streams_to_create:
             # There needs to be some test data for each stream, otherwise this will break
             record = expected_records_first_sync[stream][0]
-            updated_objects[stream].append(update_object(stream, record["id"]))
-            expected_records_second_sync[stream].append({"id": updated_objects[stream][-1]['id']})
+            updated_record = update_object(stream, record["id"])
+            updated_records[stream].append(updated_record)
+            expected_records_second_sync[stream].append({"id": updated_record['id']})
 
         # Ensure different times between udpates and inserts
         sleep(2)
 
         # Insert (create) one record for each stream prior to 2nd sync
         for stream in self.streams_to_create:
-            self.new_objects[stream].append(create_object(stream))
-            expected_records_second_sync[stream].append({"id": self.new_objects[stream][-1]['id']})
+            created_record = create_object(stream)
+            self.new_objects[stream].append(created_record)
+            created_records[stream].append(created_record)
+            expected_records_second_sync[stream].append({"id": created_record['id']})
 
         # ensure validity of expected_records_second_sync
         for stream in self.streams_to_create:
             if stream in self.expected_incremental_streams():
                 # Most streams will have 2 records from the Update and Insert
                 self.assertEqual(2, len(expected_records_second_sync.get(stream)),
-                                     msg="Expectations are invalid for incremental stream {}".format(stream))
-            if stream in self.expected_full_table_streams():
-                self.assertEqual(len(expected_records_second_sync.get(stream)), len(expected_records_first_sync.get(stream)) + len(created_records[stream]),
-                                 msg="Expectations are invalid for full table stream {}".format(stream))
+                                 msg="Expectations are invalid for incremental stream {}".format(stream)
+                )
+            elif stream in self.expected_full_table_streams():
+                self.assertEqual(
+                    len(expected_records_second_sync.get(stream)),
+                    len(expected_records_first_sync.get(stream)) + len(created_records[stream]),
+                    msg="Expectations are invalid for full table stream {}".format(stream)
+                )
+
+            # created_records[stream] = self.records_data_type_conversions(created_records.get(stream))
+            # updated_records[stream] = self.records_data_type_conversions(updated_records.get(stream))
+
 
         # Run a second sync job using orchestrator
         second_sync_start = self.local_to_utc(dt.utcnow())
@@ -182,7 +189,7 @@ class BookmarkTest(BaseTapTest):
 
                     replication_keys = stream_replication_keys.get(stream)
 
-                    # Verify both syncs write / keep the same bookmark
+                    # Verify both syncs write / keep the same bookmark keys
                     self.assertEqual(set(first_sync_state.get('bookmarks', {}).keys()),
                                      set(second_sync_state.get('bookmarks', {}).keys()))
 
@@ -190,7 +197,7 @@ class BookmarkTest(BaseTapTest):
                     self.assertGreater(first_sync_record_count.get(stream, 0), 1,
                                        msg="Data isn't set up to be able to test full sync")
 
-                    # verify that you get less/same amount of data on the 2nd sync
+                    # verify that you get less data on the 2nd sync
                     self.assertGreater(
                         first_sync_record_count.get(stream, 0),
                         second_sync_record_count.get(stream, 0),
@@ -221,31 +228,20 @@ class BookmarkTest(BaseTapTest):
                                                         msg="A 2nd sync record has a replication-key that is less than or equal to the 1st sync bookmark.")
 
                 elif stream in self.expected_full_table_streams():
-
-                    # TESTING FULL TABLE STREAMS
-
-                    # Verify no bookmarks are present
-                    first_state = first_sync_state.get('bookmarks', {}).get(stream)
-                    self.assertEqual({}, first_state,
-                                     msg="Unexpected state for {}\n".format(stream) + \
-                                     "\tState: {}\n".format(first_sync_state) + \
-                                     "\tBookmark: {}".format(first_state))
-                    second_state = second_sync_state.get('bookmarks', {}).get(stream)
-                    self.assertEqual({}, second_state,
-                                     msg="Unexpected state for {}\n".format(stream) + \
-                                     "\tState: {}\n".format(second_sync_state) + \
-                                     "\tBookmark: {}".format(second_state))
+                    raise Exception("Expectations changed, but this test was not updated to reflect them.")
 
                 # TESTING APPLICABLE TO ALL STREAMS
 
                 # Verify that the expected records are replicated in the 2nd sync
                 # For incremental streams we should see at least 2 records (a new record and an updated record)
-                # but we may see more as the bookmmark is inclusive.
+                # but we may see more as the bookmmark is inclusive and there are hidden creates/updates due to
+                # dependencies between streams.
                 # For full table streams we should see 1 more record than the first sync
                 expected_records = expected_records_second_sync.get(stream)
                 primary_keys = stream_primary_keys.get(stream)
 
-                updated_pk_values = {tuple([record.get(pk) for pk in primary_keys]) for record in updated_records[stream]}
+                updated_pk_values = {tuple([record.get(pk) for pk in primary_keys])
+                                     for record in updated_records[stream]}
                 self.assertLessEqual(
                     len(expected_records), len(second_sync_data),
                     msg="Expected number of records are not less than or equal to actual for 2nd sync.\n" +
@@ -258,30 +254,16 @@ class BookmarkTest(BaseTapTest):
                 if not primary_keys:
                     raise NotImplementedError("PKs are needed for comparing records")
 
-                # Verify that the inserted records are replicated by the 2nd sync and match our expectations
-                for created_record in created_records.get(stream):
-                    record_pk_values = tuple([created_record.get(pk) for pk in primary_keys])
-                    sync_records = [sync_record for sync_record in second_sync_data
-                                    if tuple([sync_record.get(pk) for pk in primary_keys]) == record_pk_values]
-                    self.assertTrue(len(sync_records),
-                                    msg="An inserted record is missing from our sync: \nRECORD: {}".format(created_record))
-                    self.assertEqual(1, len(sync_records),
-                                     msg="A duplicate record was found in the sync for {}\nRECORD: {}.".format(stream, sync_records))
-                    sync_record = sync_records[0]
-                    self.assertRecordsEqual(stream, created_record, sync_record)
+                # Verify that the inserted and updated records are replicated by the 2nd sync
+                for expected_record in expected_records:
+                    expected_pk_value = expected_record.get('id')
+                    sync_pk_values = [sync_record.get('id')
+                                      for sync_record in second_sync_data
+                                      if sync_record.get('id') == expected_pk_value]
+                    self.assertTrue(
+                        len(sync_pk_values) > 0,
+                        msg="A record is missing from our sync: \nSTREAM: {}\tPK: {}".format(stream, expected_pk_value)
+                    )
+                    self.assertIn(expected_pk_value, sync_pk_values)
 
-                # Verify that the updated records are replicated by the 2nd sync and match our expectations
-                for updated_record in updated_records.get(stream):
-                    if stream not in self.cannot_update_streams():
-                        record_pk_values = tuple([updated_record.get(pk) for pk in primary_keys])
-                        sync_records = [sync_record for sync_record in second_sync_data
-                                        if tuple([sync_record.get(pk) for pk in primary_keys]) == record_pk_values]
-                        if stream != 'modifier_lists':
-                            self.assertTrue(len(sync_records),
-                                            msg="An updated record is missing from our sync: \nRECORD: {}".format(updated_record))
-                            self.assertEqual(1, len(sync_records),
-                                             msg="A duplicate record was found in the sync for {}\nRECORDS: {}.".format(stream, sync_records))
-
-                        sync_record = sync_records[0]
-
-                        self.assertRecordsEqual(stream, updated_record, sync_record)
+                # TODO verify updated fields are replicated as expected

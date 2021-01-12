@@ -4,6 +4,7 @@ Run discovery for as a prerequisite for most tests
 """
 import unittest
 import os
+import decimal
 from datetime import datetime as dt
 from datetime import timezone as tz
 from singer import utils
@@ -363,6 +364,34 @@ class BaseTapTest(unittest.TestCase):
 
             connections.select_catalog_and_fields_via_metadata(
                 conn_id, catalog, schema, non_selected_fields=non_selected_properties)
+
+    def records_data_type_conversions(self, records):
+
+        converted_records = []
+        for record in records:
+            converted_record = record
+
+            # Known keys with data types that must be converted to compare with
+            # jsonified records emitted by the tap
+            timestamp_to_datetime_keys = ['created', 'updated'] 
+            int_or_float_to_decimal_keys = ["percent_off", "percent_off_precise"]
+            
+            # timestamp to datetime
+            for key in timestamp_to_datetime_keys:
+                if record.get(key, False):
+                    converted_record[key] = dt.strftime(
+                        dt.fromtimestamp(record[key]), self.COMPARISON_FORMAT
+                    )
+
+            # int/float to decimal
+            for key in int_or_float_to_decimal_keys:
+                if record.get(key, False):
+                    value = float(record.get(key))  # does float -> float or int -> float
+                    converted_record[key] = decimal.Decimal(str(value))
+
+            converted_records.append(converted_record)
+            
+        return converted_records
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

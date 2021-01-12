@@ -13,7 +13,7 @@ from singer import utils
 from tap_tester import connections, menagerie, runner
 
 
-class BaseTapTest(unittest.TestCase):  # TODO need to clean up, some methods aren't needed, some have been replaced
+class BaseTapTest(unittest.TestCase):
     """
     Setup expectations for test sub classes
     Run discovery for as a prerequisite for most tests
@@ -24,11 +24,10 @@ class BaseTapTest(unittest.TestCase):  # TODO need to clean up, some methods are
     PRIMARY_KEYS = "table-key-properties"
     FOREIGN_KEYS = "table-foreign-key-properties"
     REPLICATION_METHOD = "forced-replication-method"
-    API_LIMIT = 100 # "max-row-limit"
+    API_LIMIT = 100
     INCREMENTAL = "INCREMENTAL"
     FULL = "FULL_TABLE"
     START_DATE_FORMAT = "%Y-%m-%dT00:00:00Z"
-
     COMPARISON_FORMAT = "%Y-%m-%dT%H:%M:%S.000000Z"
 
     @staticmethod
@@ -51,11 +50,11 @@ class BaseTapTest(unittest.TestCase):  # TODO need to clean up, some methods are
 
         if original:
             return return_value
-        
+
         # Start Date test needs the new connections start date to be prior to the default
         assert self.start_date < return_value["start_date"]
 
-        # Assign start date to be the default 
+        # Assign start date to be the default
         return_value["start_date"] = self.start_date
         return return_value
 
@@ -238,7 +237,7 @@ class BaseTapTest(unittest.TestCase):  # TODO need to clean up, some methods are
         string compared which works for ISO date-time strings.
         """
         max_bookmarks = {}
-        
+
         for stream, batch in sync_records.items():
             upsert_messages = [m for m in batch.get('messages') if m['action'] == 'upsert']
 
@@ -282,7 +281,7 @@ class BaseTapTest(unittest.TestCase):  # TODO need to clean up, some methods are
 
                 if not events:
                     return None
-                upsert_messages = [m for m in events.get('events').get('messages') 
+                upsert_messages = [m for m in events.get('events').get('messages')
                                    if m['action'] == 'upsert' and type_name in m['data']['type'] ]
 
                 stream_bookmark_key = 'updated'
@@ -386,21 +385,6 @@ class BaseTapTest(unittest.TestCase):  # TODO need to clean up, some methods are
                 selected_fields.add(field['breadcrumb'][1])
         return selected_fields
 
-    # @staticmethod
-    # def select_all_streams_and_fields(conn_id, catalogs, select_all_fields: bool = True):
-    #     """Select all streams and all fields within streams"""
-    #     for catalog in catalogs:
-    #         schema = menagerie.get_annotated_schema(conn_id, catalog['stream_id'])
-
-    #         non_selected_properties = []
-    #         if not select_all_fields:
-    #             # get a list of all properties so that none are selected
-    #             non_selected_properties = schema.get('annotated-schema', {}).get(
-    #                 'properties', {}).keys()
-
-    #         connections.select_catalog_and_fields_via_metadata(
-    #             conn_id, catalog, schema, non_selected_fields=non_selected_properties)
-
     def records_data_type_conversions(self, records):
 
         converted_records = []
@@ -409,9 +393,9 @@ class BaseTapTest(unittest.TestCase):  # TODO need to clean up, some methods are
 
             # Known keys with data types that must be converted to compare with
             # jsonified records emitted by the tap
-            timestamp_to_datetime_keys = ['created', 'updated'] 
+            timestamp_to_datetime_keys = ['created', 'updated']
             int_or_float_to_decimal_keys = ["percent_off", "percent_off_precise"]
-            
+
             # timestamp to datetime
             for key in timestamp_to_datetime_keys:
                 if record.get(key, False):
@@ -426,7 +410,7 @@ class BaseTapTest(unittest.TestCase):  # TODO need to clean up, some methods are
                     converted_record[key] = decimal.Decimal(str(value))
 
             converted_records.append(converted_record)
-            
+
         return converted_records
 
     def run_and_verify_check_mode(self, conn_id):

@@ -78,7 +78,7 @@ class ALlFieldsTest(BaseTapTest):
         # Verify there are no duplicate pks in the target
         sync_pks = [tuple(sync_record.get(pk) for pk in primary_keys) for sync_record in sync_records]
         sync_pks_set = set(sync_pks)
-        
+
         # Verify there are no duplicate pks in our expectations
         expected_pks = [tuple(expected_record.get(pk) for pk in primary_keys) for expected_record in expected_records]
         expected_pks_set = set(expected_pks)
@@ -159,5 +159,3 @@ class ALlFieldsTest(BaseTapTest):
                 for pks_tuple, expected_record in expected_pks_to_record_dict.items():
                     actual_record = actual_pks_to_record_dict.get(pks_tuple)
                     self.assertRecordsEqual(stream, expected_record, actual_record)
-
-

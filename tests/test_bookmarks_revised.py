@@ -204,9 +204,9 @@ class BookmarkTest(BaseTapTest):
                         msg="first sync didn't have more records, bookmark usage not verified")
 
                     # BUG https://stitchdata.atlassian.net/browse/SUP-1316
-                    if stream in self.streams_to_create and not stream.startswith('invoice'):
+                    if stream in self.streams_to_create:
                         for replication_key in replication_keys:
-                            updates_replication_key = "updates_" + replication_key
+                            updates_replication_key = "updates_created"
                             updates_stream = stream + "_events"
 
                             # Verify second sync's bookmarks move past the first sync's

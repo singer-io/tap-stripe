@@ -79,4 +79,3 @@ class MinimumSelectionTest(BaseTapTest):
                     msg=("The fields sent to the target are not the automatic fields. Expected: {}, Actual: {}"
                          .format(actual, expected))
                 )
-

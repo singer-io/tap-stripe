@@ -4,6 +4,7 @@ Run discovery for as a prerequisite for most tests
 """
 import unittest
 import os
+import json
 import decimal
 from datetime import datetime as dt
 from datetime import timezone as tz
@@ -12,7 +13,7 @@ from singer import utils
 from tap_tester import connections, menagerie, runner
 
 
-class BaseTapTest(unittest.TestCase):
+class BaseTapTest(unittest.TestCase):  # TODO need to clean up, some methods aren't needed, some have been replaced
     """
     Setup expectations for test sub classes
     Run discovery for as a prerequisite for most tests
@@ -350,20 +351,55 @@ class BaseTapTest(unittest.TestCase):
                                                 if m['data'].get("updated") != m['data'].get(bookmark_key)]
         return created, updated
 
-    @staticmethod
-    def select_all_streams_and_fields(conn_id, catalogs, select_all_fields: bool = True):
+    def select_all_streams_and_fields(self, conn_id, catalogs, select_all_fields: bool = True, exclude_streams=None):
         """Select all streams and all fields within streams"""
-        for catalog in catalogs:
-            schema = menagerie.get_annotated_schema(conn_id, catalog['stream_id'])
 
+        for catalog in catalogs:
+            if exclude_streams and catalog.get('stream_name') in exclude_streams:
+                continue
+            schema = menagerie.get_annotated_schema(conn_id, catalog['stream_id'])
             non_selected_properties = []
             if not select_all_fields:
                 # get a list of all properties so that none are selected
                 non_selected_properties = schema.get('annotated-schema', {}).get(
-                    'properties', {}).keys()
+                    'properties', {})
+                # remove properties that are automatic
+                for prop in self.expected_automatic_fields().get(catalog['stream_name'], []):
+                    if prop in non_selected_properties:
+                        del non_selected_properties[prop]
+                non_selected_properties = non_selected_properties.keys()
+            additional_md = []
 
             connections.select_catalog_and_fields_via_metadata(
-                conn_id, catalog, schema, non_selected_fields=non_selected_properties)
+                conn_id, catalog, schema, additional_md=additional_md,
+                non_selected_fields=non_selected_properties
+            )
+
+    @staticmethod
+    def get_selected_fields_from_metadata(metadata):
+        selected_fields = set()
+        for field in metadata:
+            is_field_metadata = len(field['breadcrumb']) > 1
+            inclusion_automatic_or_selected = (field['metadata']['inclusion'] == 'automatic'
+                                               or field['metadata']['selected'] is True)
+            if is_field_metadata and inclusion_automatic_or_selected:
+                selected_fields.add(field['breadcrumb'][1])
+        return selected_fields
+
+    # @staticmethod
+    # def select_all_streams_and_fields(conn_id, catalogs, select_all_fields: bool = True):
+    #     """Select all streams and all fields within streams"""
+    #     for catalog in catalogs:
+    #         schema = menagerie.get_annotated_schema(conn_id, catalog['stream_id'])
+
+    #         non_selected_properties = []
+    #         if not select_all_fields:
+    #             # get a list of all properties so that none are selected
+    #             non_selected_properties = schema.get('annotated-schema', {}).get(
+    #                 'properties', {}).keys()
+
+    #         connections.select_catalog_and_fields_via_metadata(
+    #             conn_id, catalog, schema, non_selected_fields=non_selected_properties)
 
     def records_data_type_conversions(self, records):
 
@@ -393,8 +429,116 @@ class BaseTapTest(unittest.TestCase):
             
         return converted_records
 
+    def run_and_verify_check_mode(self, conn_id):
+        """
+        Run the tap in check mode and verify it succeeds.
+        This should be ran prior to field selection and initial sync.
+
+        Return the connection id and found catalogs from menagerie.
+        """
+        # run in check mode
+        check_job_name = runner.run_check_mode(self, conn_id)
+
+        # verify check exit codes
+        exit_status = menagerie.get_exit_status(conn_id, check_job_name)
+        menagerie.verify_check_exit_status(self, exit_status, check_job_name)
+
+        found_catalogs = menagerie.get_catalogs(conn_id)
+        self.assertGreater(len(found_catalogs), 0, msg="unable to locate schemas for connection {}".format(conn_id))
+
+        found_catalog_names = set(map(lambda c: c['tap_stream_id'], found_catalogs))
+        diff = self.expected_streams().symmetric_difference(found_catalog_names)
+        self.assertEqual(len(diff), 0, msg="discovered schemas do not match: {}".format(diff))
+        print("discovered schemas are OK")
+
+        return found_catalogs
+
+    def run_and_verify_sync(self, conn_id, clear_state=True):
+        """
+        Clear the connections state in menagerie and Run a Sync.
+        Verify the exit code following the sync.
+
+        Return the connection id and record count by stream
+        """
+        if clear_state:
+            #clear state
+            menagerie.set_state(conn_id, {})
+
+        # run sync
+        sync_job_name = runner.run_sync_mode(self, conn_id)
+
+        # Verify tap exit codes
+        exit_status = menagerie.get_exit_status(conn_id, sync_job_name)
+        menagerie.verify_sync_exit_status(self, exit_status, sync_job_name)
+
+        # read target output
+        record_count_by_stream = runner.examine_target_output_file(self, conn_id,
+                                                                   self.expected_streams(),
+                                                                   self.expected_primary_keys())
+
+        return record_count_by_stream
+
+    def perform_and_verify_table_and_field_selection(self, conn_id, found_catalogs, streams_to_select, select_all_fields=True):
+        """
+        Perform table and field selection based off of the streams to select set and field selection parameters.
+        Verfify this results in the expected streams selected and all or no fields selected for those streams.
+        """
+        # Select all available fields or select no fields from all testable streams
+        exclude_streams = self.expected_streams().difference(streams_to_select)
+        self.select_all_streams_and_fields(
+            conn_id=conn_id, catalogs=found_catalogs, select_all_fields=select_all_fields, exclude_streams=exclude_streams
+        )
+
+        catalogs = menagerie.get_catalogs(conn_id)
+
+        # Ensure our selection worked
+        for cat in catalogs:
+            catalog_entry = menagerie.get_annotated_schema(conn_id, cat['stream_id'])
+            # Verify all testable streams are selected
+            selected = catalog_entry.get('annotated-schema').get('selected')
+            print("Validating selection on {}: {}".format(cat['stream_name'], selected))
+            if cat['stream_name'] not in streams_to_select:
+                self.assertFalse(selected, msg="Stream selected, but not testable.")
+                continue # Skip remaining assertions if we aren't selecting this stream
+            self.assertTrue(selected, msg="Stream not selected.")
+
+            if select_all_fields:
+                # Verify all fields within each selected stream are selected
+                for field, field_props in catalog_entry.get('annotated-schema').get('properties').items():
+                    field_selected = field_props.get('selected')
+                    print("\tValidating selection on {}.{}: {}".format(cat['stream_name'], field, field_selected))
+                    self.assertTrue(field_selected, msg="Field not selected.")
+            else:
+                # Verify only automatic fields are selected
+                expected_automatic_fields = self.expected_automatic_fields().get(cat['tap_stream_id'])
+                selected_fields = self.get_selected_fields_from_metadata(catalog_entry['metadata'])
+                self.assertEqual(expected_automatic_fields, selected_fields)
+
+    def expected_schema_keys(self, stream):
+        props = self._load_schemas(stream).get(stream).get('properties')
+        if not props:
+            props = self._load_schemas(stream, shared=True).get(stream).get('properties')
+
+        assert props, "schema not configured proprerly"
+
+        return props.keys()
+
+    @staticmethod
+    def _get_abs_path(path):
+        return os.path.join(os.path.dirname(os.path.realpath(__file__)), path)
+
+    def _load_schemas(self, stream, shared: bool = False):
+        schemas = {}
+
+        file_name = "shared/" + stream[:-1] + ".json" if shared else stream + ".json"
+        path = self._get_abs_path("schemas") + "/" + file_name
+        final_path = path.replace('tests', self.tap_name().replace('-', '_'))
+
+        with open(final_path) as file:
+                          schemas[stream] = json.load(file)
+
+        return schemas
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.start_date = self.get_properties().get('start_date')
-
-        # self.start_date = dt.strftime(dt.today(), "%Y-%m-%dT00:00:00Z")

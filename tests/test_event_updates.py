@@ -6,7 +6,7 @@ from time import sleep
 from random import random
 
 import requests
-from tap_tester import menagerie, runner
+from tap_tester import menagerie, runner, connections
 from base import BaseTapTest
 from utils import \
     get_catalogs, update_object, create_object, delete_object
@@ -33,7 +33,7 @@ class EventUpdatesTest(BaseTapTest):
         For EACH stream that gets updates through events stream, there's at least 1 row
             of data
         """
-        conn_id = self.create_connection()
+        conn_id = connections.ensure_connection(self)
 
         event_update_streams = {
             # "balance_transactions"  # Cannot be directly updated
@@ -53,8 +53,10 @@ class EventUpdatesTest(BaseTapTest):
             # "transfers",  # Cannot be updated directly via api
         }
 
-        our_catalogs = get_catalogs(conn_id, event_update_streams)
-
+        found_catalogs = self.run_and_verify_check_mode(conn_id)
+        our_catalogs = [catalog for catalog in found_catalogs
+                        if catalog.get('tap_stream_id') in
+                        event_update_streams]
         self.select_all_streams_and_fields(
             conn_id, our_catalogs, select_all_fields=True
         )
@@ -66,13 +68,13 @@ class EventUpdatesTest(BaseTapTest):
         }
 
         # Some streams will be updated implicitly
-        streams_to_update =event_update_streams.difference({
+        streams_to_update = event_update_streams.difference({
             "invoice_line_items",
             "subscription_items",
         })
 
         # Run a sync job using orchestrator
-        first_sync_record_count = self.run_sync(conn_id)
+        first_sync_record_count = self.run_and_verify_sync(conn_id)
 
         # verify that the sync only sent records to the target for selected streams (catalogs)
         self.assertEqual(set(first_sync_record_count.keys()), event_update_streams)
@@ -99,7 +101,7 @@ class EventUpdatesTest(BaseTapTest):
             updated[stream] = record["id"]
 
         # Run a second sync job using orchestrator
-        second_sync_record_count = self.run_sync(conn_id)
+        second_sync_record_count = self.run_and_verify_sync(conn_id)
 
         # Get the set of records from a second sync
         second_sync_records = runner.get_records_from_target_output()

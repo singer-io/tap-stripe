@@ -6,7 +6,7 @@ from pathlib import Path
 from random import random
 
 import requests
-from tap_tester import menagerie, runner
+from tap_tester import menagerie, runner, connections
 from base import BaseTapTest
 from utils import \
     create_object, delete_object, get_catalogs
@@ -26,7 +26,7 @@ class CreateObjectTest(BaseTapTest):
         Verify that the second sync includes at least one create for each stream
         Verify that the created record was picked up on the second sync
         """
-        conn_id = self.create_connection()
+        conn_id = connections.ensure_connection(self)
 
         streams_to_create = {
             "balance_transactions",  # should be created implicity with a create in the payouts or charges streams
@@ -53,17 +53,17 @@ class CreateObjectTest(BaseTapTest):
             # how to set up a test account we can use to create a transfer
          }
 
-        our_catalogs = get_catalogs(conn_id, streams_to_create)
+        our_catalogs = self.run_and_verify_check_mode(conn_id)
 
         self.select_all_streams_and_fields(
             conn_id, our_catalogs, select_all_fields=True
         )
 
         # Run a sync job using orchestrator
-        first_sync_record_count = self.run_sync(conn_id)
+        first_sync_record_count = self.run_and_verify_sync(conn_id)
 
-        # verify that the sync only sent records to the target for selected streams (catalogs)
-        self.assertEqual(set(first_sync_record_count.keys()), streams_to_create)
+        # verify that the sync sent records to the target for selected streams (catalogs)
+        self.assertTrue(streams_to_create.issubset(set(first_sync_record_count.keys())))
 
         # Get the set of records from a first sync
         first_sync_records = runner.get_records_from_target_output()
@@ -78,7 +78,7 @@ class CreateObjectTest(BaseTapTest):
         }
 
         # Run a second sync job using orchestrator
-        second_sync_record_count = self.run_sync(conn_id)
+        second_sync_record_count = self.run_and_verify_sync(conn_id)
 
         # Get the set of records from a second sync
         second_sync_records = runner.get_records_from_target_output()

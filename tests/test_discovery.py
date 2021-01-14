@@ -3,7 +3,7 @@ Test tap discovery
 """
 import re
 
-from tap_tester import menagerie
+from tap_tester import menagerie, connections
 
 from base import BaseTapTest
 
@@ -32,10 +32,10 @@ class DiscoveryTest(BaseTapTest):
           are given the inclusion of automatic (metadata and annotated schema).
         • verify that all other fields have inclusion of available (metadata and schema)
         """
-        conn_id = self.create_connection()
+        conn_id = connections.ensure_connection(self)
 
         # Verify number of actual streams discovered match expected
-        found_catalogs = menagerie.get_catalogs(conn_id)
+        found_catalogs = self.run_and_verify_check_mode(conn_id)
         self.assertGreater(len(found_catalogs), 0,
                            msg="unable to locate schemas for connection {}".format(conn_id))
         self.assertEqual(len(found_catalogs),

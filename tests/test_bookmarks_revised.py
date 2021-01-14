@@ -91,7 +91,7 @@ class BookmarkTest(BaseTapTest):
         conn_id = connections.ensure_connection(self)
 
         # run in check mode
-        found_catalogs = self.run_and_verify_check_mode(self, conn_id)
+        found_catalogs = self.run_and_verify_check_mode(conn_id)
 
         # Select all testable streams and all fields within streams
         streams_to_select = self.expected_incremental_streams().difference(untested_streams)

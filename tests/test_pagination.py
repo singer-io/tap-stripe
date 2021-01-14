@@ -50,7 +50,7 @@ class PaginationTest(BaseTapTest):
         tested_streams = incremental_streams.difference(untested_streams)
         
         # Select all streams and all fields within streams
-        found_catalogs = self.run_and_verify_check_mode(self, conn_id)
+        found_catalogs = self.run_and_verify_check_mode(conn_id)
         our_catalogs = get_catalogs(conn_id, tested_streams)
         self.select_all_streams_and_fields(conn_id, our_catalogs, select_all_fields=True)
 

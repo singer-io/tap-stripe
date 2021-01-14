@@ -53,7 +53,7 @@ class EventUpdatesTest(BaseTapTest):
             # "transfers",  # Cannot be updated directly via api
         }
 
-        found_catalogs = self.run_and_verify_check_mode(self, conn_id)
+        found_catalogs = self.run_and_verify_check_mode(conn_id)
         our_catalogs = [catalog for catalog in found_catalogs
                         if catalog.get('tap_stream_id') in
                         event_update_streams]

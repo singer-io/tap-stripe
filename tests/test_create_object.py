@@ -53,7 +53,7 @@ class CreateObjectTest(BaseTapTest):
             # how to set up a test account we can use to create a transfer
          }
 
-        our_catalogs = self.run_and_verify_check_mode(self, conn_id)
+        our_catalogs = self.run_and_verify_check_mode(conn_id)
 
         self.select_all_streams_and_fields(
             conn_id, our_catalogs, select_all_fields=True

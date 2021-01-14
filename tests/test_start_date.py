@@ -34,7 +34,7 @@ class StartDateTest(BaseTapTest):
         conn_id = connections.ensure_connection(self)
 
         # Select all streams and all fields within streams
-        found_catalogs = self.run_and_verify_check_mode(self, conn_id)
+        found_catalogs = self.run_and_verify_check_mode(conn_id)
         incremental_streams = {key for key, value in self.expected_replication_method().items()
                                if value == self.INCREMENTAL}
 
@@ -89,7 +89,7 @@ class StartDateTest(BaseTapTest):
         conn_id = connections.ensure_connection(self, original_properties=False)
 
         # Select all streams and all fields within streams
-        found_catalogs = self.run_and_verify_check_mode(self, conn_id)
+        found_catalogs = self.run_and_verify_check_mode(conn_id)
         our_catalogs = [catalog for catalog in found_catalogs if
                         catalog.get('tap_stream_id') in incremental_streams.difference(
                             untested_streams)]

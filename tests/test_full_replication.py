@@ -29,7 +29,7 @@ class FullReplicationTest(BaseTapTest):
         conn_id = connections.ensure_connection(self)
 
         # Select all streams and no fields within streams
-        found_catalogs = self.run_and_verify_check_mode(self, conn_id)
+        found_catalogs = self.run_and_verify_check_mode(conn_id)
         full_streams = {key for key, value in self.expected_replication_method().items()
                         if value == self.FULL}
         our_catalogs = [catalog for catalog in found_catalogs if

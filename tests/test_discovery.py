@@ -35,7 +35,7 @@ class DiscoveryTest(BaseTapTest):
         conn_id = connections.ensure_connection(self)
 
         # Verify number of actual streams discovered match expected
-        found_catalogs = self.run_and_verify_check_mode(self, conn_id)
+        found_catalogs = self.run_and_verify_check_mode(conn_id)
         self.assertGreater(len(found_catalogs), 0,
                            msg="unable to locate schemas for connection {}".format(conn_id))
         self.assertEqual(len(found_catalogs),

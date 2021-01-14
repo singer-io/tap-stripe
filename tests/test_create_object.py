@@ -62,8 +62,8 @@ class CreateObjectTest(BaseTapTest):
         # Run a sync job using orchestrator
         first_sync_record_count = self.run_and_verify_sync(conn_id)
 
-        # verify that the sync only sent records to the target for selected streams (catalogs)
-        self.assertEqual(set(first_sync_record_count.keys()), streams_to_create)
+        # verify that the sync sent records to the target for selected streams (catalogs)
+        self.assertTrue(streams_to_create.issubset(set(first_sync_record_count.keys())))
 
         # Get the set of records from a first sync
         first_sync_records = runner.get_records_from_target_output()

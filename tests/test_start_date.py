@@ -105,7 +105,7 @@ class StartDateTest(BaseTapTest):
             updated[stream] = record["id"]
         
         # Run a sync job using orchestrator
-        second_sync_record_count = self.run_and_verify_sync(conn_id)
+        second_sync_record_count = self.run_and_verify_sync(conn_id, clear_state=True)
 
         # tap-stripe uses events for updates, so these need filtered to validate bookmark
         second_sync_records = runner.get_records_from_target_output()

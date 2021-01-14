@@ -68,7 +68,7 @@ class EventUpdatesTest(BaseTapTest):
         }
 
         # Some streams will be updated implicitly
-        streams_to_update =event_update_streams.difference({
+        streams_to_update = event_update_streams.difference({
             "invoice_line_items",
             "subscription_items",
         })

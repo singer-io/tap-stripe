@@ -75,6 +75,9 @@ class BookmarkTest(BaseTapTest):
             'balance_transactions',  # join stream, can't be updated
             'disputes',
         })
+        cannot_update_streams = {
+            'invoice_line_items',  # updates not available via api
+        }
 
         # Ensure tested streams have existing records
         expected_records_first_sync = {stream: [] for stream in self.streams_to_create}
@@ -124,7 +127,7 @@ class BookmarkTest(BaseTapTest):
 
         # Update one record from each stream prior to 2nd sync
         first_sync_created, _ = self.split_records_into_created_and_updated(first_sync_records)
-        for stream in self.streams_to_create:
+        for stream in self.streams_to_create.difference(cannot_update_streams):
             # There needs to be some test data for each stream, otherwise this will break
             record = expected_records_first_sync[stream][0]
             updated_record = update_object(stream, record["id"])
@@ -144,6 +147,12 @@ class BookmarkTest(BaseTapTest):
         # ensure validity of expected_records_second_sync
         for stream in self.streams_to_create:
             if stream in self.expected_incremental_streams():
+                if stream in cannot_update_streams:
+                    # Some streams will have only 1 record from the Insert
+                    self.assertEqual(1, len(expected_records_second_sync.get(stream)),
+                                     msg="Expectations are invalid for incremental stream {}".format(stream)
+                    )
+                    continue
                 # Most streams will have 2 records from the Update and Insert
                 self.assertEqual(2, len(expected_records_second_sync.get(stream)),
                                  msg="Expectations are invalid for incremental stream {}".format(stream)
@@ -198,7 +207,6 @@ class BookmarkTest(BaseTapTest):
                         second_sync_record_count.get(stream, 0),
                         msg="first sync didn't have more records, bookmark usage not verified")
 
-                    # BUG https://stitchdata.atlassian.net/browse/SUP-1316
                     if stream in self.streams_to_create:
                         for replication_key in replication_keys:
                             updates_replication_key = "updates_created"

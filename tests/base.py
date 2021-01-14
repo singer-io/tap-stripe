@@ -405,7 +405,7 @@ class BaseTapTest(unittest.TestCase):
 
         return found_catalogs
 
-    def run_and_verify_sync(self, conn_id, clear_state=True):
+    def run_and_verify_sync(self, conn_id, clear_state=False):
         """
         Clear the connections state in menagerie and Run a Sync.
         Verify the exit code following the sync.

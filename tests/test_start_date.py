@@ -7,7 +7,7 @@ from datetime import datetime as dt
 from datetime import timedelta
 from dateutil.parser import parse
 
-from tap_tester import menagerie, runner
+from tap_tester import menagerie, runner, connections
 
 from base import BaseTapTest
 from utils import create_object, update_object, delete_object, get_catalogs
@@ -31,10 +31,10 @@ class StartDateTest(BaseTapTest):
 
     def test_run(self):
         """Test we get a lot of data back based on the start date configured in base"""
-        conn_id = self.create_connection()
+        conn_id = connections.ensure_connection(self)
 
         # Select all streams and all fields within streams
-        found_catalogs = menagerie.get_catalogs(conn_id)
+        found_catalogs = self.run_and_verify_check_mode(self, conn_id)
         incremental_streams = {key for key, value in self.expected_replication_method().items()
                                if value == self.INCREMENTAL}
 
@@ -57,7 +57,7 @@ class StartDateTest(BaseTapTest):
         }
 
         # Run a sync job using orchestrator
-        first_sync_record_count = self.run_sync(conn_id)
+        first_sync_record_count = self.run_and_verify_sync(conn_id)
         first_total_records = reduce(lambda a, b: a + b, first_sync_record_count.values())
 
         # Count actual rows synced
@@ -85,10 +85,11 @@ class StartDateTest(BaseTapTest):
         self.start_date = dt.strftime(dt.today() - timedelta(days=1), self.START_DATE_FORMAT)
 
         # create a new connection with the new start_date
-        conn_id = self.create_connection(original_properties=False)
+
+        conn_id = connections.ensure_connection(self, original_properties=False)
 
         # Select all streams and all fields within streams
-        found_catalogs = menagerie.get_catalogs(conn_id)
+        found_catalogs = self.run_and_verify_check_mode(self, conn_id)
         our_catalogs = [catalog for catalog in found_catalogs if
                         catalog.get('tap_stream_id') in incremental_streams.difference(
                             untested_streams)]
@@ -104,7 +105,7 @@ class StartDateTest(BaseTapTest):
             updated[stream] = record["id"]
         
         # Run a sync job using orchestrator
-        second_sync_record_count = self.run_sync(conn_id)
+        second_sync_record_count = self.run_and_verify_sync(conn_id)
 
         # tap-stripe uses events for updates, so these need filtered to validate bookmark
         second_sync_records = runner.get_records_from_target_output()

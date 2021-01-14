@@ -3,7 +3,7 @@ Test tap gets all records for streams with full replication
 """
 import json
 
-from tap_tester import menagerie, runner
+from tap_tester import menagerie, runner, connections
 
 from base import BaseTapTest
 
@@ -26,10 +26,10 @@ class FullReplicationTest(BaseTapTest):
         For EACH stream that is fully replicated there are multiple rows of data with
             different values for the replication key
         """
-        conn_id = self.create_connection()
+        conn_id = connections.ensure_connection(self)
 
         # Select all streams and no fields within streams
-        found_catalogs = menagerie.get_catalogs(conn_id)
+        found_catalogs = self.run_and_verify_check_mode(self, conn_id)
         full_streams = {key for key, value in self.expected_replication_method().items()
                         if value == self.FULL}
         our_catalogs = [catalog for catalog in found_catalogs if
@@ -37,7 +37,7 @@ class FullReplicationTest(BaseTapTest):
         self.select_all_streams_and_fields(conn_id, our_catalogs, select_all_fields=True)
 
         # Run a sync job using orchestrator
-        first_sync_record_count = self.run_sync(conn_id)
+        first_sync_record_count = self.run_and_verify_sync(conn_id)
 
         # verify that the sync only sent records to the target for selected streams (catalogs)
         self.assertEqual(set(first_sync_record_count.keys()), full_streams)
@@ -48,7 +48,7 @@ class FullReplicationTest(BaseTapTest):
         first_sync_records = runner.get_records_from_target_output()
 
         # Run a second sync job using orchestrator
-        second_sync_record_count = self.run_sync(conn_id)
+        second_sync_record_count = self.run_and_verify_sync(conn_id)
 
         # Get the set of records from a second sync
         second_sync_records = runner.get_records_from_target_output()

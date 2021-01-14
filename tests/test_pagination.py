@@ -3,7 +3,7 @@ Test tap pagination of streams
 """
 import logging
 
-from tap_tester import menagerie, runner
+from tap_tester import menagerie, runner, connections
 from base import BaseTapTest
 from utils import create_object, update_object, \
     delete_object, list_all_object, get_catalogs, get_schema
@@ -26,7 +26,7 @@ class PaginationTest(BaseTapTest):
         fetch of data.  For instance if you have a limit of 250 records ensure
         that 251 (or more) records have been posted for that stream.
         """
-        conn_id = self.create_connection()
+        conn_id = connections.ensure_connection(self)
 
         incremental_streams = {key for key, value in self.expected_replication_method().items()
                                if value == self.INCREMENTAL}
@@ -50,7 +50,7 @@ class PaginationTest(BaseTapTest):
         tested_streams = incremental_streams.difference(untested_streams)
         
         # Select all streams and all fields within streams
-        found_catalogs = menagerie.get_catalogs(conn_id)
+        found_catalogs = self.run_and_verify_check_mode(self, conn_id)
         our_catalogs = get_catalogs(conn_id, tested_streams)
         self.select_all_streams_and_fields(conn_id, our_catalogs, select_all_fields=True)
 
@@ -79,7 +79,7 @@ class PaginationTest(BaseTapTest):
                 logging.info("   Stream {} has {} records created today".format(stream, len(records['data']) + 1))
 
         # Run a sync job using orchestrator
-        record_count_by_stream = self.run_sync(conn_id)
+        record_count_by_stream = self.run_and_verify_sync(conn_id)
 
         actual_fields_by_stream = runner.examine_target_output_for_fields()
 

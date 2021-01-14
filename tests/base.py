@@ -186,37 +186,6 @@ class BaseTapTest(unittest.TestCase):
     #   Helper Methods      #
     #########################
 
-    def create_connection(self, original_properties: bool = True):
-        """Create a new connection with the test name"""
-        # Create the connection
-        conn_id = connections.ensure_connection(self, original_properties)
-
-        # Run a check job using orchestrator (discovery)
-        check_job_name = runner.run_check_mode(self, conn_id)
-
-        # Assert that the check job succeeded
-        exit_status = menagerie.get_exit_status(conn_id, check_job_name)
-        menagerie.verify_check_exit_status(self, exit_status, check_job_name)
-        return conn_id
-
-    def run_sync(self, conn_id):
-        """
-        Run a sync job and make sure it exited properly.
-        Return a dictionary with keys of streams synced
-        and values of records synced for each stream
-        """
-        # Run a sync job using orchestrator
-        sync_job_name = runner.run_sync_mode(self, conn_id)
-
-        # Verify tap and target exit codes
-        exit_status = menagerie.get_exit_status(conn_id, sync_job_name)
-        menagerie.verify_sync_exit_status(self, exit_status, sync_job_name)
-
-        # Verify actual rows were synced
-        sync_record_count = runner.examine_target_output_file(
-            self, conn_id, self.expected_streams(), self.expected_primary_keys())
-        return sync_record_count
-
     @staticmethod
     def local_to_utc(date: dt):
         """Convert a datetime with timezone information to utc"""
@@ -389,7 +358,7 @@ class BaseTapTest(unittest.TestCase):
 
         converted_records = []
         for record in records:
-            converted_record = record
+            converted_record = dict(record)
 
             # Known keys with data types that must be converted to compare with
             # jsonified records emitted by the tap
@@ -429,7 +398,6 @@ class BaseTapTest(unittest.TestCase):
 
         found_catalogs = menagerie.get_catalogs(conn_id)
         self.assertGreater(len(found_catalogs), 0, msg="unable to locate schemas for connection {}".format(conn_id))
-
         found_catalog_names = set(map(lambda c: c['tap_stream_id'], found_catalogs))
         diff = self.expected_streams().symmetric_difference(found_catalog_names)
         self.assertEqual(len(diff), 0, msg="discovered schemas do not match: {}".format(diff))

@@ -9,7 +9,7 @@ from time import sleep, perf_counter
 from datetime import datetime as dt
 from dateutil.parser import parse
 
-from tap_tester import menagerie, runner
+from tap_tester import menagerie, runner, connections
 from base import BaseTapTest
 from utils import \
     create_object, update_object, delete_object, get_hidden_objects, activate_tracking
@@ -88,17 +88,12 @@ class BookmarkTest(BaseTapTest):
         self.START_DATE = self.get_properties().get('start_date')
 
         # Instantiate connection with default start
-        conn_id = self.create_connection()
+        conn_id = connections.ensure_connection(self)
 
         # run in check mode
-        check_job_name = runner.run_check_mode(self, conn_id)
-
-        # verify check  exit codes
-        exit_status = menagerie.get_exit_status(conn_id, check_job_name)
-        menagerie.verify_check_exit_status(self, exit_status, check_job_name)
+        found_catalogs = self.run_and_verify_check_mode(self, conn_id)
 
         # Select all testable streams and all fields within streams
-        found_catalogs = menagerie.get_catalogs(conn_id)
         streams_to_select = self.expected_incremental_streams().difference(untested_streams)
         our_catalogs = [catalog for catalog in found_catalogs
                         if catalog.get('tap_stream_id') in
@@ -107,7 +102,7 @@ class BookmarkTest(BaseTapTest):
 
         # Run a sync job using orchestrator
         first_sync_start = self.local_to_utc(dt.utcnow())
-        first_sync_record_count = self.run_sync(conn_id)
+        first_sync_record_count = self.run_and_verify_sync(conn_id)
         first_sync_end = self.local_to_utc(dt.utcnow())
 
         # verify that the sync only sent records to the target for selected streams (catalogs)
@@ -166,7 +161,7 @@ class BookmarkTest(BaseTapTest):
 
         # Run a second sync job using orchestrator
         second_sync_start = self.local_to_utc(dt.utcnow())
-        second_sync_record_count = self.run_sync(conn_id)
+        second_sync_record_count = self.run_and_verify_sync(conn_id)
         second_sync_end = self.local_to_utc(dt.utcnow())
 
         second_sync_state = menagerie.get_state(conn_id)

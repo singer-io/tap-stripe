@@ -2,7 +2,7 @@
 Test that with no fields selected for a stream automatic fields are still replicated
 """
 
-from tap_tester import runner, menagerie
+from tap_tester import runner, menagerie, connections
 
 from base import BaseTapTest
 from utils import create_object
@@ -25,7 +25,7 @@ class MinimumSelectionTest(BaseTapTest):
         fetch of data.  For instance if you have a limit of 250 records ensure
         that 251 (or more) records have been posted for that stream.
         """
-        conn_id = self.create_connection()
+        conn_id = connections.ensure_connection(self)
         streams_to_create = {
             # "balance_transactions",  # should be created implicity with a create in the payouts or charges streams
             "charges",
@@ -50,14 +50,15 @@ class MinimumSelectionTest(BaseTapTest):
             for stream in streams_to_create.difference()
         }
 
+
         # Select all streams and no fields within streams
         # IF THERE ARE NO AUTOMATIC FIELDS FOR A STREAM
         # WE WILL NEED TO UPDATE THE BELOW TO SELECT ONE
-        found_catalogs = menagerie.get_catalogs(conn_id)
+        found_catalogs = self.run_and_verify_check_mode(conn_id)
         self.select_all_streams_and_fields(conn_id, found_catalogs, select_all_fields=False)
 
         # Run a sync job using orchestrator
-        record_count_by_stream = self.run_sync(conn_id)
+        record_count_by_stream = self.run_and_verify_sync(conn_id)
 
         actual_fields_by_stream = runner.examine_target_output_for_fields()
 

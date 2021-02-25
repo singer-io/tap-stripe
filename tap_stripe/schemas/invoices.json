@@ -189,43 +189,45 @@
     "last_finalization_error": {
       "type": [
         "null",
-        "array"
+        "object"
       ],
-      "code": {
-        "type": [
-          "null",
-          "string"
-        ]
-      },
-      "doc_url": {
-        "type": [
-          "null",
-          "string"
-        ]
-      },
-      "message": {
-        "type": [
-          "null",
-          "string"
-        ]
-      },
-      "param": {
-        "type": [
-          "null",
-          "string"
-        ]
-      },
-      "payment_method_type": {
-        "type": [
-          "null",
-          "string"
-        ]
-      },
-      "type": {
-        "type": [
-          "null",
-          "string"
-        ]
+      "properties": {
+        "code": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "doc_url": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "message": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "param": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "payment_method_type": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "type": {
+          "type": [
+            "null",
+            "string"
+          ]
+        }
       }
     },
     "default_tax_rates": {

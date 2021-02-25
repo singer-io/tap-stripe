@@ -18,7 +18,10 @@
       ],
       "properties": {
         "stripe_report": {
-          "type": ["null", "string"]
+          "type": [
+            "null",
+            "string"
+          ]
         }
       }
     },
@@ -729,14 +732,14 @@
                     "null",
                     "object"
                   ],
-                  "properties": null
+                  "properties": {}
                 },
                 "apple_pay": {
                   "type": [
                     "null",
                     "object"
                   ],
-                  "properties": null
+                  "properties": {}
                 },
                 "dynamic_last4": {
                   "type": [
@@ -749,7 +752,7 @@
                     "null",
                     "object"
                   ],
-                  "properties": null
+                  "properties": {}
                 },
                 "masterpass": {
                   "type": [
@@ -864,7 +867,7 @@
                     "null",
                     "object"
                   ],
-                  "properties": null
+                  "properties": {}
                 },
                 "type": {
                   "type": [
@@ -1195,7 +1198,7 @@
                 "null",
                 "object"
               ],
-              "properties": null
+              "properties": {}
             },
             "multibanco": {
               "type": [
@@ -1330,7 +1333,7 @@
                 "null",
                 "object"
               ],
-              "properties": null
+              "properties": {}
             },
             "type": {
               "type": [
@@ -1343,14 +1346,14 @@
                 "null",
                 "object"
               ],
-              "properties": null
+              "properties": {}
             },
             "metadata": {
               "type": [
                 "null",
                 "object"
               ],
-              "properties": null
+              "properties": {}
             },
             "exp_month": {
               "type": [

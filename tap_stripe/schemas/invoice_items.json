@@ -15,7 +15,7 @@
         "null",
         "object"
       ],
-      "properties": null
+      "properties": {}
     },
     "plan": {
       "$ref": "shared/plan.json#/"

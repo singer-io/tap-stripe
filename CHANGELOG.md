@@ -1,5 +1,8 @@
 # Changelog
 
+** 1.4.5
+  * Added various schema [#77](https://github.com/singer-io/tap-stripe/pull/77)
+
 ** 1.4.4
   * Use the default timeout in the stripe client [#61](https://github.com/singer-io/tap-stripe/pull/61)
 

@@ -11,6 +11,124 @@
       ],
       "properties": {}
     },
+    "preferred_locales": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "items": {
+        "type": [
+          "null",
+          "string"
+        ]
+      }
+    },
+    "invoice_settings": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {
+        "custom_fields": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "items": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "default_payment_method": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "footer": {
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      }
+    },
+    "name": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "tax_exempt": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "next_invoice_sequence": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "balance": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "phone": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "address": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {
+        "city": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "country": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "line1": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "line2": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "postal_code": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "state": {
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      }
+    },
     "shipping": {
       "type": [
         "null",
@@ -83,11 +201,11 @@
             "array"
           ],
           "items": {
-            "$ref" : "shared/source.json#/"
+            "$ref": "shared/source.json#/"
           }
         },
         {
-          "$ref" : "shared/source.json#/"
+          "$ref": "shared/source.json#/"
         }
       ]
     },

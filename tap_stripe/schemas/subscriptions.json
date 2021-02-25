@@ -18,6 +18,159 @@
       ],
       "format": "date-time"
     },
+    "schedule": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "next_pending_invoice_item_invoice": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "date-time"
+    },
+    "cancel_at": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "date-time"
+    },
+    "invoice_customer_balance_settings": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {
+        "consume_applied_balance_on_void": {
+          "type": [
+            "null",
+            "boolean"
+          ]
+        }
+      }
+    },
+    "pending_invoice_item_interval": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {
+        "interval": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "interval_count": {
+          "type": [
+            "null",
+            "integer"
+          ]
+        }
+      }
+    },
+    "pause_collection": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {
+        "behavior": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "resumes_at": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "format": "date-time"
+        }
+      }
+    },
+    "transfer_data": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {
+        "amount_percent": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "format": "singer.decimal"
+        },
+        "destination": {
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      }
+    },
+    "latest_invoice": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "billing_thresholds": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {
+        "amount_gte": {
+          "type": [
+            "null",
+            "integer"
+          ]
+        },
+        "reset_billing_cycle_anchor": {
+          "type": [
+            "null",
+            "boolean"
+          ]
+        }
+      }
+    },
+    "pending_setup_intent": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "start_date": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "date-time"
+    },
+    "collection_method": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "default_source": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "default_payment_method": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
     "livemode": {
       "type": [
         "null",
@@ -82,7 +235,7 @@
       ]
     },
     "discount": {
-      "$ref" : "shared/discount.json#/"
+      "$ref": "shared/discount.json#/"
     },
     "current_period_end": {
       "type": [

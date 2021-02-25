@@ -78,6 +78,20 @@
       ],
       "format": "date-time"
     },
+    "billing_thresholds": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {
+        "usage_gte": {
+          "type": [
+            "null",
+            "integer"
+          ]
+        }
+      }
+    },
     "discount": {
       "type": [
         "null",

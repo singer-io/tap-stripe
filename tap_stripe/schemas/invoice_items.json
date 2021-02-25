@@ -17,12 +17,109 @@
       ],
       "properties": {}
     },
-    "plan": {"$ref": "shared/plan.json#/"},
+    "plan": {
+      "$ref": "shared/plan.json#/"
+    },
+    "tax_rates": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "items": {
+        "type": [
+          "null",
+          "object"
+        ],
+        "properties": {
+          "id": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "object": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "active": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "country": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "created": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "display_name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "inclusive": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "jurisdiction": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "livemode": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "percentage": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "singer.decimal"
+          },
+          "state": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      }
+    },
     "invoice": {
       "type": [
         "null",
         "string"
       ]
+    },
+    "unit_amount_decimal": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "singer.decimal"
     },
     "period": {
       "type": [
@@ -88,6 +185,18 @@
         "null",
         "boolean"
       ]
+    },
+    "discounts": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "items": {
+        "type": [
+          "null",
+          "string"
+        ]
+      }
     },
     "discountable": {
       "type": [

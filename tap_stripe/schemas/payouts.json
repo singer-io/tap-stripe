@@ -19,6 +19,18 @@
         "string"
       ]
     },
+    "original_payout": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "reversed_by": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
     "statement_description": {
       "type": [
         "null",

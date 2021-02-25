@@ -1,5 +1,8 @@
 # Changelog
 
+** 1.4.6
+  * Removed fields that caused transform errors
+
 ** 1.4.5
   * Added various schema [#77](https://github.com/singer-io/tap-stripe/pull/77)
 

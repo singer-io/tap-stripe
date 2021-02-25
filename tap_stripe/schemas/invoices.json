@@ -30,26 +30,6 @@
         "string"
       ]
     },
-    "custom_fields": {
-      "type": [
-        "null",
-        "object"
-      ],
-      "properties": {
-        "name": {
-          "type": [
-            "null",
-            "string"
-          ]
-        },
-        "value": {
-          "type": [
-            "null",
-            "string"
-          ]
-        }
-      }
-    },
     "customer_name": {
       "type": [
         "null",

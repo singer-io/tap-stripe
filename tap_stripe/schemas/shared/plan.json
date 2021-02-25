@@ -11,6 +11,13 @@
         "string"
       ]
     },
+    "amount_decimal": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "singer.decimal"
+    },
     "tiers": {
       "type": [
         "null",

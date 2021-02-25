@@ -116,6 +116,50 @@
         "string"
       ]
     },
+    "discounts": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "items": {
+        "type": [
+          "null",
+          "string"
+        ]
+      }
+    },
+    "account_tax_ids": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "items": {
+        "type": [
+          "null",
+          "string"
+        ]
+      }
+    },
+    "transfer_data": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {
+        "amount": {
+          "type": [
+            "null",
+            "integer"
+          ]
+        },
+        "destination": {
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      }
+    },
     "default_tax_rates": {
       "type": [
         "null",

@@ -313,10 +313,22 @@
       ],
       "properties": {}
     },
+    "calculated_statement_descriptor": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
     "invoice": {
       "type": [
         "null",
         "string"
+      ]
+    },
+    "amount_captured": {
+      "type": [
+        "null",
+        "integer"
       ]
     },
     "amount": {

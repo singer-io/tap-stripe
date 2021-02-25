@@ -72,6 +72,27 @@
         }
       }
     },
+    "pause_collection": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {
+        "behavior": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "resumes_at": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "format": "date-time"
+        }
+      }
+    },
     "latest_invoice": {
       "type": [
         "null",

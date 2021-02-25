@@ -186,6 +186,18 @@
         "boolean"
       ]
     },
+    "discounts": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "items": {
+        "type": [
+          "null",
+          "string"
+        ]
+      }
+    },
     "discountable": {
       "type": [
         "null",

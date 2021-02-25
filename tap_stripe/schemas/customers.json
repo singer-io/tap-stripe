@@ -200,11 +200,11 @@
             "array"
           ],
           "items": {
-            "$ref" : "shared/source.json#/"
+            "$ref": "shared/source.json#/"
           }
         },
         {
-          "$ref" : "shared/source.json#/"
+          "$ref": "shared/source.json#/"
         }
       ]
     },

@@ -100,7 +100,8 @@
     },
     "pending_setup_intent": {
       "type": [
-        "null"
+        "null",
+        "string"
       ]
     },
     "start_date": {

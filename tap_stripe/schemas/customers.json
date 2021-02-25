@@ -111,7 +111,8 @@
         },
         "line2": {
           "type": [
-            "null"
+            "null",
+            "string"
           ]
         },
         "postal_code": {

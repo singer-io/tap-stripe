@@ -96,7 +96,7 @@
             "type": [
               "null",
               "string"
-            ]
+            ],
             "format": "singer.decimal"
           },
           "state": {
@@ -104,7 +104,7 @@
               "null",
               "string"
             ]
-          },
+          }
         }
       }
     },

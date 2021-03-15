@@ -13,7 +13,7 @@ jobs:
           command: |
             python3 -mvenv /usr/local/share/virtualenvs/tap-stripe
             source /usr/local/share/virtualenvs/tap-stripe/bin/activate
-            pip install -U 'pip<19.2' 'setuptools<51.0.0'
+            pip install -U pip setuptools
             pip install .[dev]
       - run:
           name: 'pylint'
@@ -24,8 +24,8 @@ jobs:
           name: 'JSON Validator'
           command: |
             source /usr/local/share/virtualenvs/tap-tester/bin/activate
-            stitch-validate-json /usr/local/share/virtualenvs/tap-stripe/lib/python3.5/site-packages/tap_stripe/schemas/*.json
-            stitch-validate-json /usr/local/share/virtualenvs/tap-stripe/lib/python3.5/site-packages/tap_stripe/schemas/shared/*.json
+            stitch-validate-json tap_stripe/schemas/*.json
+            stitch-validate-json tap_stripe/schemas/shared/*.json
       - run:
           name: 'Unit Tests'
           command: |

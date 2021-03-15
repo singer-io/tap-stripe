@@ -494,3 +494,4 @@ class BaseTapTest(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.start_date = self.get_properties().get('start_date')
+        self.maxDiff=None

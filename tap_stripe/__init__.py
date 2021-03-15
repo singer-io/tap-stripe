@@ -74,7 +74,6 @@ STREAM_TO_TYPE_FILTER = {
     'transfers': {'type': 'transfer.*', 'object': 'transfer'},
     'disputes': {'type': 'charge.dispute.*', 'object': 'dispute'},
     'products': {'type': 'product.*', 'object': 'product'},
-    # pylint: disable=bad-continuation
     # Cannot find evidence of these streams having events associated:
     # subscription_items - appears on subscriptions events
     # balance_transactions - seems to be immutable

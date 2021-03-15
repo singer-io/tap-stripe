@@ -16,7 +16,7 @@ setup(
     extras_require={
         'dev': [
             'ipdb==0.11',
-            'pylint',
+            'pylint==2.7.2',
             'astroid==2.1.0',
             'nose==1.3.7'
         ]

@@ -1,6 +1,4 @@
 # Changelog
-** 1.4.7
-  * Updates singer-python from 5.5.1 to 5.12.1 [#81](https://github.com/singer-io/tap-stripe/pull/81)
 
 ** 1.4.6
   * Removed fields that caused transform errors

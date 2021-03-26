@@ -147,16 +147,116 @@ class ALlFieldsTest(BaseTapTest):
                 # Verify schema covers all fields
                 # BUG_1 | https://stitchdata.atlassian.net/browse/SRCE-4736
                 #         to reproduce bug comment out the marked lines below
-                streams_to_skip_schema_assertion = {  # BUG_1
-                    'customers', 'subscriptions', 'products', 'invoice_items',
-                    'payouts', 'charges', 'subscription_items', 'invoices',
-                    'plans', 'invoice_line_items'
+                fields_to_skip_schema_assertion = {
+                    'customers':{
+                        'tax_ids',
+                        'cards',
+                        'discount',
+                        'subscriptions',
+                        'sources',
+                        'updated'
+                    },
+                    'subscriptions':{
+                        'default_tax_rates',
+                        'pending_update',
+                        'billing_cycle_anchor',
+                        'current_period_end',
+                        'current_period_start',
+                        'discount',
+                        'items',
+                        'plan',
+                        'start',
+                        'start_date',
+                        'updated'
+                    },
+                    'products':{
+                        'skus',
+                        'package_dimensions',
+                        'updated'
+                    },
+                    'invoice_items':{
+                        'price',
+                        'date',
+                        'period',
+                        'unit_amount_decimal',
+                        'unit_amount',
+                        'updated'
+                    },
+                    'payouts':{
+                        'application_fee',
+                        'reversals',
+                        'reversed',
+                        'arrival_date',
+                        'date',
+                        'status',
+                        'updated'
+                    },
+                    'charges':{
+                        'refunds',
+                        'source',
+                        'updated'
+                    },
+                    'subscription_items':{
+                        'tax_rates',
+                        'price',
+                        'plan',
+                        'subscription',
+                        'updated'
+                    },
+                    'invoices':{
+                        'payment_settings',
+                        'on_behalf_of',
+                        'custom_fields',
+                        'created',
+                        'date',
+                        'lines',
+                        'period_end',
+                        'period_start',
+                        'webhooks_delivered_at',
+                        'updated'
+                    },
+                    'plans':{
+                        'transform_usage',
+                        'updated'
+                    },
+                    'invoice_line_items':{
+                        'unique_id',
+                        'tax_rates',
+                        'price',
+                        'amount',
+                        'currency',
+                        'description',
+                        'discount_amounts',
+                        'discountable',
+                        'discounts',
+                        'id',
+                        'invoice_item',
+                        'livemode',
+                        'metadata',
+                        'object',
+                        'period',
+                        'plan',
+                        'proration',
+                        'quantity',
+                        'subscription',
+                        'tax_amounts',
+                        'type',
+                        'updated'
+                    },
+                    'coupons':{
+                        'updated'
+                    }
                 }
+
+                for field in fields_to_skip_schema_assertion.get(stream, {}):# BUG_1
+                    if field in expected_keys:
+                        expected_keys.remove(field)
+
                 schema_keys = set(self.expected_schema_keys(stream))
-                if stream not in streams_to_skip_schema_assertion:  # BUG_1
-                    self.assertEqual(
-                        set(), expected_keys.difference(schema_keys), msg="\tFields missing from schema!"
-                    )
+
+                self.assertEqual(
+                    set(), expected_keys.difference(schema_keys), msg="\tFields missing from schema!"
+                )
 
                 # not a test, just logging the fields that are included in the schema but not in the expectations
                 if schema_keys.difference(expected_keys):
@@ -177,10 +277,11 @@ class ALlFieldsTest(BaseTapTest):
                 expected_pks_to_record_dict = self.getPKsToRecordsDict(stream, expected_records)
                 actual_pks_to_record_dict = self.getPKsToRecordsDict(stream, actual_records)
 
-                if stream not in streams_to_skip_schema_assertion:  # BUG_1
-                    for pks_tuple, expected_record in expected_pks_to_record_dict.items():
-                        if expected_record.get('updated') is None and expected_record.get('created'):
-                            print("WARNING adding 'updated' to new {} record for comparison".format(stream))
-                            expected_record['updated'] = expected_record['created']
-                        actual_record = actual_pks_to_record_dict.get(pks_tuple)
-                        self.assertDictEqual(expected_record, actual_record)
+                for pks_tuple, expected_record in expected_pks_to_record_dict.items():
+                    actual_record = actual_pks_to_record_dict.get(pks_tuple) or {}
+                    for field in fields_to_skip_schema_assertion.get(stream, {}):# BUG_1
+                        if field in expected_record.keys():
+                            expected_record.pop(field)
+                        if field in actual_record.keys():
+                            actual_record.pop(field)
+                    self.assertDictEqual(expected_record, actual_record)

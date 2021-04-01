@@ -15,7 +15,7 @@ from collections import namedtuple
 from tap_tester import menagerie, runner, connections
 from base import BaseTapTest
 from utils import \
-    create_object, delete_object
+    create_object, delete_object, list_all_object
 
 
 class ALlFieldsTest(BaseTapTest):
@@ -37,27 +37,54 @@ class ALlFieldsTest(BaseTapTest):
     def setUpClass(cls):
         logging.info("Start Setup")
         # Create data prior to first sync
-        cls.streams_to_create = {
+        cls.streams_to_test = {
             "customers",
             "charges",
             "coupons",
             "invoice_items",
-            "invoice_line_items",
+            # "invoice_line_items", # TODO
             "invoices",
             "payouts",
             "plans",
             "products",
-            "subscription_items",
+            "subscription_items", # TODO
             "subscriptions",
         }
-        cls.new_objects = {stream: [] for stream in cls.streams_to_create}
+
+        cls.expected_objects = {stream: [] for stream in cls.streams_to_test}
+
+        cls.existing_objects = {stream: [] for stream in cls.streams_to_test}
+        cls.new_objects = {stream: [] for stream in cls.streams_to_test}
+
+        for stream in cls.streams_to_test:
+
+            # get existing records
+            stripe_obj = list_all_object(stream)
+            stripe_json = json.dumps(stripe_obj, sort_keys=True, indent=2)
+            dict_obj = json.loads(stripe_json)
+
+            cls.existing_objects[stream] = dict_obj['data']
+
+            # create new records if necessary
+            stripe_obj = create_object(stream)
+            stripe_json = json.dumps(stripe_obj, sort_keys=True, indent=2)
+            dict_obj = json.loads(stripe_json)
+
+           cls.new_objects[stream] = [dict_obj]
+
+
+        # gather expectations based off existing and new data
+        for stream in cls.streams_to_test:
+            cls.expected_objects[stream] = cls.existing_objects[stream] + cls.new_objects[stream]
+
 
     @classmethod
     def tearDownClass(cls):
         logging.info("Start Teardown")
-        for stream in cls.streams_to_create:
+        for stream in cls.streams_to_test:
             for record in cls.new_objects[stream]:
                 delete_object(stream, record["id"])
+
 
     def getPKsToRecordsDict(self, stream, records):
         """Return dict object of tupled pk values to record"""
@@ -101,12 +128,6 @@ class ALlFieldsTest(BaseTapTest):
         Verify that for each stream you can get data when no fields are selected
         and only the automatic fields are replicated.
         """
-        for stream in self.streams_to_create:
-            stripe_obj = create_object(stream)
-            stripe_json = json.dumps(stripe_obj, sort_keys=True, indent=2)
-            dict_obj = json.loads(stripe_json)
-
-            self.new_objects[stream].append(dict_obj)
 
         # instantiate connection
         conn_id = connections.ensure_connection(self)
@@ -115,7 +136,7 @@ class ALlFieldsTest(BaseTapTest):
         found_catalogs = self.run_and_verify_check_mode(conn_id)
 
         # table and field selection
-        streams_to_select = self.streams_to_create
+        streams_to_select = self.streams_to_test
         self.perform_and_verify_table_and_field_selection(
             conn_id, found_catalogs, streams_to_select, select_all_fields=True
         )
@@ -132,156 +153,152 @@ class ALlFieldsTest(BaseTapTest):
             self.assertGreater(count, 0, msg="failed to replicate any data for: {}".format(stream))
         print("total replicated row count: {}".format(replicated_row_count))
 
+
+        # BUG_1 | https://stitchdata.atlassian.net/browse/SRCE-4736
+        KNOWN_MISSING_FIELDS = {
+            'customers':{
+                'tax_ids',
+                'cards',
+                'discount',
+                'subscriptions',
+                'sources',
+            },
+            'subscriptions':{
+                'default_tax_rates',
+                'pending_update',
+                'billing_cycle_anchor',
+                'current_period_end',
+                'current_period_start',
+                'discount',
+                'items',
+                'plan',
+                'start',
+                'start_date',
+            },
+            'products':{
+                'skus',
+                'package_dimensions',
+
+            },
+            'invoice_items':{
+                'price',
+                'date',
+                'period',
+                'unit_amount_decimal',
+                'unit_amount',
+            },
+            'payouts':{
+                'application_fee',
+                'reversals',
+                'reversed',
+                'arrival_date',
+                'date',
+                'status',
+            },
+            'charges':{
+                'refunds',
+                'source',
+            },
+            'subscription_items':{
+                'tax_rates',
+                'price',
+                'plan',
+                'subscription',
+            },
+            'invoices':{
+                'payment_settings',
+                'on_behalf_of',
+                'custom_fields',
+                'created',
+                'date',
+                'lines',
+                'period_end',
+                'period_start',
+                'webhooks_delivered_at',
+            },
+            'plans':{
+                'transform_usage',
+            },
+            'invoice_line_items':{
+                'unique_id',
+                'tax_rates',
+                'price',
+                'amount',
+                'currency',
+                'description',
+                'discount_amounts',
+                'discountable',
+                'discounts',
+                'id',
+                'invoice_item',
+                'livemode',
+                'metadata',
+                'object',
+                'period',
+                'plan',
+                'proration',
+                'quantity',
+                'subscription',
+                'tax_amounts',
+                'type',
+            },
+        }
+
+        FIELDS_ADDED_BY_TAP = {'updated'}
+
         # Test by Stream
-        for stream in self.streams_to_create:
+        for stream in self.streams_to_test:
             with self.subTest(stream=stream):
-                expected_records = self.records_data_type_conversions(self.new_objects.get(stream))
 
-
-                data = synced_records.get(stream)
-                record_messages_keys = [set(row['data'].keys()) for row in data['messages']]
-                expected_keys = set()
+                # set expectattions
+                expected_records = self.records_data_type_conversions(
+                    self.expected_objects[stream]
+                )
+                expected_records_keys = set()
                 for record in expected_records:
-                    expected_keys.update(record.keys())
+                    expected_records_keys.update(set(record.keys()))
+
+                # collect actual values
+                actual_records = synced_records.get(stream)
+                actual_records_keys = set()
+                for message in actual_records['messages']: 
+                    if message['action'] == 'upsert':
+                        actual_records_keys.update(set(message['data'].keys()))
+                schema_keys = set(self.expected_schema_keys(stream)) # read in from schema files
+
 
                 # Verify schema covers all fields
-                # BUG_1 | https://stitchdata.atlassian.net/browse/SRCE-4736
-                #         to reproduce bug comment out the marked lines below
-                fields_to_skip_schema_assertion = {
-                    'customers':{
-                        'tax_ids',
-                        'cards',
-                        'discount',
-                        'subscriptions',
-                        'sources',
-                        'updated'
-                    },
-                    'subscriptions':{
-                        'default_tax_rates',
-                        'pending_update',
-                        'billing_cycle_anchor',
-                        'current_period_end',
-                        'current_period_start',
-                        'discount',
-                        'items',
-                        'plan',
-                        'start',
-                        'start_date',
-                        'updated'
-                    },
-                    'products':{
-                        'skus',
-                        'package_dimensions',
-                        'updated'
-                    },
-                    'invoice_items':{
-                        'price',
-                        'date',
-                        'period',
-                        'unit_amount_decimal',
-                        'unit_amount',
-                        'updated'
-                    },
-                    'payouts':{
-                        'application_fee',
-                        'reversals',
-                        'reversed',
-                        'arrival_date',
-                        'date',
-                        'status',
-                        'updated'
-                    },
-                    'charges':{
-                        'refunds',
-                        'source',
-                        'updated'
-                    },
-                    'subscription_items':{
-                        'tax_rates',
-                        'price',
-                        'plan',
-                        'subscription',
-                        'updated'
-                    },
-                    'invoices':{
-                        'payment_settings',
-                        'on_behalf_of',
-                        'custom_fields',
-                        'created',
-                        'date',
-                        'lines',
-                        'period_end',
-                        'period_start',
-                        'webhooks_delivered_at',
-                        'updated'
-                    },
-                    'plans':{
-                        'transform_usage',
-                        'updated'
-                    },
-                    'invoice_line_items':{
-                        'unique_id',
-                        'tax_rates',
-                        'price',
-                        'amount',
-                        'currency',
-                        'description',
-                        'discount_amounts',
-                        'discountable',
-                        'discounts',
-                        'id',
-                        'invoice_item',
-                        'livemode',
-                        'metadata',
-                        'object',
-                        'period',
-                        'plan',
-                        'proration',
-                        'quantity',
-                        'subscription',
-                        'tax_amounts',
-                        'type',
-                        'updated'
-                    },
-                    'coupons':{
-                        'updated'
-                    }
-                }
+                adjusted_expected_keys = expected_records_keys.union(FIELDS_ADDED_BY_TAP)
+                adjusted_actual_keys = actual_records_keys.union(KNOWN_MISSING_FIELDS.get(stream, set()))  # BUG_1
+                self.assertSetEqual(adjusted_expected_keys, adjusted_actual_keys)
+                # self.assertTrue(adjusted_actual_keys.issubset(adjusted_expected_keys))
 
-                for field in fields_to_skip_schema_assertion.get(stream, {}):# BUG_1
-                    if field in expected_keys:
-                        expected_keys.remove(field)
 
-                schema_keys = set(self.expected_schema_keys(stream))
+                # Log the fields that are included in the schema but not in the expectations.
+                # These are fields we should strive to get data for in our test data set
+                if schema_keys.difference(adjusted_expected_keys):
+                    print("WARNING Stream: [{}] Fields missing from expectations: [{}]".format(
+                        stream, schema_keys.difference(adjusted_expected_keys))
+                    )
 
-                self.assertEqual(
-                    set(), expected_keys.difference(schema_keys), msg="\tFields missing from schema!"
-                )
-
-                # not a test, just logging the fields that are included in the schema but not in the expectations
-                if schema_keys.difference(expected_keys):
-                    print("WARNING Fields missing from expectations: {}".format(schema_keys.difference(expected_keys)))
 
                 # Verify that all fields sent to the target fall into the expected schema
-                for actual_keys in record_messages_keys:
-                    self.assertTrue(
-                        actual_keys.issubset(schema_keys),
-                        msg="Expected all fields to be present, as defined by schemas/{}.json".format(stream) +
-                        "EXPECTED (SCHEMA): {}\nACTUAL (REPLICATED KEYS): {}".format(schema_keys, actual_keys))
+                self.assertTrue(actual_records_keys.issubset(schema_keys))
 
-                actual_records = [row['data'] for row in data['messages']]
 
-                # Verify by pks, that we replicated the expected records and only the expected records
-                self.assertPKsEqual(stream, expected_records, actual_records)
+                # actual_records = [row['data'] for row in data['messages']]
 
-                expected_pks_to_record_dict = self.getPKsToRecordsDict(stream, expected_records)
-                actual_pks_to_record_dict = self.getPKsToRecordsDict(stream, actual_records)
+                # # Verify by pks, that we replicated the expected records and only the expected records
+                # self.assertPKsEqual(stream, expected_records, actual_records)
 
-                for pks_tuple, expected_record in expected_pks_to_record_dict.items():
-                    actual_record = actual_pks_to_record_dict.get(pks_tuple) or {}
-                    for field in fields_to_skip_schema_assertion.get(stream, {}):# BUG_1
-                        if field in expected_record.keys():
-                            expected_record.pop(field)
-                        if field in actual_record.keys():
-                            actual_record.pop(field)
-                    self.assertDictEqual(expected_record, actual_record)
+                # expected_pks_to_record_dict = self.getPKsToRecordsDict(stream, expected_records)
+                # actual_pks_to_record_dict = self.getPKsToRecordsDict(stream, actual_records)
+
+                # for pks_tuple, expected_record in expected_pks_to_record_dict.items():
+                #     actual_record = actual_pks_to_record_dict.get(pks_tuple) or {}
+                #     for field in fields_to_skip_schema_assertion.get(stream, {}):# BUG_1
+                #         if field in expected_record.keys():
+                #             expected_record.pop(field)
+                #         if field in actual_record.keys():
+                #             actual_record.pop(field)
+                #     self.assertDictEqual(expected_record, actual_record)

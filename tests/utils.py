@@ -139,10 +139,25 @@ def rand_len(resp):
     """return a random int between 0 and length, or just 0 if length == 0"""
     return random.randint(0, len(resp) -1) if len(resp) > 0 else None
 
+def stripe_obj_to_dict(stripe_obj):
+    stripe_json = json.dumps(stripe_obj, sort_keys=True, indent=2)
+    dict_obj = json.loads(stripe_json)
+    return dict_ojb
 
 def list_all_object(stream, max_limit: int = 100):
     """Retrieve all records for an object"""
     if stream in client:
+
+        if stream == "subscription_items":
+            # stripe_subscriptions_obj = list_all_object("subscriptions")
+            # all_subscriptions = stripe_obj_to_dict(stripe_subscriptions_obj)
+            all_subscriptions= list_all_object("subscriptions")
+            all_subscription_ids = {subscription['id'] for subscription in all_subscriptions['data']}
+
+            objects = []
+            for subscription_id in all_subscription_ids:
+                objects += client[strema].list(subscription=subscription_id)['data']
+
         return client[stream].list(limit=max_limit, created={"gte": midnight})
 
     return None

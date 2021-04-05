@@ -1,5 +1,6 @@
 import logging
 import random
+import json
 import backoff
 from datetime import datetime as dt
 from datetime import time, timedelta
@@ -117,7 +118,7 @@ def create_payment_method(cust, meta_val):
 
 def get_a_record(stream):
     """Get a random record for a given stream. If there are none, create one."""
-    records = list_all_object(stream)['data']
+    records = list_all_object(stream)
     index = rand_len(records)
     if index:
         return records[index]
@@ -142,23 +143,45 @@ def rand_len(resp):
 def stripe_obj_to_dict(stripe_obj):
     stripe_json = json.dumps(stripe_obj, sort_keys=True, indent=2)
     dict_obj = json.loads(stripe_json)
-    return dict_ojb
+    return dict_obj
 
 def list_all_object(stream, max_limit: int = 100):
     """Retrieve all records for an object"""
     if stream in client:
 
         if stream == "subscription_items":
-            # stripe_subscriptions_obj = list_all_object("subscriptions")
-            # all_subscriptions = stripe_obj_to_dict(stripe_subscriptions_obj)
             all_subscriptions= list_all_object("subscriptions")
-            all_subscription_ids = {subscription['id'] for subscription in all_subscriptions['data']}
+            all_subscription_ids = {subscription['id'] for subscription in all_subscriptions}
 
             objects = []
             for subscription_id in all_subscription_ids:
-                objects += client[strema].list(subscription=subscription_id)['data']
+                stripe_object = client[stream].list(subscription=subscription_id)['data']
+                stripe_dict = stripe_obj_to_dict(stripe_object)
+                if isinstance(stripe_dict, list):
+                    objects += stripe_dict
+                else:
+                    objects.append(stripe_dict)
 
-        return client[stream].list(limit=max_limit, created={"gte": midnight})
+            return objects
+
+        elif stream == "invoice_line_items":
+            all_invoices = list_all_object("invoices")
+
+            objects = []
+            for invoice in all_invoices:
+                invoice_dict = stripe_obj_to_dict(invoice)
+                if isinstance(invoice_dict, list):
+                    objects += invoice_dict['lines']
+                else:
+                    objects.append(invoice_dict['lines'])
+
+            return objects
+
+        stripe_obj = client[stream].list(limit=max_limit, created={"gte": midnight})
+        if stripe_obj.get('data'):
+            return stripe_obj['data']
+
+        return stripe_obj
 
     return None
 

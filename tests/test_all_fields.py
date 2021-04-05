@@ -2,7 +2,6 @@
 Test tap sets a bookmark and respects it for the next sync of a stream
 """
 import os
-import json
 import logging
 from pathlib import Path
 from random import random
@@ -42,12 +41,12 @@ class ALlFieldsTest(BaseTapTest):
             "charges",
             "coupons",
             "invoice_items",
-            # "invoice_line_items", # TODO
+            "invoice_line_items",
             "invoices",
             "payouts",
             "plans",
             "products",
-            "subscription_items", # TODO
+            "subscription_items",
             "subscriptions",
         }
 
@@ -60,18 +59,11 @@ class ALlFieldsTest(BaseTapTest):
 
             # get existing records
             stripe_obj = list_all_object(stream)
-            stripe_json = json.dumps(stripe_obj, sort_keys=True, indent=2)
-            dict_obj = json.loads(stripe_json)
-
-            cls.existing_objects[stream] = dict_obj['data']
+            cls.existing_objects[stream] = stripe_obj
 
             # create new records if necessary
             stripe_obj = create_object(stream)
-            stripe_json = json.dumps(stripe_obj, sort_keys=True, indent=2)
-            dict_obj = json.loads(stripe_json)
-
-           cls.new_objects[stream] = [dict_obj]
-
+            cls.new_objects[stream] = [stripe_obj]
 
         # gather expectations based off existing and new data
         for stream in cls.streams_to_test:
@@ -204,6 +196,7 @@ class ALlFieldsTest(BaseTapTest):
                 'price',
                 'plan',
                 'subscription',
+                'updated',
             },
             'invoices':{
                 'payment_settings',
@@ -220,31 +213,37 @@ class ALlFieldsTest(BaseTapTest):
                 'transform_usage',
             },
             'invoice_line_items':{
-                'unique_id',
-                'tax_rates',
+                'url',
                 'price',
-                'amount',
-                'currency',
-                'description',
-                'discount_amounts',
-                'discountable',
-                'discounts',
-                'id',
-                'invoice_item',
-                'livemode',
-                'metadata',
-                'object',
-                'period',
-                'plan',
-                'proration',
-                'quantity',
-                'subscription',
-                'tax_amounts',
-                'type',
+                'tax_rates',
+                'unique_id',
+                'data',
+                'total_count',
+                'has_more',
+                'updated',
             },
         }
 
-        FIELDS_ADDED_BY_TAP = {'updated'}
+        FIELDS_ADDED_BY_TAP = {
+            'coupons': {'updated'},
+            'customers': {'updated'},
+            'subscriptions': {'updated'},
+            'products': {'updated'},
+            'invoice_items': {
+                'updated',
+                'subscription_item', # TODO why?
+            },
+            'payouts': {'updated'},
+            'charges': {'updated'},
+            'subscription_items': {'updated'},
+            'invoices': {'updated'},
+            'plans': {'updated'},
+            'invoice_line_items': {
+                'updated',
+                'invoice',
+                'subscription_item', # TODO why?
+            },
+        }
 
         # Test by Stream
         for stream in self.streams_to_test:
@@ -260,36 +259,39 @@ class ALlFieldsTest(BaseTapTest):
 
                 # collect actual values
                 actual_records = synced_records.get(stream)
+                actual_records_data = [message['data'] for message in actual_records.get('messages')]
                 actual_records_keys = set()
-                for message in actual_records['messages']: 
+                for message in actual_records['messages']:
                     if message['action'] == 'upsert':
                         actual_records_keys.update(set(message['data'].keys()))
                 schema_keys = set(self.expected_schema_keys(stream)) # read in from schema files
 
 
-                # Verify schema covers all fields
-                adjusted_expected_keys = expected_records_keys.union(FIELDS_ADDED_BY_TAP)
-                adjusted_actual_keys = actual_records_keys.union(KNOWN_MISSING_FIELDS.get(stream, set()))  # BUG_1
-                self.assertSetEqual(adjusted_expected_keys, adjusted_actual_keys)
-                # self.assertTrue(adjusted_actual_keys.issubset(adjusted_expected_keys))
-
-
                 # Log the fields that are included in the schema but not in the expectations.
                 # These are fields we should strive to get data for in our test data set
-                if schema_keys.difference(adjusted_expected_keys):
+                if schema_keys.difference(expected_records_keys):
                     print("WARNING Stream: [{}] Fields missing from expectations: [{}]".format(
-                        stream, schema_keys.difference(adjusted_expected_keys))
-                    )
+                        stream, schema_keys.difference(expected_records_keys)
+                    ))
+
+
+                # Verify schema covers all fields
+                adjusted_expected_keys = expected_records_keys.union(
+                    FIELDS_ADDED_BY_TAP.get(stream, set())
+                )
+                adjusted_actual_keys = actual_records_keys.union(  # BUG_1
+                    KNOWN_MISSING_FIELDS.get(stream, set())
+                )
+                self.assertSetEqual(adjusted_expected_keys, adjusted_actual_keys)
 
 
                 # Verify that all fields sent to the target fall into the expected schema
                 self.assertTrue(actual_records_keys.issubset(schema_keys))
 
 
-                # actual_records = [row['data'] for row in data['messages']]
 
-                # # Verify by pks, that we replicated the expected records and only the expected records
-                # self.assertPKsEqual(stream, expected_records, actual_records)
+                # Verify by pks, that we replicated the expected records and only the expected records
+                # self.assertPKsEqual(stream, expected_records, actual_records_data)                # TODO LEFT OFF HERE
 
                 # expected_pks_to_record_dict = self.getPKsToRecordsDict(stream, expected_records)
                 # actual_pks_to_record_dict = self.getPKsToRecordsDict(stream, actual_records)

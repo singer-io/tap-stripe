@@ -227,7 +227,7 @@ class BookmarkTest(BaseTapTest):
                             for record in second_sync_data:
                                 date_value = record["updated"]
                                 self.assertGreaterEqual(date_value,
-                                                        dt.strftime(first_sync_bookmark, self.COMPARISON_FORMAT),
+                                                        dt.strftime(first_sync_bookmark, self.TS_COMPARISON_FORMAT),
                                                         msg="A 2nd sync record has a replication-key that is less than or equal to the 1st sync bookmark.")
 
                 elif stream in self.expected_full_table_streams():

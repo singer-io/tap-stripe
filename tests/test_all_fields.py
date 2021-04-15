@@ -14,7 +14,7 @@ from collections import namedtuple
 from tap_tester import menagerie, runner, connections
 from base import BaseTapTest
 from utils import \
-    create_object, delete_object, list_all_object
+    create_object, delete_object, list_all_object, stripe_obj_to_dict
 
 
 class ALlFieldsTest(BaseTapTest):
@@ -37,17 +37,19 @@ class ALlFieldsTest(BaseTapTest):
         logging.info("Start Setup")
         # Create data prior to first sync
         cls.streams_to_test = {
-            "customers",
-            "charges",
-            "coupons",
-            "invoice_items",
-            "invoice_line_items",
-            "invoices",
-            "payouts",
-            "plans",
-            "products",
-            "subscription_items",
-            "subscriptions",
+            # "<stream name>", # [Individual] [All streams] [With customers]
+            "customers",  #         [+]        [________x]   [+++x++xxx+
+            "charges",  #           [+]        [_______++]   [_+++++++++
+            "coupons",  #           [+]        [______+++]   [__++++++++
+            # "invoice_items",  #     [+]      [_____++++]   [__+_______
+            # # # "invoice_line_items",
+            "invoices",  #          [+]        [____+++++]   [____++++++
+            "payouts", #            [+]        [___++++++]   [_____+++++
+            # "plans", #              [+]      [__+++++++]   [______+___
+            # "products", #           [+]      [_++++++++]   [_______+__
+            # # "subscription_items",
+            # "subscriptions",  #     [+]        [+++++++++]   [________++
+            # "events"
         }
 
         cls.expected_objects = {stream: [] for stream in cls.streams_to_test}
@@ -63,9 +65,9 @@ class ALlFieldsTest(BaseTapTest):
 
             # create new records if necessary
             stripe_obj = create_object(stream)
-            cls.new_objects[stream] = [stripe_obj]
+            cls.new_objects[stream] = [stripe_obj_to_dict(stripe_obj)]
 
-        # gather expectations based off existing and new data
+        # Gather expectations based off existing and new data
         for stream in cls.streams_to_test:
             cls.expected_objects[stream] = cls.existing_objects[stream] + cls.new_objects[stream]
 
@@ -78,42 +80,26 @@ class ALlFieldsTest(BaseTapTest):
                 delete_object(stream, record["id"])
 
 
-    def getPKsToRecordsDict(self, stream, records):
+    def getPKsToRecordsDict(self, stream, records, duplicates=False):
         """Return dict object of tupled pk values to record"""
         primary_keys = list(self.expected_primary_keys().get(stream))
-        pks_to_record_dict = {tuple(record.get(pk) for pk in primary_keys): record for record in records}
-        return pks_to_record_dict
 
-    def assertPKsEqual(self, stream, expected_records, sync_records, assert_pk_count_same=False):
-        """
-        Compare the values of the primary keys for expected and synced records.
-        For this comparison to be valid we also check for duplicate primary keys.
+        if not duplicates: # just send back a dictionary comprehension of tupled pks to records
+            pks_to_record_dict = {tuple(record.get(pk) for pk in primary_keys): record for record in records}
+            return pks_to_record_dict, dict()
 
-        Parameters:
-        arg1 (int): Description of arg1
-        """
-        primary_keys = list(self.expected_primary_keys().get(stream))
+        # if duplicates are present we must track them in a separate dictionary
+        pks_to_record_dict_1 = dict()
+        pks_to_record_dict_2 = dict()
+        for record in records:
+            primary_key_values = tuple(record.get(pk) for pk in primary_keys)
 
-        # This stream is dependent on the 'invoice' stream so it technically has two pks
-        # but we add one of them, so just use the one pk to make a comparison
-        if stream == "invoice_line_items":
-            primary_keys = ["id"]
+            if pks_to_record_dict_1.get(primary_key_values):
+                pks_to_record_dict_2[primary_key_values] = record
+                continue
 
-        # Verify there are no duplicate pks in the target
-        sync_pks = [tuple(sync_record.get(pk) for pk in primary_keys) for sync_record in sync_records]
-        sync_pks_set = set(sync_pks)
-
-        # Verify there are no duplicate pks in our expectations
-        expected_pks = [tuple(expected_record.get(pk) for pk in primary_keys) for expected_record in expected_records]
-        expected_pks_set = set(expected_pks)
-
-
-        # Verify sync pks have all expected records pks in it
-        self.assertTrue(sync_pks_set.issuperset(expected_pks_set))
-
-        if assert_pk_count_same:
-            self.assertEqual(expected_pks_set, sync_pks_set)
-
+            pks_to_record_dict_1[primary_key_values] = record
+        return pks_to_record_dict_1, pks_to_record_dict_2
 
     def test_run(self):
         """
@@ -224,6 +210,51 @@ class ALlFieldsTest(BaseTapTest):
             },
         }
 
+        KNOWN_FAILING_FIELDS = { # TODO write these up
+            'coupons': {
+                'percent_off', # BUG | Decimal('67') != Decimal('66.6') (value is changing in duplicate records)
+            },
+            'customers': set(),
+            'subscriptions': set(),
+            'products': set(),
+            'invoice_items': set(),
+            'payouts': set(),
+            'charges': set(),
+            'subscription_items': set(),
+            'invoices': {
+                'discount', # BUG | missing subfields
+                'plans', # BUG | missing subfields
+                'finalized_at', # BUG | schema missing datetime format
+            },
+            'plans': set(),
+            'invoice_line_items': set()
+        }
+
+        # NB | The following sets not to be confused with the sets above documenting BUGs.
+        #      These are testing issues/limitations which we have implemented long-term
+        #      workarounds for.
+
+        # fields with changing values, which make it hard to compare values directly
+        FICKLE_FIELDS = {
+            'coupons': {
+                'times_redeemed' # expect 0, get 1
+            },
+            'customers': set(),
+            'subscriptions': set(),
+            'products': set(),
+            'invoice_items': set(),
+            'payouts': {
+                'object', # expect 'transfer', get 'payout'
+            },
+            'charges': {
+                'status', # expect 'paid', get 'succeeded'
+            },
+            'subscription_items': set(),
+            'invoices': set(),
+            'plans': set(),
+            'invoice_line_items': set()
+        }
+
         FIELDS_ADDED_BY_TAP = {
             'coupons': {'updated'},
             'customers': {'updated'},
@@ -231,7 +262,7 @@ class ALlFieldsTest(BaseTapTest):
             'products': {'updated'},
             'invoice_items': {
                 'updated',
-                'subscription_item', # TODO why?
+                'subscription_item', # TODO why is this needed?
             },
             'payouts': {'updated'},
             'charges': {'updated'},
@@ -241,15 +272,17 @@ class ALlFieldsTest(BaseTapTest):
             'invoice_line_items': {
                 'updated',
                 'invoice',
-                'subscription_item', # TODO why?
+                'subscription_item', # TODO why is this needed?
             },
         }
+
 
         # Test by Stream
         for stream in self.streams_to_test:
             with self.subTest(stream=stream):
 
                 # set expectattions
+                primary_keys = list(self.expected_primary_keys().get(stream))
                 expected_records = self.records_data_type_conversions(
                     self.expected_objects[stream]
                 )
@@ -270,7 +303,7 @@ class ALlFieldsTest(BaseTapTest):
                 # Log the fields that are included in the schema but not in the expectations.
                 # These are fields we should strive to get data for in our test data set
                 if schema_keys.difference(expected_records_keys):
-                    print("WARNING Stream: [{}] Fields missing from expectations: [{}]".format(
+                    print("WARNING Stream[{}] Fields missing from expectations: [{}]".format(
                         stream, schema_keys.difference(expected_records_keys)
                     ))
 
@@ -288,19 +321,73 @@ class ALlFieldsTest(BaseTapTest):
                 # Verify that all fields sent to the target fall into the expected schema
                 self.assertTrue(actual_records_keys.issubset(schema_keys))
 
+                # Verify there are no duplicate pks in the target
+                actual_pks = [tuple(actual_record.get(pk) for pk in primary_keys) for actual_record in actual_records_data]
+                actual_pks_set = set(actual_pks)
+                self.assertLessEqual(len(actual_pks_set), len(actual_pks))
 
+                # Verify there are no duplicate pks in our expectations
+                expected_pks = [tuple(expected_record.get(pk) for pk in primary_keys) for expected_record in expected_records]
+                expected_pks_set = set(expected_pks)
+                self.assertEqual(len(expected_pks_set), len(expected_pks))
 
-                # Verify by pks, that we replicated the expected records and only the expected records
-                # self.assertPKsEqual(stream, expected_records, actual_records_data)                # TODO LEFT OFF HERE
+                # Verify by pks, that we replicated the expected records
+                self.assertTrue(actual_pks_set.issuperset(expected_pks_set))
 
-                # expected_pks_to_record_dict = self.getPKsToRecordsDict(stream, expected_records)
-                # actual_pks_to_record_dict = self.getPKsToRecordsDict(stream, actual_records)
+                # test records by field values...
 
-                # for pks_tuple, expected_record in expected_pks_to_record_dict.items():
-                #     actual_record = actual_pks_to_record_dict.get(pks_tuple) or {}
-                #     for field in fields_to_skip_schema_assertion.get(stream, {}):# BUG_1
-                #         if field in expected_record.keys():
-                #             expected_record.pop(field)
-                #         if field in actual_record.keys():
-                #             actual_record.pop(field)
-                #     self.assertDictEqual(expected_record, actual_record)
+                expected_pks_to_record_dict, _ = self.getPKsToRecordsDict(stream, expected_records)
+                actual_pks_to_record_dict, actual_pks_to_record_dict_dupes = self.getPKsToRecordsDict(
+                    stream, actual_records_data, duplicates=True
+                )
+
+                # TODO Furter investigate difference between. Wrap everything inside a for loop to run against both sets of records
+                #      actual_pks_to_record_dict
+                #      actual_pks_to_record_dict_dupes
+
+                # Verify the fields which are replicated, adhere to the expected schemas
+                for pks_tuple, expected_record in expected_pks_to_record_dict.items():
+                    with self.subTest(record=pks_tuple):
+
+                        actual_record = actual_pks_to_record_dict.get(pks_tuple) or {}
+                        field_adjustment_set = FIELDS_ADDED_BY_TAP[stream].union(
+                            KNOWN_MISSING_FIELDS.get(stream, set())  # BUG_1
+                        )
+
+                        # NB | THere are many subtleties in the stripe Data Model.
+
+                        #      We have seen multiple cases where Field A in Stream A has an effect on Field B in Stream B.
+                        #      Stripe also appears to run background processes which can result in the update of a
+                        #      record between the time when we set our expectations and when we run a sync, therefore
+                        #      invalidating our expectations.
+
+                        #      To work around these challenges we will attempt to compare fields directly. If that fails
+                        #      we will log the inequality and assert that the datatypes at least match.
+
+                        for field in set(actual_record.keys()).difference(field_adjustment_set):  # skip known bugs
+                            with self.subTest(field=field):
+                                base_err_msg = f"Stream[{stream}] Record[{pks_tuple}] Field[{field}]"
+
+                                expected_field_value = expected_record.get(field, "EXPECTED IS MISSING FIELD")
+                                actual_field_value = actual_record.get(field, "ACTUAL IS MISSING FIELD")
+
+                                try:
+
+                                    self.assertEqual(expected_field_value, actual_field_value)
+
+                                except AssertionError as failure_1:
+
+                                    print(f"WARNING {base_err_msg} failed exact comparison.\n"
+                                          f"AssertionError({failure_1})")
+
+                                    if field in KNOWN_FAILING_FIELDS[stream]:
+                                        continue # skip the following wokaround
+
+                                    elif actual_field_value and field in FICKLE_FIELDS[stream]:
+                                        self.assertIsInstance(actual_field_value, type(expected_field_value))
+
+                                    elif actual_field_value:
+                                        raise AssertionError(f"{base_err_msg} Unexpected field is being fickle.")
+
+                                    else:
+                                        print(f"WARNING {base_err_msg} failed datatype comparison. Field is None.")

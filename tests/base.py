@@ -28,7 +28,7 @@ class BaseTapTest(unittest.TestCase):
     INCREMENTAL = "INCREMENTAL"
     FULL = "FULL_TABLE"
     START_DATE_FORMAT = "%Y-%m-%dT00:00:00Z"
-    COMPARISON_FORMAT = "%Y-%m-%dT%H:%M:%S.000000Z"
+    TS_COMPARISON_FORMAT = "%Y-%m-%dT%H:%M:%S.000000Z"
 
     @staticmethod
     def tap_name():
@@ -75,39 +75,46 @@ class BaseTapTest(unittest.TestCase):
             self.REPLICATION_METHOD: self.INCREMENTAL,
         }
 
-        date_rep_key = default.copy()
-        date_rep_key.update({self.REPLICATION_KEYS: {"date"}})
-
-        child_stream_default = dict(default)
-        child_stream_default.update({self.AUTOMATIC_FIELDS: None})
-
-        # invoice_line_items have a composite pk
-        null_replication_key_child = child_stream_default.copy()
-        null_replication_key_child.update({self.REPLICATION_KEYS: None})
-        null_replication_key_child.update({self.PRIMARY_KEYS: {"id", "invoice"}})
-
-        payout_transactions_metadata = {
-            self.AUTOMATIC_FIELDS: {"id"},
-            self.REPLICATION_KEYS: {"id"},
-            self.PRIMARY_KEYS: {"id"},
-            self.REPLICATION_METHOD: self.INCREMENTAL
-        }
-
         return {
             'charges': default,
             'events': default,
             'customers': default,
             'plans': default,
-            'invoices': date_rep_key,
-            'invoice_items': date_rep_key,
-            'invoice_line_items': null_replication_key_child,
+            'invoices': {
+                self.AUTOMATIC_FIELDS: {"updated"},
+                self.REPLICATION_KEYS: {"date"},
+                self.PRIMARY_KEYS: {"id"},
+                self.REPLICATION_METHOD: self.INCREMENTAL,
+            },
+            'invoice_items': {
+                self.AUTOMATIC_FIELDS: {"updated"},
+                self.REPLICATION_KEYS: {"date"},
+                self.PRIMARY_KEYS: {"id"},
+                self.REPLICATION_METHOD: self.INCREMENTAL,
+            },
+            'invoice_line_items': {
+                self.PRIMARY_KEYS: {"id", "invoice"},
+                self.REPLICATION_METHOD: self.INCREMENTAL,
+                self.REPLICATION_KEYS: None,
+                self.AUTOMATIC_FIELDS: None
+            },
             'transfers': default,
             'coupons': default,
             'subscriptions': default,
-            'subscription_items': child_stream_default,
+            'subscription_items': {
+                self.AUTOMATIC_FIELDS: None,
+                self.REPLICATION_KEYS: {"created"},
+                self.PRIMARY_KEYS: {"id"},
+                self.REPLICATION_METHOD: self.INCREMENTAL,
+            },
             'balance_transactions': default,
             'payouts': default,
-            'payout_transactions' : payout_transactions_metadata,
+            'payout_transactions' : {
+                self.AUTOMATIC_FIELDS: {"id"},
+                self.REPLICATION_KEYS: {"id"},
+                self.PRIMARY_KEYS: {"id"},
+                self.REPLICATION_METHOD: self.INCREMENTAL
+            },
             'disputes': default,
             'products': default,
         }
@@ -362,21 +369,30 @@ class BaseTapTest(unittest.TestCase):
 
             # Known keys with data types that must be converted to compare with
             # jsonified records emitted by the tap
-            timestamp_to_datetime_keys = ['created', 'updated']
+            timestamp_to_datetime_keys = ['created', 'updated', 'start', 'end',
+                                          'next_payment_attempt', 'finalized_at',
+                                          'paid_at']
             int_or_float_to_decimal_keys = ["percent_off", "percent_off_precise"]
+            object_keys = ['discount', 'plan', 'coupon', 'status_transitions']
 
             # timestamp to datetime
             for key in timestamp_to_datetime_keys:
                 if record.get(key, False):
                     converted_record[key] = dt.strftime(
-                        dt.fromtimestamp(record[key]), self.COMPARISON_FORMAT
+                        dt.fromtimestamp(record[key]), self.TS_COMPARISON_FORMAT
                     )
 
             # int/float to decimal
             for key in int_or_float_to_decimal_keys:
                 if record.get(key, False):
-                    value = float(record.get(key))  # does float -> float or int -> float
-                    converted_record[key] = decimal.Decimal(str(value))
+                    str_value = str(record.get(key))  # does float -> float or int -> float
+                    converted_record[key] = decimal.Decimal(str_value)
+
+            # object field requires recursive check of subfields
+            for key in object_keys:
+                if record.get(key, False) and isinstance(record[key], dict):
+                    field_object = record[key]
+                    converted_record[key] = self.records_data_type_conversions([field_object])[0]
 
             converted_records.append(converted_record)
 

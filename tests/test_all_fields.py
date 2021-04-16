@@ -37,18 +37,18 @@ class ALlFieldsTest(BaseTapTest):
         logging.info("Start Setup")
         # Create data prior to first sync
         cls.streams_to_test = {
-            # "<stream name>", # [Individual] [All streams] [With customers]
-            "customers",  #         [+]        [________x]   [+++x++xxx+
-            "charges",  #           [+]        [_______++]   [_+++++++++
-            "coupons",  #           [+]        [______+++]   [__++++++++
-            # "invoice_items",  #     [+]      [_____++++]   [__+_______
+            # "<stream name>", # [Individual] [All streams] [With customers]  [Paramtetrize all streams]
+            "customers",  #         [+]        [________x]   [+++x++xxx+]     [+
+            "charges",  #           [+]        [_______++]   [_+++++++++]     [+
+            "coupons",  #           [+]        [______+++]   [__++++++++]     [+
+            "invoice_items",  #     [+]        [_____++++]   [__+_______]     [+
             # # # "invoice_line_items",
-            "invoices",  #          [+]        [____+++++]   [____++++++
-            "payouts", #            [+]        [___++++++]   [_____+++++
-            # "plans", #              [+]      [__+++++++]   [______+___
-            # "products", #           [+]      [_++++++++]   [_______+__
-            # # "subscription_items",
-            # "subscriptions",  #     [+]        [+++++++++]   [________++
+            "invoices",  #          [+]        [____+++++]   [____++++++]     [+
+            "payouts", #            [+]        [___++++++]   [_____+++++]     [+
+            "plans", #              [+]        [__+++++++]   [______+___]     [+
+            "products", #           [+]        [_++++++++]   [_______+__]     [+
+            # "subscription_items",
+            "subscriptions",  #     [+]        [+++++++++]   [________]       [+
             # "events"
         }
 
@@ -59,17 +59,10 @@ class ALlFieldsTest(BaseTapTest):
 
         for stream in cls.streams_to_test:
 
-            # get existing records
-            stripe_obj = list_all_object(stream)
-            cls.existing_objects[stream] = stripe_obj
-
-            # create new records if necessary
+            # create new records
             stripe_obj = create_object(stream)
             cls.new_objects[stream] = [stripe_obj_to_dict(stripe_obj)]
-
-        # Gather expectations based off existing and new data
-        for stream in cls.streams_to_test:
-            cls.expected_objects[stream] = cls.existing_objects[stream] + cls.new_objects[stream]
+            cls.expected_objects[stream] = cls.new_objects[stream]
 
 
     @classmethod
@@ -101,7 +94,29 @@ class ALlFieldsTest(BaseTapTest):
             pks_to_record_dict_1[primary_key_values] = record
         return pks_to_record_dict_1, pks_to_record_dict_2
 
+
     def test_run(self):
+
+        # first just run the test against customers
+        streams_to_test_1 = {'customers'}
+
+        # then run against all streams under test (except customers)
+        streams_to_test_2 = self.streams_to_test.difference(streams_to_test_1)
+
+        for streams_to_test in [streams_to_test_1, streams_to_test_2]:
+            with self.subTest(streams_to_test=streams_to_test):
+
+                # get existing records and add them to our expectations
+                for stream in streams_to_test:
+                    stripe_obj = list_all_object(stream)
+                    self.existing_objects[stream] = stripe_obj
+                    self.expected_objects[stream] = self.existing_objects[stream]
+
+                # run the test
+                self.all_fields_test(streams_to_test)
+
+
+    def all_fields_test(self, streams_to_test):
         """
         Verify that for each stream you can get data when no fields are selected
         and only the automatic fields are replicated.
@@ -114,9 +129,8 @@ class ALlFieldsTest(BaseTapTest):
         found_catalogs = self.run_and_verify_check_mode(conn_id)
 
         # table and field selection
-        streams_to_select = self.streams_to_test
         self.perform_and_verify_table_and_field_selection(
-            conn_id, found_catalogs, streams_to_select, select_all_fields=True
+            conn_id, found_catalogs, streams_to_test, select_all_fields=True
         )
 
         # run initial sync
@@ -278,7 +292,7 @@ class ALlFieldsTest(BaseTapTest):
 
 
         # Test by Stream
-        for stream in self.streams_to_test:
+        for stream in streams_to_test:
             with self.subTest(stream=stream):
 
                 # set expectattions

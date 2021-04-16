@@ -276,7 +276,7 @@ class ALlFieldsTest(BaseTapTest):
             'products': {'updated'},
             'invoice_items': {
                 'updated',
-                'subscription_item', # TODO why is this needed?
+                'subscription_item',
             },
             'payouts': {'updated'},
             'charges': {'updated'},
@@ -286,7 +286,7 @@ class ALlFieldsTest(BaseTapTest):
             'invoice_line_items': {
                 'updated',
                 'invoice',
-                'subscription_item', # TODO why is this needed?
+                'subscription_item',
             },
         }
 

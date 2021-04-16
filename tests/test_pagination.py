@@ -59,7 +59,7 @@ class PaginationTest(BaseTapTest):
         streams_to_create = {}
         for stream in tested_streams:
             records = list_all_object(stream)
-            record_count = len(records['data'])
+            record_count = len(records)
 
             streams_to_create[stream] = record_count
             logging.info("   Stream {} has {} records created today".format(stream, record_count))
@@ -74,9 +74,8 @@ class PaginationTest(BaseTapTest):
                     new_objects[stream].append(create_object(stream))
                     streams_to_create[stream] += 1
                 records = list_all_object(stream)
-                self.assertEqual(100, len(records['data']))
-                self.assertTrue(records['has_more'])
-                logging.info("   Stream {} has {} records created today".format(stream, len(records['data']) + 1))
+                self.assertEqual(100, len(records))
+                logging.info("   Stream {} has at least {} records created today".format(stream, len(records) + 1))
 
         # Run a sync job using orchestrator
         record_count_by_stream = self.run_and_verify_sync(conn_id)

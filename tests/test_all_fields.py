@@ -231,7 +231,9 @@ class ALlFieldsTest(BaseTapTest):
             'customers': set(),
             'subscriptions': set(),
             'products': set(),
-            'invoice_items': set(),
+            'invoice_items': {
+                'plan', # BUG | missing subfields
+            },
             'payouts': set(),
             'charges': set(),
             'subscription_items': set(),

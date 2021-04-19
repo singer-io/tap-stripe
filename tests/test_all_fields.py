@@ -37,19 +37,17 @@ class ALlFieldsTest(BaseTapTest):
         logging.info("Start Setup")
         # Create data prior to first sync
         cls.streams_to_test = {
-            # "<stream name>", # [Individual] [All streams] [With customers]  [Paramtetrize all streams]
-            "customers",  #         [+]        [________x]   [+++x++xxx+]     [+
-            "charges",  #           [+]        [_______++]   [_+++++++++]     [+
-            "coupons",  #           [+]        [______+++]   [__++++++++]     [+
-            "invoice_items",  #     [+]        [_____++++]   [__+_______]     [+
-            # # # "invoice_line_items",
-            "invoices",  #          [+]        [____+++++]   [____++++++]     [+
-            "payouts", #            [+]        [___++++++]   [_____+++++]     [+
-            "plans", #              [+]        [__+++++++]   [______+___]     [+
-            "products", #           [+]        [_++++++++]   [_______+__]     [+
-            # "subscription_items",
-            "subscriptions",  #     [+]        [+++++++++]   [________]       [+
-            # "events"
+            "customers",
+            "charges",
+            "coupons",
+            "invoice_items",
+            # "invoice_line_items",  # TODO
+            "invoices",
+            "payouts",
+            "plans",
+            "products",
+            # "subscription_items",  # TODO
+            "subscriptions",
         }
 
         cls.expected_objects = {stream: [] for stream in cls.streams_to_test}
@@ -73,11 +71,11 @@ class ALlFieldsTest(BaseTapTest):
                 delete_object(stream, record["id"])
 
 
-    def getPKsToRecordsDict(self, stream, records, duplicates=False):
+    def getPKsToRecordsDict(self, stream, records, duplicates=False):  # BUG_2
         """Return dict object of tupled pk values to record"""
         primary_keys = list(self.expected_primary_keys().get(stream))
 
-        if not duplicates: # just send back a dictionary comprehension of tupled pks to records
+       if not duplicates: # just send back a dictionary comprehension of tupled pks to records
             pks_to_record_dict = {tuple(record.get(pk) for pk in primary_keys): record for record in records}
             return pks_to_record_dict, dict()
 
@@ -340,6 +338,7 @@ class ALlFieldsTest(BaseTapTest):
                 # Verify there are no duplicate pks in the target
                 actual_pks = [tuple(actual_record.get(pk) for pk in primary_keys) for actual_record in actual_records_data]
                 actual_pks_set = set(actual_pks)
+                # self.assertEqual(len(actual_pks_set), len(actual_pks))  # BUG_2
                 self.assertLessEqual(len(actual_pks_set), len(actual_pks))
 
                 # Verify there are no duplicate pks in our expectations
@@ -352,11 +351,12 @@ class ALlFieldsTest(BaseTapTest):
 
                 # test records by field values...
 
-                expected_pks_to_record_dict, _ = self.getPKsToRecordsDict(stream, expected_records)
-                actual_pks_to_record_dict, actual_pks_to_record_dict_dupes = self.getPKsToRecordsDict(
+                expected_pks_to_record_dict, _ = self.getPKsToRecordsDict(stream, expected_records)  # BUG_2
+                actual_pks_to_record_dict, actual_pks_to_record_dict_dupes = self.getPKsToRecordsDict(  # BUG_2
                     stream, actual_records_data, duplicates=True
                 )
 
+                # BUG_2 | TODO do next line, then write up
                 # TODO Furter investigate difference between. Wrap everything inside a for loop to run against both sets of records
                 #      actual_pks_to_record_dict
                 #      actual_pks_to_record_dict_dupes

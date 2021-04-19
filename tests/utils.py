@@ -141,7 +141,7 @@ def rand_len(resp):
     return random.randint(0, len(resp) -1) if len(resp) > 0 else None
 
 def stripe_obj_to_dict(stripe_obj):
-    stripe_json = json.dumps(stripe_obj, sort_keys=True, indent=2) # TODO is sorting keys bad????
+    stripe_json = json.dumps(stripe_obj, sort_keys=True, indent=2)
     dict_obj = json.loads(stripe_json)
     return dict_obj
 
@@ -181,8 +181,6 @@ def list_all_object(stream, max_limit: int = 100):
 
                 else:
                     raise AssertionError(f"invoice['lines']['data'] is not a list {invoice_line_dict}")
-                    # TODO remove the if / else altogether
-                    # objects.append(invoice_line_dict.update({'invoice': invoice['id']}))
 
             return objects
 

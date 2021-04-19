@@ -373,7 +373,7 @@ class BaseTapTest(unittest.TestCase):
                                           'next_payment_attempt', 'finalized_at',
                                           'paid_at']
             int_or_float_to_decimal_keys = ["percent_off", "percent_off_precise"]
-            object_keys = ['discount', 'plan', 'coupon', 'status_transitions']
+            object_keys = ['discount', 'plan', 'coupon', 'status_transitions', 'period']
 
             # timestamp to datetime
             for key in timestamp_to_datetime_keys:

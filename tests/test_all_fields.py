@@ -41,12 +41,12 @@ class ALlFieldsTest(BaseTapTest):
             "charges",
             "coupons",
             "invoice_items",
-            # "invoice_line_items",  # TODO
+            "invoice_line_items",
             "invoices",
             "payouts",
             "plans",
             "products",
-            # "subscription_items",  # TODO
+            "subscription_items",
             "subscriptions",
         }
 
@@ -75,7 +75,7 @@ class ALlFieldsTest(BaseTapTest):
         """Return dict object of tupled pk values to record"""
         primary_keys = list(self.expected_primary_keys().get(stream))
 
-       if not duplicates: # just send back a dictionary comprehension of tupled pks to records
+        if not duplicates: # just send back a dictionary comprehension of tupled pks to records
             pks_to_record_dict = {tuple(record.get(pk) for pk in primary_keys): record for record in records}
             return pks_to_record_dict, dict()
 
@@ -116,8 +116,10 @@ class ALlFieldsTest(BaseTapTest):
 
     def all_fields_test(self, streams_to_test):
         """
-        Verify that for each stream you can get data when no fields are selected
-        and only the automatic fields are replicated.
+        Verify that for each stream data is synced when all fields are selected.
+
+        Verify the synced data matches our expectations based off of the applied schema
+        and results from the test client utils.
         """
 
         # instantiate connection
@@ -211,13 +213,9 @@ class ALlFieldsTest(BaseTapTest):
                 'transform_usage',
             },
             'invoice_line_items':{
-                'url',
                 'price',
                 'tax_rates',
                 'unique_id',
-                'data',
-                'total_count',
-                'has_more',
                 'updated',
             },
         }

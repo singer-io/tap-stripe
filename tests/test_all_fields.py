@@ -360,48 +360,51 @@ class ALlFieldsTest(BaseTapTest):
                 #      actual_pks_to_record_dict_dupes
 
                 # Verify the fields which are replicated, adhere to the expected schemas
-                for pks_tuple, expected_record in expected_pks_to_record_dict.items():
-                    with self.subTest(record=pks_tuple):
+                # for pks_tuple, expected_record in expected_pks_to_record_dict.items(): # TODO put back
+                for count, expected_pks_to_records in enumerate([expected_pks_to_record_dict, expected_pks_to_record_dict_dupes]):
+                    with self.subTest(count=count):
+                        for pks_tuple, expected_record in expected_pks_to_records.items():
+                            with self.subTest(record=pks_tuple):
 
-                        actual_record = actual_pks_to_record_dict.get(pks_tuple) or {}
-                        field_adjustment_set = FIELDS_ADDED_BY_TAP[stream].union(
-                            KNOWN_MISSING_FIELDS.get(stream, set())  # BUG_1
-                        )
+                                actual_record = actual_pks_to_record_dict.get(pks_tuple) or {}
+                                field_adjustment_set = FIELDS_ADDED_BY_TAP[stream].union(
+                                    KNOWN_MISSING_FIELDS.get(stream, set())  # BUG_1
+                                )
 
-                        # NB | THere are many subtleties in the stripe Data Model.
+                                # NB | THere are many subtleties in the stripe Data Model.
 
-                        #      We have seen multiple cases where Field A in Stream A has an effect on Field B in Stream B.
-                        #      Stripe also appears to run background processes which can result in the update of a
-                        #      record between the time when we set our expectations and when we run a sync, therefore
-                        #      invalidating our expectations.
+                                #      We have seen multiple cases where Field A in Stream A has an effect on Field B in Stream B.
+                                #      Stripe also appears to run background processes which can result in the update of a
+                                #      record between the time when we set our expectations and when we run a sync, therefore
+                                #      invalidating our expectations.
 
-                        #      To work around these challenges we will attempt to compare fields directly. If that fails
-                        #      we will log the inequality and assert that the datatypes at least match.
+                                #      To work around these challenges we will attempt to compare fields directly. If that fails
+                                #      we will log the inequality and assert that the datatypes at least match.
 
-                        for field in set(actual_record.keys()).difference(field_adjustment_set):  # skip known bugs
-                            with self.subTest(field=field):
-                                base_err_msg = f"Stream[{stream}] Record[{pks_tuple}] Field[{field}]"
+                                for field in set(actual_record.keys()).difference(field_adjustment_set):  # skip known bugs
+                                    with self.subTest(field=field):
+                                        base_err_msg = f"Stream[{stream}] Record[{pks_tuple}] Field[{field}]"
 
-                                expected_field_value = expected_record.get(field, "EXPECTED IS MISSING FIELD")
-                                actual_field_value = actual_record.get(field, "ACTUAL IS MISSING FIELD")
+                                        expected_field_value = expected_record.get(field, "EXPECTED IS MISSING FIELD")
+                                        actual_field_value = actual_record.get(field, "ACTUAL IS MISSING FIELD")
 
-                                try:
+                                        try:
 
-                                    self.assertEqual(expected_field_value, actual_field_value)
+                                            self.assertEqual(expected_field_value, actual_field_value)
 
-                                except AssertionError as failure_1:
+                                        except AssertionError as failure_1:
 
-                                    print(f"WARNING {base_err_msg} failed exact comparison.\n"
-                                          f"AssertionError({failure_1})")
+                                            print(f"WARNING {base_err_msg} failed exact comparison.\n"
+                                                  f"AssertionError({failure_1})")
 
-                                    if field in KNOWN_FAILING_FIELDS[stream]:
-                                        continue # skip the following wokaround
+                                            if field in KNOWN_FAILING_FIELDS[stream]:
+                                                continue # skip the following wokaround
 
-                                    elif actual_field_value and field in FICKLE_FIELDS[stream]:
-                                        self.assertIsInstance(actual_field_value, type(expected_field_value))
+                                            elif actual_field_value and field in FICKLE_FIELDS[stream]:
+                                                self.assertIsInstance(actual_field_value, type(expected_field_value))
 
-                                    elif actual_field_value:
-                                        raise AssertionError(f"{base_err_msg} Unexpected field is being fickle.")
+                                            elif actual_field_value:
+                                                raise AssertionError(f"{base_err_msg} Unexpected field is being fickle.")
 
-                                    else:
-                                        print(f"WARNING {base_err_msg} failed datatype comparison. Field is None.")
+                                            else:
+                                                print(f"WARNING {base_err_msg} failed datatype comparison. Field is None.")

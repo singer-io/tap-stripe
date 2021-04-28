@@ -354,17 +354,26 @@ class ALlFieldsTest(BaseTapTest):
                     stream, actual_records_data, duplicates=True
                 )
 
-                # BUG_2 | TODO do next line, then write up
-                # TODO Furter investigate difference between. Wrap everything inside a for loop to run against both sets of records
-                #      actual_pks_to_record_dict
-                #      actual_pks_to_record_dict_dupes
+                # BUG_2 | https://jira.talendforge.org/browse/TDL-9720
 
                 # Verify the fields which are replicated, adhere to the expected schemas
-                for pks_tuple, expected_record in expected_pks_to_record_dict.items(): # TODO put back
+                for pks_tuple, expected_record in expected_pks_to_record_dict.items():
                     with self.subTest(record=pks_tuple):
 
-                        # actual_record = actual_pks_to_record_dict_dupes.get(pks_tuple) or {}
                         actual_record = actual_pks_to_record_dict.get(pks_tuple) or {}
+
+                        # BUG_2 | uncomment to reproduce a duplicate record with a data discrepancy
+                        # actual_record_dupe = actual_pks_to_record_dict_dupes.get(pks_tuple) or {}
+                        # if actual_record_dupe != actual_record and \
+                        #    actual_record_dupe['created'] == actual_record['created'] and \
+                        #    actual_record_dupe['updated'] == actual_record['updated']:
+                        #     import pdb; pdb.set_trace()
+                        #     print(f"Discrepancy {set(actual_record_dupe.keys()).difference(set(actual_record.keys())))}")
+                        #     print("created: {actual_record['created']}")
+                        #     print("created dupe: {actual_record_dupe['created']}")
+                        #     print("updated: {actual_record['updated']}")
+                        #     print("updated dupe: {actual_record_dupe['updated']}")
+
                         field_adjustment_set = FIELDS_ADDED_BY_TAP[stream].union(
                             KNOWN_MISSING_FIELDS.get(stream, set())  # BUG_1
                         )

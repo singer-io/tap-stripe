@@ -146,7 +146,8 @@ class ALlFieldsTest(BaseTapTest):
         print("total replicated row count: {}".format(replicated_row_count))
 
 
-        # BUG_1 | https://stitchdata.atlassian.net/browse/SRCE-4736
+        # BUG_1 | https://jira.talendforge.org/browse/TDL-12478
+        #         Original Ticket [https://stitchdata.atlassian.net/browse/SRCE-4736]
         KNOWN_MISSING_FIELDS = {
             'customers':{
                 'tax_ids',
@@ -274,6 +275,9 @@ class ALlFieldsTest(BaseTapTest):
             'products': {'updated'},
             'invoice_items': {
                 'updated',
+                # BUG_13666 | [https://jira.talendforge.org/browse/TDL-13666]
+                #             Deterimine what we do when creating records that
+                #             cuases the presence of this value to be inconsistent
                 'subscription_item',
             },
             'payouts': {'updated'},
@@ -326,7 +330,7 @@ class ALlFieldsTest(BaseTapTest):
                 )
                 adjusted_actual_keys = actual_records_keys.union(  # BUG_1
                     KNOWN_MISSING_FIELDS.get(stream, set())
-                )
+                ).union({'subscription_items'})  # BUG_13666
                 self.assertSetEqual(adjusted_expected_keys, adjusted_actual_keys)
 
 

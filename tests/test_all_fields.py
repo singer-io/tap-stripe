@@ -288,7 +288,7 @@ class ALlFieldsTest(BaseTapTest):
             'invoice_line_items': {
                 'updated',
                 'invoice',
-                'subscription_item',
+                'subscription_item'
             },
         }
 
@@ -330,7 +330,7 @@ class ALlFieldsTest(BaseTapTest):
                 )
                 adjusted_actual_keys = actual_records_keys.union(  # BUG_1
                     KNOWN_MISSING_FIELDS.get(stream, set())
-                ).union({'subscription_items'})  # BUG_13666
+                ).union({'subscription_item'})  # BUG_13666
                 self.assertSetEqual(adjusted_expected_keys, adjusted_actual_keys)
 
 

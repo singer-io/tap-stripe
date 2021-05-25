@@ -373,7 +373,7 @@ class BaseTapTest(unittest.TestCase):
                                           'next_payment_attempt', 'finalized_at',
                                           'paid_at']
             int_or_float_to_decimal_keys = ["percent_off", "percent_off_precise"]
-            object_keys = ['discount', 'plan', 'coupon', 'status_transitions', 'period']
+            object_keys = ['discount', 'plan', 'coupon', 'status_transitions', 'period', 'sources']
 
             # timestamp to datetime
             for key in timestamp_to_datetime_keys:
@@ -390,9 +390,14 @@ class BaseTapTest(unittest.TestCase):
 
             # object field requires recursive check of subfields
             for key in object_keys:
-                if record.get(key, False) and isinstance(record[key], dict):
+                if record.get(key, False):
                     field_object = record[key]
-                    converted_record[key] = self.records_data_type_conversions([field_object])[0]
+
+                    if isinstance(field_object, dict):
+                        converted_record[key] = self.records_data_type_conversions([field_object])[0]
+
+                    elif isinstance(field_object, list):
+                        converted_record[key] = self.records_data_type_conversions(field_object)
 
             converted_records.append(converted_record)
 

@@ -146,15 +146,16 @@ class ALlFieldsTest(BaseTapTest):
         print("total replicated row count: {}".format(replicated_row_count))
 
 
-        # BUG_1 | https://jira.talendforge.org/browse/TDL-12478
-        #         Original Ticket [https://stitchdata.atlassian.net/browse/SRCE-4736]
+        # BUG_12478 | https://jira.talendforge.org/browse/TDL-12478
+        #             Original Ticket [https://stitchdata.atlassian.net/browse/SRCE-4736]
         KNOWN_MISSING_FIELDS = {
             'customers':{
                 'tax_ids',
-                'cards',
-                'discount',
-                'subscriptions',
-                'sources',
+                # These were 'missing' but are now not.
+                # 'cards',
+                # 'discount',
+                # 'subscriptions',
+                # 'sources',
             },
             'subscriptions':{
                 'default_tax_rates',
@@ -225,7 +226,9 @@ class ALlFieldsTest(BaseTapTest):
             'coupons': {
                 'percent_off', # BUG | Decimal('67') != Decimal('66.6') (value is changing in duplicate records)
             },
-            'customers': set(),
+            'customers': {
+                'discount',  # BUG | missing subfields in coupon where coupon is subfield within discount
+            },
             'subscriptions': set(),
             'products': set(),
             'invoice_items': {
@@ -328,13 +331,15 @@ class ALlFieldsTest(BaseTapTest):
                 adjusted_expected_keys = expected_records_keys.union(
                     FIELDS_ADDED_BY_TAP.get(stream, set())
                 )
-                adjusted_actual_keys = actual_records_keys.union(  # BUG_1
+                adjusted_actual_keys = actual_records_keys.union(  # BUG_12478
                     KNOWN_MISSING_FIELDS.get(stream, set())
                 )
                 if stream == 'invoice_items':
                     adjusted_actual_keys = adjusted_actual_keys.union({'subscription_item'})  # BUG_13666
                 self.assertSetEqual(adjusted_expected_keys, adjusted_actual_keys)
 
+                # verify the missing fields from KNOWN_MISSING_FIELDS are always missing (stability check)
+                self.assertSetEqual(actual_records_keys.difference(KNOWN_MISSING_FIELDS.get(stream, set())), actual_records_keys)
 
                 # Verify that all fields sent to the target fall into the expected schema
                 self.assertTrue(actual_records_keys.issubset(schema_keys))
@@ -381,7 +386,7 @@ class ALlFieldsTest(BaseTapTest):
                         #     print("updated dupe: {actual_record_dupe['updated']}")
 
                         field_adjustment_set = FIELDS_ADDED_BY_TAP[stream].union(
-                            KNOWN_MISSING_FIELDS.get(stream, set())  # BUG_1
+                            KNOWN_MISSING_FIELDS.get(stream, set())  # BUG_12478
                         )
 
                         # NB | THere are many subtleties in the stripe Data Model.

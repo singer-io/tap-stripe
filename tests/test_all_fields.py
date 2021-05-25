@@ -172,8 +172,8 @@ class ALlFieldsTest(BaseTapTest):
             },
             'products':{
                 'skus',
-                'package_dimensions',
-
+                # These were 'missing' but are now not.
+                # 'package_dimensions',
             },
             'invoice_items':{
                 'price',
@@ -190,10 +190,10 @@ class ALlFieldsTest(BaseTapTest):
                 'date',
                 'status',
             },
-            'charges':{
-                'refunds',
-                'source',
-            },
+            'charges': set(),
+            # These were 'missing' but are now not.
+            # 'refunds',
+            # 'source',
             'subscription_items':{
                 'tax_rates',
                 'price',

@@ -160,14 +160,15 @@ class ALlFieldsTest(BaseTapTest):
             'subscriptions':{
                 'default_tax_rates',
                 'pending_update',
-                'billing_cycle_anchor',
-                'current_period_end',
-                'current_period_start',
-                'discount',
-                'items',
-                'plan',
-                'start',
-                'start_date',
+                # These were 'missing' but are now not.
+                # 'current_period_end',
+                # 'current_period_start',
+                # 'items',
+                # 'start_date',
+                # 'start',
+                # 'discount',
+                # 'billing_cycle_anchor',
+                # 'plan',
             },
             'products':{
                 'skus',
@@ -229,7 +230,13 @@ class ALlFieldsTest(BaseTapTest):
             'customers': {
                 'discount',  # BUG | missing subfields in coupon where coupon is subfield within discount
             },
-            'subscriptions': set(),
+            'subscriptions': {
+                # BUG | missing subfields in coupon where coupon is subfield within discount
+                # BUG | missing subfields on discount ['checkout_session', 'id', 'invoice', 'invoice_item', 'promotion_code']
+                'discount',
+                # BUG | missing subfields on plan ['statement_description', 'statement_descriptor', 'name', 'amount_decimal']
+                'plan',
+            },
             'products': set(),
             'invoice_items': {
                 'plan', # BUG | missing subfields

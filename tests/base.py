@@ -370,8 +370,10 @@ class BaseTapTest(unittest.TestCase):
             # Known keys with data types that must be converted to compare with
             # jsonified records emitted by the tap
             timestamp_to_datetime_keys = ['created', 'updated', 'start', 'end',
+                                          'start_date', 'end_date', 'paid_at',
                                           'next_payment_attempt', 'finalized_at',
-                                          'paid_at']
+                                          'current_period_start', 'current_period_end',
+                                          'billing_cycle_anchor']
             int_or_float_to_decimal_keys = ["percent_off", "percent_off_precise"]
             object_keys = ['discount', 'plan', 'coupon', 'status_transitions', 'period', 'sources']
 

@@ -183,6 +183,20 @@ def list_all_object(stream, max_limit: int = 100):
                     raise AssertionError(f"invoice['lines']['data'] is not a list {invoice_line_dict}")
 
             return objects
+
+        elif stream == "subscriptions":
+            stripe_obj = client[stream].list(limit=max_limit, created={"gte": midnight})
+            dict_obj = stripe_obj_to_dict(stripe_obj)
+
+            if dict_obj.get('data'):
+                for obj in dict_obj['data']:
+
+                    if obj['items']:
+                        subscription_item_ids = [item['id'] for item in obj['items']['data']]
+                        obj['items'] = subscription_item_ids
+
+                return dict_obj['data']
+
         elif stream == "customers":
             stripe_obj = client[stream].list(limit=max_limit, created={"gte": midnight})
             dict_obj = stripe_obj_to_dict(stripe_obj)

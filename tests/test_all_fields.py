@@ -151,75 +151,54 @@ class ALlFieldsTest(BaseTapTest):
         KNOWN_MISSING_FIELDS = {
             'customers':{
                 'tax_ids',
-                # These were 'missing' but are now not.
-                # 'cards',
-                # 'discount',
-                # 'subscriptions',
-                # 'sources',
             },
             'subscriptions':{
                 'default_tax_rates',
                 'pending_update',
-                # These were 'missing' but are now not.
-                # 'current_period_end',
-                # 'current_period_start',
-                # 'items',
-                # 'start_date',
-                # 'start',
-                # 'discount',
-                # 'billing_cycle_anchor',
-                # 'plan',
             },
             'products':{
                 'skus',
-                # These were 'missing' but are now not.
-                # 'package_dimensions',
             },
             'invoice_items':{
                 'price',
-                'date',
-                'period',
-                'unit_amount_decimal',
-                'unit_amount',
+                # These were 'missing' but are now not.
+                # 'unit_amount',
+                # 'date',
+                # 'period',
+                # 'unit_amount_decimal',
             },
             'payouts':{
                 'application_fee',
                 'reversals',
                 'reversed',
-                'arrival_date',
-                'date',
-                'status',
             },
             'charges': set(),
-            # These were 'missing' but are now not.
-            # 'refunds',
-            # 'source',
             'subscription_items':{
                 'tax_rates',
                 'price',
-                'plan',
-                'subscription',
                 'updated',
+                # These were 'missing' but are now not.
+                # 'plan',
+                # 'subscription',
             },
             'invoices':{
                 'payment_settings',
                 'on_behalf_of',
                 'custom_fields',
-                'created',
-                'date',
-                'lines',
-                'period_end',
-                'period_start',
-                'webhooks_delivered_at',
+                # These were 'missing' but are now not.
+                # 'period_start',
+                # 'created',
+                # 'period_end',
+                # 'date',
+                # 'lines',
+                # 'webhooks_delivered_at',
             },
-            'plans':{
-                'transform_usage',
-            },
-            'invoice_line_items':{
-                'price',
+            'plans': set(),
+            'invoice_line_items': {
                 'tax_rates',
                 'unique_id',
                 'updated',
+                'price',
             },
         }
 
@@ -243,13 +222,20 @@ class ALlFieldsTest(BaseTapTest):
             },
             'payouts': set(),
             'charges': set(),
-            'subscription_items': set(),
+            'subscription_items': {
+                # BUG | missing subfields on plan ['statement_description', 'statement_descriptor', 'name']
+                # BUG | schema wrong for subfield ['transform_usage']
+                'plan',
+            },
             'invoices': {
                 'discount', # BUG | missing subfields
                 'plans', # BUG | missing subfields
                 'finalized_at', # BUG | schema missing datetime format
+                'created', # BUG | schema missing datetime format
             },
-            'plans': set(),
+            'plans': {
+                'transform_usage' # BUG schema is wrong, should be an object not string
+            },
             'invoice_line_items': set()
         }
 

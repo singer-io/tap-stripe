@@ -145,11 +145,24 @@ def stripe_obj_to_dict(stripe_obj):
     dict_obj = json.loads(stripe_json)
     return dict_obj
 
-def list_all_object(stream, max_limit: int = 100):
+def list_all_object(stream, max_limit: int = 100, get_invoice_lines: bool = False):
     """Retrieve all records for an object"""
     if stream in client:
 
-        if stream == "subscription_items":
+        if stream == "subscriptions":
+            stripe_obj = client[stream].list(limit=max_limit, created={"gte": midnight})
+            dict_obj = stripe_obj_to_dict(stripe_obj)
+
+            if dict_obj.get('data'):
+                for obj in dict_obj['data']:
+
+                    if obj['items']:
+                        subscription_item_ids = [item['id'] for item in obj['items']['data']]
+                        obj['items'] = subscription_item_ids
+
+                return dict_obj['data']
+
+        elif stream == "subscription_items":
             all_subscriptions= list_all_object("subscriptions")
             all_subscription_ids = {subscription['id'] for subscription in all_subscriptions}
 
@@ -165,9 +178,29 @@ def list_all_object(stream, max_limit: int = 100):
 
             return objects
 
-        elif stream == "invoice_line_items":
-            all_invoices = list_all_object("invoices")
+        elif stream == "invoices":
+            stripe_obj = client[stream].list(limit=max_limit, created={"gte": midnight})
+            dict_obj = stripe_obj_to_dict(stripe_obj)
 
+            if dict_obj.get('data') and not get_invoice_lines:
+                for obj in dict_obj['data']:
+
+                    if obj['lines']:
+                        line_ids = []
+                        for line in obj['lines']['data']:
+                            # BUG | TODO? Sometimes there is a 'unique_line_item_id' and sometimes a 'unique_id'
+                            #       both of which differ from 'id', so it's unclear what we should be referencing.
+                            #       The following logic matches the current behavior.
+                            identifier = 'unique_line_item_id' if line.get('unique_line_item_id') else 'id'
+                            line_id = line[identifier]
+                            line_ids.append(line_id)
+
+                        obj['lines'] = line_ids
+
+            return dict_obj['data']
+
+        elif stream == "invoice_line_items":
+            all_invoices = list_all_object("invoices", get_invoice_lines=True)
             objects = []
             for invoice in all_invoices:
                 invoice_dict = stripe_obj_to_dict(invoice)
@@ -183,19 +216,6 @@ def list_all_object(stream, max_limit: int = 100):
                     raise AssertionError(f"invoice['lines']['data'] is not a list {invoice_line_dict}")
 
             return objects
-
-        elif stream == "subscriptions":
-            stripe_obj = client[stream].list(limit=max_limit, created={"gte": midnight})
-            dict_obj = stripe_obj_to_dict(stripe_obj)
-
-            if dict_obj.get('data'):
-                for obj in dict_obj['data']:
-
-                    if obj['items']:
-                        subscription_item_ids = [item['id'] for item in obj['items']['data']]
-                        obj['items'] = subscription_item_ids
-
-                return dict_obj['data']
 
         elif stream == "customers":
             stripe_obj = client[stream].list(limit=max_limit, created={"gte": midnight})
@@ -216,6 +236,7 @@ def list_all_object(stream, max_limit: int = 100):
             if not isinstance(dict_obj, list):
                 return [dict_obj]
             return dict_obj
+
 
         stripe_obj = client[stream].list(limit=max_limit, created={"gte": midnight})
         dict_obj = stripe_obj_to_dict(stripe_obj)

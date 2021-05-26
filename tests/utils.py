@@ -188,9 +188,9 @@ def list_all_object(stream, max_limit: int = 100, get_invoice_lines: bool = Fals
                     if obj['lines']:
                         line_ids = []
                         for line in obj['lines']['data']:
-                            # BUG | TODO? Sometimes there is a 'unique_line_item_id' and sometimes a 'unique_id'
-                            #       both of which differ from 'id', so it's unclear what we should be referencing.
-                            #       The following logic matches the current behavior.
+                            # NB | Sometimes there is a 'unique_line_item_id' and sometimes a 'unique_id'
+                            #      both of which differ from 'id', so it's unclear what we should be referencing.
+                            #      The following logic matches the current behavior.
                             identifier = 'unique_line_item_id' if line.get('unique_line_item_id') else 'id'
                             line_id = line[identifier]
                             line_ids.append(line_id)

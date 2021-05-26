@@ -48,7 +48,7 @@ class EventUpdatesTest(BaseTapTest):
             "payouts",
             "plans",
             "products",
-            # "subscription_items", # BUG https://stitchdata.atlassian.net/browse/SUP-1214
+            # "subscription_items", # BUG_9916 | https://jira.talendforge.org/browse/TDL-9916
             "subscriptions",
             # "transfers",  # Cannot be updated directly via api
         }

@@ -71,7 +71,7 @@ class ALlFieldsTest(BaseTapTest):
                 delete_object(stream, record["id"])
 
 
-    def getPKsToRecordsDict(self, stream, records, duplicates=False):  # BUG_2
+    def getPKsToRecordsDict(self, stream, records, duplicates=False):  # BUG_9720
         """Return dict object of tupled pk values to record"""
         primary_keys = list(self.expected_primary_keys().get(stream))
 
@@ -147,6 +147,7 @@ class ALlFieldsTest(BaseTapTest):
 
 
         # BUG_12478 | https://jira.talendforge.org/browse/TDL-12478
+        #             Fields that are consistently missing during replication
         #             Original Ticket [https://stitchdata.atlassian.net/browse/SRCE-4736]
         KNOWN_MISSING_FIELDS = {
             'customers':{
@@ -161,11 +162,6 @@ class ALlFieldsTest(BaseTapTest):
             },
             'invoice_items':{
                 'price',
-                # These were 'missing' but are now not.
-                # 'unit_amount',
-                # 'date',
-                # 'period',
-                # 'unit_amount_decimal',
             },
             'payouts':{
                 'application_fee',
@@ -177,21 +173,11 @@ class ALlFieldsTest(BaseTapTest):
                 'tax_rates',
                 'price',
                 'updated',
-                # These were 'missing' but are now not.
-                # 'plan',
-                # 'subscription',
             },
             'invoices':{
                 'payment_settings',
                 'on_behalf_of',
                 'custom_fields',
-                # These were 'missing' but are now not.
-                # 'period_start',
-                # 'created',
-                # 'period_end',
-                # 'date',
-                # 'lines',
-                # 'webhooks_delivered_at',
             },
             'plans': set(),
             'invoice_line_items': {
@@ -202,39 +188,40 @@ class ALlFieldsTest(BaseTapTest):
             },
         }
 
-        KNOWN_FAILING_FIELDS = { # TODO write these up
+        KNOWN_FAILING_FIELDS = {
             'coupons': {
-                'percent_off', # BUG | Decimal('67') != Decimal('66.6') (value is changing in duplicate records)
+                'percent_off', # BUG_9720 | Decimal('67') != Decimal('66.6') (value is changing in duplicate records)
             },
             'customers': {
-                'discount',  # BUG | missing subfields in coupon where coupon is subfield within discount
+                'discount',  # BUG_12478 | missing subfields in coupon where coupon is subfield within discount
             },
             'subscriptions': {
-                # BUG | missing subfields in coupon where coupon is subfield within discount
-                # BUG | missing subfields on discount ['checkout_session', 'id', 'invoice', 'invoice_item', 'promotion_code']
+                # BUG_12478 | missing subfields in coupon where coupon is subfield within discount
+                # BUG_12478 | missing subfields on discount ['checkout_session', 'id', 'invoice', 'invoice_item', 'promotion_code']
                 'discount',
-                # BUG | missing subfields on plan ['statement_description', 'statement_descriptor', 'name', 'amount_decimal']
+                # BUG_12478 | missing subfields on plan ['statement_description', 'statement_descriptor', 'name', 'amount_decimal']
                 'plan',
             },
             'products': set(),
             'invoice_items': {
-                'plan', # BUG | missing subfields
+                'plan', # BUG_12478 | missing subfields
             },
             'payouts': set(),
             'charges': set(),
             'subscription_items': {
-                # BUG | missing subfields on plan ['statement_description', 'statement_descriptor', 'name']
-                # BUG | schema wrong for subfield ['transform_usage']
+                # BUG_12478 | missing subfields on plan ['statement_description', 'statement_descriptor', 'name']
+                # BUG_13711 | https://jira.talendforge.org/browse/TDL-13711
+                #             Schema wrong for subfield 'transform_usage', should be object not string
                 'plan',
             },
             'invoices': {
-                'discount', # BUG | missing subfields
-                'plans', # BUG | missing subfields
-                'finalized_at', # BUG | schema missing datetime format
-                'created', # BUG | schema missing datetime format
+                'discount', # BUG_12478 | missing subfields
+                'plans', # BUG_12478 | missing subfields
+                'finalized_at', # BUG_13711 | schema missing datetime format
+                'created', # BUG_13711 | schema missing datetime format
             },
             'plans': {
-                'transform_usage' # BUG schema is wrong, should be an object not string
+                'transform_usage' # BUG_13711 schema is wrong, should be an object not string
             },
             'invoice_line_items': set()
         }
@@ -340,7 +327,7 @@ class ALlFieldsTest(BaseTapTest):
                 # Verify there are no duplicate pks in the target
                 actual_pks = [tuple(actual_record.get(pk) for pk in primary_keys) for actual_record in actual_records_data]
                 actual_pks_set = set(actual_pks)
-                # self.assertEqual(len(actual_pks_set), len(actual_pks))  # BUG_2
+                # self.assertEqual(len(actual_pks_set), len(actual_pks))  # BUG_9720
                 self.assertLessEqual(len(actual_pks_set), len(actual_pks))
 
                 # Verify there are no duplicate pks in our expectations
@@ -353,12 +340,12 @@ class ALlFieldsTest(BaseTapTest):
 
                 # test records by field values...
 
-                expected_pks_to_record_dict, _ = self.getPKsToRecordsDict(stream, expected_records)  # BUG_2
-                actual_pks_to_record_dict, actual_pks_to_record_dict_dupes = self.getPKsToRecordsDict(  # BUG_2
+                expected_pks_to_record_dict, _ = self.getPKsToRecordsDict(stream, expected_records)  # BUG_9720
+                actual_pks_to_record_dict, actual_pks_to_record_dict_dupes = self.getPKsToRecordsDict(  # BUG_9720
                     stream, actual_records_data, duplicates=True
                 )
 
-                # BUG_2 | https://jira.talendforge.org/browse/TDL-9720
+                # BUG_9720 | https://jira.talendforge.org/browse/TDL-9720
 
                 # Verify the fields which are replicated, adhere to the expected schemas
                 for pks_tuple, expected_record in expected_pks_to_record_dict.items():
@@ -366,7 +353,7 @@ class ALlFieldsTest(BaseTapTest):
 
                         actual_record = actual_pks_to_record_dict.get(pks_tuple) or {}
 
-                        # BUG_2 | uncomment to reproduce a duplicate record with a data discrepancy
+                        # BUG_9720 | uncomment to reproduce a duplicate record with a data discrepancy
                         # actual_record_dupe = actual_pks_to_record_dict_dupes.get(pks_tuple) or {}
                         # if actual_record_dupe != actual_record and \
                         #    actual_record_dupe['created'] == actual_record['created'] and \
@@ -385,7 +372,7 @@ class ALlFieldsTest(BaseTapTest):
                         # NB | THere are many subtleties in the stripe Data Model.
 
                         #      We have seen multiple cases where Field A in Stream A has an effect on Field B in Stream B.
-                        #      Stripe also appears to run background processes which can result in the update of a
+                        #      Stripe also appears to run frequent background processes which can result in the update of a
                         #      record between the time when we set our expectations and when we run a sync, therefore
                         #      invalidating our expectations.
 

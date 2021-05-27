@@ -11,8 +11,8 @@ from dateutil.parser import parse
 
 from tap_tester import menagerie, runner, connections
 from base import BaseTapTest
-from utils import \
-    create_object, update_object, delete_object, get_hidden_objects, activate_tracking
+from utils import create_object, update_object, delete_object, \
+    get_hidden_objects, activate_tracking, stripe_obj_to_dict
 
 
 class BookmarkTest(BaseTapTest):
@@ -85,7 +85,8 @@ class BookmarkTest(BaseTapTest):
             for stream in self.streams_to_create:
                 self.new_objects[stream].append(create_object(stream))
         for stream in self.streams_to_create:
-            self.new_objects[stream].append(create_object(stream))
+            new_object = create_object(stream)
+            self.new_objects[stream].append(stripe_obj_to_dict(new_object))
             expected_records_first_sync[stream].append({"id": self.new_objects[stream][-1]['id']})
 
         self.START_DATE = self.get_properties().get('start_date')
@@ -227,7 +228,7 @@ class BookmarkTest(BaseTapTest):
                             for record in second_sync_data:
                                 date_value = record["updated"]
                                 self.assertGreaterEqual(date_value,
-                                                        dt.strftime(first_sync_bookmark, self.COMPARISON_FORMAT),
+                                                        dt.strftime(first_sync_bookmark, self.TS_COMPARISON_FORMAT),
                                                         msg="A 2nd sync record has a replication-key that is less than or equal to the 1st sync bookmark.")
 
                 elif stream in self.expected_full_table_streams():

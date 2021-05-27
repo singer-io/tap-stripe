@@ -46,7 +46,7 @@ class CreateObjectTest(BaseTapTest):
         missing_streams_to_create = {
             "disputes",  # can be created by simulating a dispute transaction with a specific card number
             # no way to create directly, see: https://stripe.com/docs/testing#disputes
-            "payout_transactions",  # BUG (https://stitchdata.atlassian.net/browse/SUP-1294)
+            "payout_transactions",  # BUG_9703 | https://jira.talendforge.org/browse/TDL-9703
             # depends on payouts and transactions
             "transfers",
             # needs an account that we can transfer to, not sure

@@ -1,5 +1,6 @@
 import logging
 import random
+import json
 import backoff
 from datetime import datetime as dt
 from datetime import time, timedelta
@@ -117,7 +118,7 @@ def create_payment_method(cust, meta_val):
 
 def get_a_record(stream):
     """Get a random record for a given stream. If there are none, create one."""
-    records = list_all_object(stream)['data']
+    records = list_all_object(stream)
     index = rand_len(records)
     if index:
         return records[index]
@@ -139,11 +140,114 @@ def rand_len(resp):
     """return a random int between 0 and length, or just 0 if length == 0"""
     return random.randint(0, len(resp) -1) if len(resp) > 0 else None
 
+def stripe_obj_to_dict(stripe_obj):
+    stripe_json = json.dumps(stripe_obj, sort_keys=True, indent=2)
+    dict_obj = json.loads(stripe_json)
+    return dict_obj
 
-def list_all_object(stream, max_limit: int = 100):
+def list_all_object(stream, max_limit: int = 100, get_invoice_lines: bool = False):
     """Retrieve all records for an object"""
     if stream in client:
-        return client[stream].list(limit=max_limit, created={"gte": midnight})
+
+        if stream == "subscriptions":
+            stripe_obj = client[stream].list(limit=max_limit, created={"gte": midnight})
+            dict_obj = stripe_obj_to_dict(stripe_obj)
+
+            if dict_obj.get('data'):
+                for obj in dict_obj['data']:
+
+                    if obj['items']:
+                        subscription_item_ids = [item['id'] for item in obj['items']['data']]
+                        obj['items'] = subscription_item_ids
+
+                return dict_obj['data']
+
+        elif stream == "subscription_items":
+            all_subscriptions= list_all_object("subscriptions")
+            all_subscription_ids = {subscription['id'] for subscription in all_subscriptions}
+
+            objects = []
+            for subscription_id in all_subscription_ids:
+                stripe_object = client[stream].list(subscription=subscription_id)['data']
+                stripe_dict = stripe_obj_to_dict(stripe_object)
+                if isinstance(stripe_dict, list):
+                    objects += stripe_dict
+                else:
+                    # objects.append(stripe_dict)
+                    raise NotImplementedError("Didn't accuont for a non-list object")
+
+            return objects
+
+        elif stream == "invoices":
+            stripe_obj = client[stream].list(limit=max_limit, created={"gte": midnight})
+            dict_obj = stripe_obj_to_dict(stripe_obj)
+
+            if dict_obj.get('data') and not get_invoice_lines:
+                for obj in dict_obj['data']:
+
+                    if obj['lines']:
+                        line_ids = []
+                        for line in obj['lines']['data']:
+                            # NB | Sometimes there is a 'unique_line_item_id' and sometimes a 'unique_id'
+                            #      both of which differ from 'id', so it's unclear what we should be referencing.
+                            #      The following logic matches the current behavior.
+                            identifier = 'unique_line_item_id' if line.get('unique_line_item_id') else 'id'
+                            line_id = line[identifier]
+                            line_ids.append(line_id)
+
+                        obj['lines'] = line_ids
+
+            return dict_obj['data']
+
+        elif stream == "invoice_line_items":
+            all_invoices = list_all_object("invoices", get_invoice_lines=True)
+            objects = []
+            for invoice in all_invoices:
+                invoice_dict = stripe_obj_to_dict(invoice)
+                invoice_line_dict = invoice_dict['lines']['data']
+
+                if isinstance(invoice_line_dict, list):
+                    for item in invoice_line_dict:
+                        item.update({'invoice': invoice['id']})
+
+                    return invoice_line_dict
+
+                else:
+                    raise AssertionError(f"invoice['lines']['data'] is not a list {invoice_line_dict}")
+
+            return objects
+
+        elif stream == "customers":
+            stripe_obj = client[stream].list(limit=max_limit, created={"gte": midnight})
+            dict_obj = stripe_obj_to_dict(stripe_obj)
+
+            if dict_obj.get('data'):
+                for obj in dict_obj['data']:
+
+                    if obj['sources']:
+                        sources = obj['sources']['data']
+                        obj['sources'] = sources
+                    if obj['subscriptions']:
+                        subscription_ids = [subscription['id'] for subscription in obj['subscriptions']['data']]
+                        obj['subscriptions'] = subscription_ids
+
+                return dict_obj['data']
+
+            if not isinstance(dict_obj, list):
+                return [dict_obj]
+            return dict_obj
+
+
+        stripe_obj = client[stream].list(limit=max_limit, created={"gte": midnight})
+        dict_obj = stripe_obj_to_dict(stripe_obj)
+        if dict_obj.get('data'):
+            if not isinstance(dict_obj['data'], list):
+                return [dict_obj['data']]
+            return dict_obj['data']
+
+        if not isinstance(dict_obj, list):
+            return [dict_obj]
+        return dict_obj
 
     return None
 
@@ -245,7 +349,6 @@ def standard_create(stream):
                       jitter=None)
 def create_object(stream):
     """Logic for creating a record for a given  object stream"""
-
     global NOW
     NOW = dt.utcnow()  # update NOW time to maintain uniqueness across records
 
@@ -256,13 +359,23 @@ def create_object(stream):
         if stream in {"disputes", "transfers"}:
             return None
 
-        elif stream in {'customers', 'products', 'coupons', 'plans', 'payouts'}:
+        elif stream in {'products', 'coupons', 'plans', 'payouts'}:
             return standard_create(stream)
+
+        elif stream == 'customers':
+            customer = standard_create(stream)
+            customer_dict = stripe_obj_to_dict(customer)
+            if customer_dict['subscriptions']:
+                subscription_ids = [subscription['id'] for subscription in customer_dict['subscriptions']['data']]
+                customer_dict['subscriptions'] = subscription_ids
+            return customer_dict
 
         elif stream == 'invoice_line_items':
             # An invoice_line_item is implicity generated by the creation of an invoice
             invoice = create_object('invoices')
-            return invoice.get('lines').get('data')[0]
+            invoice_line = stripe_obj_to_dict(invoice['lines']['data'][0])
+            invoice_line.update({'invoice': invoice['id']})
+            return invoice_line
 
         cust = get_a_record('customers')
 

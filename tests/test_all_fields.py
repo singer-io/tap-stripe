@@ -223,7 +223,10 @@ class ALlFieldsTest(BaseTapTest):
             'plans': {
                 'transform_usage' # BUG_13711 schema is wrong, should be an object not string
             },
-            'invoice_line_items': set()
+            'invoice_line_items': {  # TODO | BUG ?
+                'unique_line_item_id',
+                'invoice_item',
+            }
         }
 
         # NB | The following sets not to be confused with the sets above documenting BUGs.

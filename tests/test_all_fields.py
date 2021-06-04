@@ -223,7 +223,7 @@ class ALlFieldsTest(BaseTapTest):
             'plans': {
                 'transform_usage' # BUG_13711 schema is wrong, should be an object not string
             },
-            'invoice_line_items': {  # TODO | BUG ?
+            'invoice_line_items': { # TODO This is a test issue that prevents us from consistently passing
                 'unique_line_item_id',
                 'invoice_item',
             }

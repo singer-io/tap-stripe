@@ -156,6 +156,7 @@ class ALlFieldsTest(BaseTapTest):
             'subscriptions':{
                 'default_tax_rates',
                 'pending_update',
+                'automatic_tax',
             },
             'products':{
                 'skus',
@@ -178,6 +179,7 @@ class ALlFieldsTest(BaseTapTest):
                 'payment_settings',
                 'on_behalf_of',
                 'custom_fields',
+                'automatic_tax',
             },
             'plans': set(),
             'invoice_line_items': {

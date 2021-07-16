@@ -180,6 +180,7 @@ class ALlFieldsTest(BaseTapTest):
                 'on_behalf_of',
                 'custom_fields',
                 'automatic_tax',
+                'quote',
             },
             'plans': set(),
             'invoice_line_items': {

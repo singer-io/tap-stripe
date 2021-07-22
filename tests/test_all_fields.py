@@ -154,6 +154,7 @@ class ALlFieldsTest(BaseTapTest):
                 'tax_ids',
             },
             'subscriptions':{
+                'payment_settings',
                 'default_tax_rates',
                 'pending_update',
                 'automatic_tax',

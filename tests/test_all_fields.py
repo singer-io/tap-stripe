@@ -161,6 +161,7 @@ class ALlFieldsTest(BaseTapTest):
             },
             'products':{
                 'skus',
+                'tax_code',
             },
             'invoice_items':{
                 'price',

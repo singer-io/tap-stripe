@@ -144,6 +144,26 @@ class Context():
                         Context.updated_counts[stream_name])
         LOGGER.info('------------------')
 
+    @classmethod
+    def is_field_selected(cls, stream, field_name):
+        stream_metadata = metadata.to_map(stream['metadata'])
+        selected = metadata.get(stream_metadata, ('properties', field_name), 'selected')
+        inclusion = metadata.get(stream_metadata, ('properties', field_name), 'inclusion')
+
+        return selected or inclusion == 'automatic'
+
+    @classmethod
+    def filtered_schema(cls, stream):
+        """
+        Filter schema of a stream to only include selected fields
+        """
+        schema_fields = stream['schema']['properties']
+        for field_name in list(schema_fields.keys()):
+            if not cls.is_field_selected(stream, field_name):
+                stream['schema']['properties'].pop(field_name, None)
+        return stream['schema']
+
+
 def apply_request_timer_to_client(client):
     """ Instruments the Stripe SDK client object with a request timer. """
     _original_request = client.request
@@ -782,8 +802,9 @@ def sync():
     for catalog_entry in Context.catalog['streams']:
         stream_name = catalog_entry["tap_stream_id"]
         if Context.is_selected(stream_name):
+            schema = Context.filtered_schema(catalog_entry)
             singer.write_schema(stream_name,
-                                catalog_entry['schema'],
+                                schema,
                                 catalog_entry['key_properties'])
 
             Context.new_counts[stream_name] = 0

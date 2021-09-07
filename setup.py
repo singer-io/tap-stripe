@@ -17,7 +17,7 @@ setup(
         'test': [
             'pylint==2.7.2',
             'nose==1.3.7'
-        ]
+        ],
         'dev': [
             'ipdb',
             'pylint==2.7.2',

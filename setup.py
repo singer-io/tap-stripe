@@ -14,8 +14,12 @@ setup(
         "stripe==2.10.1",
     ],
     extras_require={
+        'test': [
+            'pylint==2.7.2',
+            'nose==1.3.7'
+        ]
         'dev': [
-            'ipdb==0.11',
+            'ipdb',
             'pylint==2.7.2',
             'astroid==2.5.1',
             'nose==1.3.7'

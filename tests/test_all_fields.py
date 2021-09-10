@@ -1,6 +1,3 @@
-"""
-Test tap sets a bookmark and respects it for the next sync of a stream
-"""
 import os
 import logging
 from pathlib import Path
@@ -15,6 +12,144 @@ from tap_tester import menagerie, runner, connections
 from base import BaseTapTest
 from utils import \
     create_object, delete_object, list_all_object, stripe_obj_to_dict
+
+
+# BUG_12478 | https://jira.talendforge.org/browse/TDL-12478
+#             Fields that are consistently missing during replication
+#             Original Ticket [https://stitchdata.atlassian.net/browse/SRCE-4736]
+KNOWN_MISSING_FIELDS = {
+    'customers':{
+        'tax_ids',
+    },
+    'subscriptions':{
+        'payment_settings',
+        'default_tax_rates',
+        'pending_update',
+        'automatic_tax',
+    },
+    'products':{
+        'skus',
+        'tax_code',
+    },
+    'invoice_items':{
+        'price',
+    },
+    'payouts':{
+        'application_fee',
+        'reversals',
+        'reversed',
+    },
+    'charges': set(),
+    'subscription_items':{
+        'tax_rates',
+        'price',
+        'updated',
+    },
+    'invoices':{
+        'payment_settings',
+        'on_behalf_of',
+        'custom_fields',
+        'automatic_tax',
+        'quote',
+    },
+    'plans': set(),
+    'invoice_line_items': {
+        'tax_rates',
+        'unique_id',
+        'updated',
+        'price',
+    },
+}
+
+KNOWN_FAILING_FIELDS = {
+    'coupons': {
+        'percent_off', # BUG_9720 | Decimal('67') != Decimal('66.6') (value is changing in duplicate records)
+    },
+    'customers': {
+        'discount',  # BUG_12478 | missing subfields in coupon where coupon is subfield within discount
+    },
+    'subscriptions': {
+        # BUG_12478 | missing subfields in coupon where coupon is subfield within discount
+        # BUG_12478 | missing subfields on discount ['checkout_session', 'id', 'invoice', 'invoice_item', 'promotion_code']
+        'discount',
+        # BUG_12478 | missing subfields on plan ['statement_description', 'statement_descriptor', 'name', 'amount_decimal']
+        'plan',
+    },
+    'products': set(),
+    'invoice_items': {
+        'plan', # BUG_12478 | missing subfields
+    },
+    'payouts': set(),
+    'charges': set(),
+    'subscription_items': {
+        # BUG_12478 | missing subfields on plan ['statement_description', 'statement_descriptor', 'name']
+        # BUG_13711 | https://jira.talendforge.org/browse/TDL-13711
+        #             Schema wrong for subfield 'transform_usage', should be object not string
+        'plan',
+    },
+    'invoices': {
+        'discount', # BUG_12478 | missing subfields
+        'plans', # BUG_12478 | missing subfields
+        'finalized_at', # BUG_13711 | schema missing datetime format
+        'created', # BUG_13711 | schema missing datetime format
+    },
+    'plans': {
+        'transform_usage' # BUG_13711 schema is wrong, should be an object not string
+    },
+    # 'invoice_line_items': { # TODO This is a test issue that prevents us from consistently passing
+    #     'unique_line_item_id',
+    #     'invoice_item',
+    # }
+}
+
+# NB | The following sets not to be confused with the sets above documenting BUGs.
+#      These are testing issues/limitations which we have implemented long-term
+#      workarounds for.
+
+# fields with changing values, which make it hard to compare values directly
+FICKLE_FIELDS = {
+    'coupons': {
+        'times_redeemed' # expect 0, get 1
+    },
+    'customers': set(),
+    'subscriptions': set(),
+    'products': set(),
+    'invoice_items': set(),
+    'payouts': {
+        'object', # expect 'transfer', get 'payout'
+    },
+    'charges': {
+        'status', # expect 'paid', get 'succeeded'
+    },
+    'subscription_items': set(),
+    'invoices': set(),
+    'plans': set(),
+    'invoice_line_items': set()
+}
+
+FIELDS_ADDED_BY_TAP = {
+    'coupons': {'updated'},
+    'customers': {'updated'},
+    'subscriptions': {'updated'},
+    'products': {'updated'},
+    'invoice_items': {
+        'updated',
+        # BUG_13666 | [https://jira.talendforge.org/browse/TDL-13666]
+        #             Deterimine what we do when creating records that
+        #             cuases the presence of this value to be inconsistent
+        'subscription_item',
+    },
+    'payouts': {'updated'},
+    'charges': {'updated'},
+    'subscription_items': {'updated'},
+    'invoices': {'updated'},
+    'plans': {'updated'},
+    'invoice_line_items': {
+        'updated',
+        'invoice',
+        'subscription_item'
+    },
+}
 
 
 class ALlFieldsTest(BaseTapTest):
@@ -146,144 +281,6 @@ class ALlFieldsTest(BaseTapTest):
         print("total replicated row count: {}".format(replicated_row_count))
 
 
-        # BUG_12478 | https://jira.talendforge.org/browse/TDL-12478
-        #             Fields that are consistently missing during replication
-        #             Original Ticket [https://stitchdata.atlassian.net/browse/SRCE-4736]
-        KNOWN_MISSING_FIELDS = {
-            'customers':{
-                'tax_ids',
-            },
-            'subscriptions':{
-                'payment_settings',
-                'default_tax_rates',
-                'pending_update',
-                'automatic_tax',
-            },
-            'products':{
-                'skus',
-                'tax_code',
-            },
-            'invoice_items':{
-                'price',
-            },
-            'payouts':{
-                'application_fee',
-                'reversals',
-                'reversed',
-            },
-            'charges': set(),
-            'subscription_items':{
-                'tax_rates',
-                'price',
-                'updated',
-            },
-            'invoices':{
-                'payment_settings',
-                'on_behalf_of',
-                'custom_fields',
-                'automatic_tax',
-                'quote',
-            },
-            'plans': set(),
-            'invoice_line_items': {
-                'tax_rates',
-                'unique_id',
-                'updated',
-                'price',
-            },
-        }
-
-        KNOWN_FAILING_FIELDS = {
-            'coupons': {
-                'percent_off', # BUG_9720 | Decimal('67') != Decimal('66.6') (value is changing in duplicate records)
-            },
-            'customers': {
-                'discount',  # BUG_12478 | missing subfields in coupon where coupon is subfield within discount
-            },
-            'subscriptions': {
-                # BUG_12478 | missing subfields in coupon where coupon is subfield within discount
-                # BUG_12478 | missing subfields on discount ['checkout_session', 'id', 'invoice', 'invoice_item', 'promotion_code']
-                'discount',
-                # BUG_12478 | missing subfields on plan ['statement_description', 'statement_descriptor', 'name', 'amount_decimal']
-                'plan',
-            },
-            'products': set(),
-            'invoice_items': {
-                'plan', # BUG_12478 | missing subfields
-            },
-            'payouts': set(),
-            'charges': set(),
-            'subscription_items': {
-                # BUG_12478 | missing subfields on plan ['statement_description', 'statement_descriptor', 'name']
-                # BUG_13711 | https://jira.talendforge.org/browse/TDL-13711
-                #             Schema wrong for subfield 'transform_usage', should be object not string
-                'plan',
-            },
-            'invoices': {
-                'discount', # BUG_12478 | missing subfields
-                'plans', # BUG_12478 | missing subfields
-                'finalized_at', # BUG_13711 | schema missing datetime format
-                'created', # BUG_13711 | schema missing datetime format
-            },
-            'plans': {
-                'transform_usage' # BUG_13711 schema is wrong, should be an object not string
-            },
-            'invoice_line_items': { # TODO This is a test issue that prevents us from consistently passing
-                'unique_line_item_id',
-                'invoice_item',
-            }
-        }
-
-        # NB | The following sets not to be confused with the sets above documenting BUGs.
-        #      These are testing issues/limitations which we have implemented long-term
-        #      workarounds for.
-
-        # fields with changing values, which make it hard to compare values directly
-        FICKLE_FIELDS = {
-            'coupons': {
-                'times_redeemed' # expect 0, get 1
-            },
-            'customers': set(),
-            'subscriptions': set(),
-            'products': set(),
-            'invoice_items': set(),
-            'payouts': {
-                'object', # expect 'transfer', get 'payout'
-            },
-            'charges': {
-                'status', # expect 'paid', get 'succeeded'
-            },
-            'subscription_items': set(),
-            'invoices': set(),
-            'plans': set(),
-            'invoice_line_items': set()
-        }
-
-        FIELDS_ADDED_BY_TAP = {
-            'coupons': {'updated'},
-            'customers': {'updated'},
-            'subscriptions': {'updated'},
-            'products': {'updated'},
-            'invoice_items': {
-                'updated',
-                # BUG_13666 | [https://jira.talendforge.org/browse/TDL-13666]
-                #             Deterimine what we do when creating records that
-                #             cuases the presence of this value to be inconsistent
-                'subscription_item',
-            },
-            'payouts': {'updated'},
-            'charges': {'updated'},
-            'subscription_items': {'updated'},
-            'invoices': {'updated'},
-            'plans': {'updated'},
-            'invoice_line_items': {
-                'updated',
-                'invoice',
-                'subscription_item'
-            },
-        }
-
-
         # Test by Stream
         for stream in streams_to_test:
             with self.subTest(stream=stream):
@@ -313,7 +310,6 @@ class ALlFieldsTest(BaseTapTest):
                     print("WARNING Stream[{}] Fields missing from expectations: [{}]".format(
                         stream, schema_keys.difference(expected_records_keys)
                     ))
-
 
                 # Verify schema covers all fields
                 adjusted_expected_keys = expected_records_keys.union(

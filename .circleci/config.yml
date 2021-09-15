@@ -135,15 +135,15 @@ workflows:
             - circleci-user
           test_command: |-
             run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_event_updates.py
-           requires:
-             - "Create Object Integration Test"
+          requires:
+            - "Create Object Integration Test"
       - integration_test:
           name: "Full Table Integration Test"
           context:
             - circleci-user
           test_command: |-
             run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_full_replication.py
-           requires:
+          requires:
             - "Event Updates Integration Test"
       - integration_test:
           name: "Incremental Integration Test"
@@ -151,7 +151,7 @@ workflows:
             - circleci-user
           test_command: |-
             run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_bookmarks.py
-           requires:
+          requires:
             - "Full Table Integration Test"
       - integration_test:
           name: "Start Date Integration Test"
@@ -159,7 +159,7 @@ workflows:
             - circleci-user
           test_command: |-
             run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_start_date.py
-           requires:
+          requires:
             - "Incremental Integration Test"
 build_daily:
     <<: *commit_jobs

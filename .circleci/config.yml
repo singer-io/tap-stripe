@@ -3,16 +3,12 @@ orbs:
   slack: circleci/slack@3.4.2
 
 executors:
-  awscli:
-    docker:
-      - image: cibuilds/aws:2.0.38@sha256:a1614fdbb8675806ccace08ce98b732178c5cbe05f38b2554d5ed3ce7853c0cf
-        user: root
   tap_tester:
     docker:
       - image: 218546966473.dkr.ecr.us-east-1.amazonaws.com/circle-ci:stitch-tap-tester
 jobs:
   ensure_env:
-    executor: awscli
+    executor: tap_tester
     steps:
       - run: aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/tap_tester_sandbox /tmp/circleci_workspace/dev_env.sh
       - persist_to_workspace:

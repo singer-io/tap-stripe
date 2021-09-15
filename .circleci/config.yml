@@ -7,14 +7,6 @@ executors:
     docker:
       - image: 218546966473.dkr.ecr.us-east-1.amazonaws.com/circle-ci:stitch-tap-tester
 jobs:
-  ensure_env:
-    executor: tap_tester
-    steps:
-      - run: aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/tap_tester_sandbox /tmp/circleci_workspace/dev_env.sh
-      - persist_to_workspace:
-          root: /tmp/circleci_workspace
-          paths:
-            - dev_env.sh
   build:
     executor: tap_tester
     steps:
@@ -56,8 +48,9 @@ jobs:
           name: 'Integration Test'
           no_output_timeout: 30m
           command: |
+            aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/tap_tester_sandbox dev_env.sh
+            source dev_env.sh
             source /usr/local/share/virtualenvs/tap-tester/bin/activate
-            source /tmp/circleci_workspace/dev_env.sh
             pip install 'stripe==2.42.0'
             << parameters.test_command >>
       - slack/notify-on-failure:
@@ -79,12 +72,8 @@ workflows:
   version: 2
   commit: &commit_jobs
     jobs:
-      - ensure_env:
-          context: circleci-user
       - build:
           context: circleci-user
-          requires:
-            - ensure_env
       - integration_test:
           name: "All Fields Integration Test"
           context:

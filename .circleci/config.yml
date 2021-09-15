@@ -80,7 +80,7 @@ workflows:
   commit: &commit_jobs
     jobs:
       - ensure_env:
-          context: stitch-circleci-aws-creds
+          context: circleci-user
       - build:
           context: circleci-user
           requires:

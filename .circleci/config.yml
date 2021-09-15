@@ -79,7 +79,7 @@ workflows:
           context:
             - circleci-user
           test_command: |-
-            run-test --tap=${CIRCLE_PROJECT_REPONAME} test/test_all_fields.py
+            run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_all_fields.py
           requires:
             - build
       - integration_test:
@@ -87,7 +87,7 @@ workflows:
           context:
             - circleci-user
           test_command: |-
-            run-test --tap=${CIRCLE_PROJECT_REPONAME} test/test_discovery.py
+            run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_discovery.py
           requires:
             - "All Fields Integration Test"
       - integration_test:
@@ -95,7 +95,7 @@ workflows:
           context:
             - circleci-user
           test_command: |-
-            run-test --tap=${CIRCLE_PROJECT_REPONAME} test/test_automatic_fields.py
+            run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_automatic_fields.py
           requires:
             - "All Fields Integration Test"
       - integration_test:
@@ -103,7 +103,7 @@ workflows:
           context:
             - circleci-user
           test_command: |-
-            run-test --tap=${CIRCLE_PROJECT_REPONAME} test/test_pagination.py
+            run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_pagination.py
           requires:
             - "All Fields Integration Test"
       - integration_test:
@@ -111,7 +111,7 @@ workflows:
           context:
             - circleci-user
           test_command: |-
-            run-test --tap=${CIRCLE_PROJECT_REPONAME} test/test_create_object.py
+            run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_create_object.py
           requires:
             - "All Fields Integration Test"
       - integration_test:

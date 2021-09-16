@@ -11,6 +11,7 @@ jobs:
     executor: tap_tester
     steps:
       - run: aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/tap_tester_sandbox /tmp/circleci_workspace/dev_env.sh
+      - checkout
       - run:
           name: 'Setup virtual env'
           command: |

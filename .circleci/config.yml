@@ -10,7 +10,6 @@ jobs:
   ensure_env:
     executor: tap_tester
     steps:
-      - run: aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/tap_tester_sandbox /tmp/circleci_workspace/dev_env.sh
       - checkout
       - run:
           name: 'Setup virtual env'
@@ -19,18 +18,17 @@ jobs:
             source /usr/local/share/virtualenvs/tap-stripe/bin/activate
             pip install -U pip setuptools
             pip install .[test]
-            mv /usr/local/share/virtualenvs/tap-stripe /tmp/circleci_workspace
       - persist_to_workspace:
-          root: /tmp/circleci_workspace
+          root: /usr/local/share/virtualenvs/
           paths:
             - dev_env.sh
-            - tap-stripe/*
+            - tap-stripe
   build_and_test:
     executor: tap_tester
     steps:
       - checkout
       - attach_workspace:
-          at: /tmp/circleci_workspace
+          at: /usr/local/share/virtualenvs
       - run:
           name: 'pylint'
           command: |
@@ -56,12 +54,13 @@ jobs:
     steps:
       - checkout
       - attach_workspace:
-          at: /tmp/circleci_workspace
+          at: /usr/local/share/virtualenvs
       - run:
           name: 'Integration Test'
           no_output_timeout: 30m
           command: |
-            source /tmp/circleci_workspace/tap-stripe/bin/activate
+            aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/tap_tester_sandbox dev_env.sh
+            source tap-stripe/bin/activate
             source /usr/local/share/virtualenvs/tap-tester/bin/activate
             source /tmp/circleci_workspace/dev_env.sh
             pip install 'stripe==2.42.0'

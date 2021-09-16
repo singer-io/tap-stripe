@@ -81,7 +81,7 @@ jobs:
             aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/tap_tester_sandbox dev_env.sh
             source /usr/local/share/virtualenvs/tap-stripe/bin/activate
             source /usr/local/share/virtualenvs/tap-tester/bin/activate
-            source /tmp/circleci_workspace/dev_env.sh
+            source dev_env.sh
             pip install 'stripe==2.42.0'
             << parameters.test_command >>
       - slack/notify-on-failure:
@@ -121,6 +121,14 @@ workflows:
             - circleci-user
           test_command: |-
             run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_discovery.py
+          requires:
+            - "All Fields Integration Test"
+      - integration_test:
+          name: "Start Date Integration Test"
+          context:
+            - circleci-user
+          test_command: |-
+            run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_start_date.py
           requires:
             - "All Fields Integration Test"
       - integration_test:
@@ -171,14 +179,6 @@ workflows:
             run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_bookmarks.py
           requires:
             - "Full Table Integration Test"
-      - integration_test:
-          name: "Start Date Integration Test"
-          context:
-            - circleci-user
-          test_command: |-
-            run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_start_date.py
-          requires:
-            - "Incremental Integration Test"
 build_daily:
     <<: *commit_jobs
     triggers:

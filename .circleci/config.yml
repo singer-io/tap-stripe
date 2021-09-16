@@ -23,7 +23,7 @@ jobs:
           paths:
             - dev_env.sh
             - tap-stripe
-  build_and_test:
+  pylint:
     executor: tap_tester
     steps:
       - checkout
@@ -34,6 +34,24 @@ jobs:
           command: |
             source /usr/local/share/virtualenvs/tap-stripe/bin/activate
             pylint tap_stripe -d missing-docstring,too-many-branches
+  json_validate:
+    executor: tap_tester
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /usr/local/share/virtualenvs
+      - run:
+          name: 'JSON Validator'
+          command: |
+            source /usr/local/share/virtualenvs/tap-tester/bin/activate
+            stitch-validate-json tap_stripe/schemas/*.json
+            stitch-validate-json tap_stripe/schemas/shared/*.json
+  unittest:
+    executor: tap_tester
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /usr/local/share/virtualenvs
       - run:
           name: 'JSON Validator'
           command: |
@@ -45,7 +63,7 @@ jobs:
           command: |
             source /usr/local/share/virtualenvs/tap-stripe/bin/activate
             nosetests tests/unittests
-      - add_ssh_keys
+
   integration_test:
     parameters:
       test_command:
@@ -55,6 +73,7 @@ jobs:
       - checkout
       - attach_workspace:
           at: /usr/local/share/virtualenvs
+      - add_ssh_keys
       - run:
           name: 'Integration Test'
           no_output_timeout: 30m
@@ -74,7 +93,15 @@ workflows:
     jobs:
       - ensure_env:
           context: circleci-user
-      - build_and_test:
+      - pylint:
+          context: circleci-user
+          requires:
+            - ensure_env
+      - json_validate:
+          context: circleci-user
+          requires:
+            - ensure_env
+      - unittest:
           context: circleci-user
           requires:
             - ensure_env
@@ -83,15 +110,17 @@ workflows:
           context:
             - circleci-user
           test_command: |-
-            run-test --tap=/tmp/circleci_workspace/${CIRCLE_PROJECT_REPONAME} tests/test_all_fields.py
+            run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_all_fields.py
           requires:
-            - build_and_test
+            - unittest
+            - pylint
+            - json_validate
       - integration_test:
           name: "Discovery Integration Test"
           context:
             - circleci-user
           test_command: |-
-            run-test --tap=/tmp/circleci_workspace/${CIRCLE_PROJECT_REPONAME} tests/test_discovery.py
+            run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_discovery.py
           requires:
             - "All Fields Integration Test"
       - integration_test:
@@ -99,7 +128,7 @@ workflows:
           context:
             - circleci-user
           test_command: |-
-            run-test --tap=/tmp/circleci_workspace/${CIRCLE_PROJECT_REPONAME} tests/test_automatic_fields.py
+            run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_automatic_fields.py
           requires:
             - "All Fields Integration Test"
       - integration_test:
@@ -107,7 +136,7 @@ workflows:
           context:
             - circleci-user
           test_command: |-
-            run-test --tap=/tmp/circleci_workspace/${CIRCLE_PROJECT_REPONAME} tests/test_pagination.py
+            run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_pagination.py
           requires:
             - "All Fields Integration Test"
       - integration_test:
@@ -115,7 +144,7 @@ workflows:
           context:
             - circleci-user
           test_command: |-
-            run-test --tap=/tmp/circleci_workspace/${CIRCLE_PROJECT_REPONAME} tests/test_create_object.py
+            run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_create_object.py
           requires:
             - "All Fields Integration Test"
       - integration_test:
@@ -123,7 +152,7 @@ workflows:
           context:
             - circleci-user
           test_command: |-
-            run-test --tap=/tmp/circleci_workspace/${CIRCLE_PROJECT_REPONAME} tests/test_event_updates.py
+            run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_event_updates.py
           requires:
             - "Create Object Integration Test"
       - integration_test:
@@ -131,7 +160,7 @@ workflows:
           context:
             - circleci-user
           test_command: |-
-            run-test --tap=/tmp/circleci_workspace/${CIRCLE_PROJECT_REPONAME} tests/test_full_replication.py
+            run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_full_replication.py
           requires:
             - "Event Updates Integration Test"
       - integration_test:
@@ -139,7 +168,7 @@ workflows:
           context:
             - circleci-user
           test_command: |-
-            run-test --tap=/tmp/circleci_workspace/${CIRCLE_PROJECT_REPONAME} tests/test_bookmarks.py
+            run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_bookmarks.py
           requires:
             - "Full Table Integration Test"
       - integration_test:
@@ -147,7 +176,7 @@ workflows:
           context:
             - circleci-user
           test_command: |-
-            run-test --tap=/tmp/circleci_workspace/${CIRCLE_PROJECT_REPONAME} tests/test_start_date.py
+            run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_start_date.py
           requires:
             - "Incremental Integration Test"
 build_daily:

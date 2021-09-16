@@ -7,10 +7,10 @@ executors:
     docker:
       - image: 218546966473.dkr.ecr.us-east-1.amazonaws.com/circle-ci:stitch-tap-tester
 jobs:
-  build:
+  ensure_env:
     executor: tap_tester
     steps:
-      - checkout
+      - run: aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/tap_tester_sandbox /tmp/circleci_workspace/dev_env.sh
       - run:
           name: 'Setup virtual env'
           command: |
@@ -18,10 +18,22 @@ jobs:
             source /usr/local/share/virtualenvs/tap-stripe/bin/activate
             pip install -U pip setuptools
             pip install .[test]
+            mv /usr/local/share/virtualenvs/tap-stripe /tmp/circleci_workspace
+      - persist_to_workspace:
+          root: /tmp/circleci_workspace
+          paths:
+            - dev_env.sh
+            - tap-stripe/*
+  build_and_test:
+    executor: tap_tester
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /tmp/circleci_workspace
       - run:
           name: 'pylint'
           command: |
-            source /usr/local/share/virtualenvs/tap-stripe/bin/activate
+            source /tmp/circleci_workspace/tap-stripe/bin/activate
             pylint tap_stripe -d missing-docstring,too-many-branches
       - run:
           name: 'JSON Validator'
@@ -32,7 +44,7 @@ jobs:
       - run:
           name: 'Unit Tests'
           command: |
-            source /usr/local/share/virtualenvs/tap-stripe/bin/activate
+            source /tmp/circleci_workspace/tap-stripe/bin/activate
             nosetests tests/unittests
       - add_ssh_keys
   integration_test:
@@ -42,20 +54,15 @@ jobs:
     executor: tap_tester
     steps:
       - checkout
-      - run:
-          name: 'Setup tap virtual env'
-          command: |
-            python3 -mvenv /usr/local/share/virtualenvs/tap-stripe
-            source /usr/local/share/virtualenvs/tap-stripe/bin/activate
-            pip install -U pip setuptools
-            pip install .[test]
+      - attach_workspace:
+          at: /tmp/circleci_workspace
       - run:
           name: 'Integration Test'
           no_output_timeout: 30m
           command: |
-            aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/tap_tester_sandbox dev_env.sh
-            source dev_env.sh
+            source /tmp/circleci_workspace/tap-stripe/bin/activate
             source /usr/local/share/virtualenvs/tap-tester/bin/activate
+            source /tmp/circleci_workspace/dev_env.sh
             pip install 'stripe==2.42.0'
             << parameters.test_command >>
       - slack/notify-on-failure:
@@ -65,22 +72,24 @@ workflows:
   version: 2
   commit: &commit_jobs
     jobs:
-      - build:
+      - ensure_env:
+          context: circleci-user
+      - build_and_test:
           context: circleci-user
       - integration_test:
           name: "All Fields Integration Test"
           context:
             - circleci-user
           test_command: |-
-            run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_all_fields.py
+            run-test --tap=/tmp/circleci_workspace/${CIRCLE_PROJECT_REPONAME} tests/test_all_fields.py
           requires:
-            - build
+            - build_and_test
       - integration_test:
           name: "Discovery Integration Test"
           context:
             - circleci-user
           test_command: |-
-            run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_discovery.py
+            run-test --tap=/tmp/circleci_workspace/${CIRCLE_PROJECT_REPONAME} tests/test_discovery.py
           requires:
             - "All Fields Integration Test"
       - integration_test:
@@ -88,7 +97,7 @@ workflows:
           context:
             - circleci-user
           test_command: |-
-            run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_automatic_fields.py
+            run-test --tap=/tmp/circleci_workspace/${CIRCLE_PROJECT_REPONAME} tests/test_automatic_fields.py
           requires:
             - "All Fields Integration Test"
       - integration_test:
@@ -96,7 +105,7 @@ workflows:
           context:
             - circleci-user
           test_command: |-
-            run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_pagination.py
+            run-test --tap=/tmp/circleci_workspace/${CIRCLE_PROJECT_REPONAME} tests/test_pagination.py
           requires:
             - "All Fields Integration Test"
       - integration_test:
@@ -104,7 +113,7 @@ workflows:
           context:
             - circleci-user
           test_command: |-
-            run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_create_object.py
+            run-test --tap=/tmp/circleci_workspace/${CIRCLE_PROJECT_REPONAME} tests/test_create_object.py
           requires:
             - "All Fields Integration Test"
       - integration_test:
@@ -112,7 +121,7 @@ workflows:
           context:
             - circleci-user
           test_command: |-
-            run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_event_updates.py
+            run-test --tap=/tmp/circleci_workspace/${CIRCLE_PROJECT_REPONAME} tests/test_event_updates.py
           requires:
             - "Create Object Integration Test"
       - integration_test:
@@ -120,7 +129,7 @@ workflows:
           context:
             - circleci-user
           test_command: |-
-            run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_full_replication.py
+            run-test --tap=/tmp/circleci_workspace/${CIRCLE_PROJECT_REPONAME} tests/test_full_replication.py
           requires:
             - "Event Updates Integration Test"
       - integration_test:
@@ -128,7 +137,7 @@ workflows:
           context:
             - circleci-user
           test_command: |-
-            run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_bookmarks.py
+            run-test --tap=/tmp/circleci_workspace/${CIRCLE_PROJECT_REPONAME} tests/test_bookmarks.py
           requires:
             - "Full Table Integration Test"
       - integration_test:
@@ -136,7 +145,7 @@ workflows:
           context:
             - circleci-user
           test_command: |-
-            run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_start_date.py
+            run-test --tap=/tmp/circleci_workspace/${CIRCLE_PROJECT_REPONAME} tests/test_start_date.py
           requires:
             - "Incremental Integration Test"
 build_daily:

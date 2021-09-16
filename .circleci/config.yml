@@ -76,6 +76,8 @@ workflows:
           context: circleci-user
       - build_and_test:
           context: circleci-user
+          requires:
+            - ensure_env
       - integration_test:
           name: "All Fields Integration Test"
           context:

@@ -96,6 +96,10 @@ KNOWN_FAILING_FIELDS = {
     'plans': {
         'transform_usage' # BUG_13711 schema is wrong, should be an object not string
     },
+    # 'invoice_line_items': { # TODO This is a test issue that prevents us from consistently passing
+    #     'unique_line_item_id',
+    #     'invoice_item',
+    # }
 }
 
 # NB | The following sets not to be confused with the sets above documenting BUGs.
@@ -266,14 +270,16 @@ class ALlFieldsTest(BaseTapTest):
 
         # run initial sync
         first_record_count_by_stream = self.run_and_verify_sync(conn_id)
+
         replicated_row_count = sum(first_record_count_by_stream.values())
         synced_records = runner.get_records_from_target_output()
+
+        # Verify target has records for all synced streams
+        for stream, count in first_record_count_by_stream.items():
+            assert stream in self.expected_streams()
+            self.assertGreater(count, 0, msg="failed to replicate any data for: {}".format(stream))
         print("total replicated row count: {}".format(replicated_row_count))
 
-        # Verify target has records only for the selected streams
-        for stream, count in first_record_count_by_stream.items():
-            self.assertIn(stream, self.expected_streams())
-            self.assertGreater(count, 0)
 
         # Test by Stream
         for stream in streams_to_test:
@@ -305,22 +311,22 @@ class ALlFieldsTest(BaseTapTest):
                         stream, schema_keys.difference(expected_records_keys)
                     ))
 
-                # Verify that all fields sent to the target fall into the expected schema
-                self.assertTrue(actual_records_keys.issubset(schema_keys))
-
-                # Verify schema covers all expected fields
+                # Verify schema covers all fields
                 adjusted_expected_keys = expected_records_keys.union(
                     FIELDS_ADDED_BY_TAP.get(stream, set())
                 )
-                # adjusted_actual_keys = actual_records_keys.union(  # BUG_12478
-                #     KNOWN_MISSING_FIELDS.get(stream, set())
-                # )
-                # if stream == 'invoice_items':
-                #     adjusted_actual_keys = adjusted_actual_keys.union({'subscription_item'})  # BUG_13666
-                # self.assertSetEqual(adjusted_expected_keys, adjusted_actual_keys)
-                # Verify schema covers all expected fields
-                self.assertSetEqual(adjusted_expected_keys, actual_records_keys)
+                adjusted_actual_keys = actual_records_keys.union(  # BUG_12478
+                    KNOWN_MISSING_FIELDS.get(stream, set())
+                )
+                if stream == 'invoice_items':
+                    adjusted_actual_keys = adjusted_actual_keys.union({'subscription_item'})  # BUG_13666
+                self.assertSetEqual(adjusted_expected_keys, adjusted_actual_keys)
 
+                # verify the missing fields from KNOWN_MISSING_FIELDS are always missing (stability check)
+                self.assertSetEqual(actual_records_keys.difference(KNOWN_MISSING_FIELDS.get(stream, set())), actual_records_keys)
+
+                # Verify that all fields sent to the target fall into the expected schema
+                self.assertTrue(actual_records_keys.issubset(schema_keys))
 
                 # Verify there are no duplicate pks in the target
                 actual_pks = [tuple(actual_record.get(pk) for pk in primary_keys) for actual_record in actual_records_data]

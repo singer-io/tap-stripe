@@ -30,12 +30,14 @@ jobs:
       - attach_workspace:
           at: /usr/local/share/virtualenvs
       - run:
+          name: "Setup custom environment variables"
+          command: echo 'export MY_ENV_VAR="${PYLINT_DISABLE_LIST}"' >> $BASH_ENV
+      - run:
           name: 'pylint'
           command: |
             source /usr/local/share/virtualenvs/tap-stripe/bin/activate
-            export disable_list=${PYLINT_DISABLE_LIST}
-            echo "Will ignore the following errors ${disable_list}"
-            pylint tap_stripe -d ${disable_list}
+            echo "Will ignore the following errors ${MY_ENV_VAR}"
+            pylint tap_stripe -d ${MY_ENV_VAR}
   json_validate:
     executor: tap_tester
     steps:

@@ -33,8 +33,9 @@ jobs:
           name: 'pylint'
           command: |
             source /usr/local/share/virtualenvs/tap-stripe/bin/activate
-            echo "Will ignore the following errors ${PYLINT_DISABLE_LIST}"
-            pylint tap_stripe -d ${PYLINT_DISABLE_LIST}
+            export disable_list=${PYLINT_DISABLE_LIST}
+            echo "Will ignore the following errors ${disable_list}"
+            pylint tap_stripe -d ${disable_list}
   json_validate:
     executor: tap_tester
     steps:

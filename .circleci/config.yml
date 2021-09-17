@@ -33,7 +33,8 @@ jobs:
           name: 'pylint'
           command: |
             source /usr/local/share/virtualenvs/tap-stripe/bin/activate
-            pylint tap_stripe -d missing-docstring,too-many-branches
+            echo "Will ignore the following errors ${PYLINT_DISABLE_LIST}"
+            pylint tap_stripe -d ${PYLINT_DISABLE_LIST}
   json_validate:
     executor: tap_tester
     steps:

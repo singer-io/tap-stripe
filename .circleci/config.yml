@@ -67,7 +67,7 @@ jobs:
             source /usr/local/share/virtualenvs/tap-stripe/bin/activate
             nosetests tests/unittests
 
-  integration_test:
+  run_integration_test:
     parameters:
       test_command:
         type: string
@@ -107,7 +107,7 @@ workflows:
           context: circleci-user
           requires:
             - build
-      - integration_test:
+      - run_integration_test:
           name: "All Fields Integration Test"
           context:
             - circleci-user
@@ -117,7 +117,7 @@ workflows:
             - unittest
             - pylint
             - json_validate
-      - integration_test:
+      - run_integration_test:
           name: "Discovery Integration Test"
           context:
             - circleci-user
@@ -125,7 +125,15 @@ workflows:
             run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_discovery.py
           requires:
             - "All Fields Integration Test"
-      - integration_test:
+      - run_integration_test:
+          name: "Check All Integration Tests Running"
+          context:
+            - circleci-user
+          test_command: |-
+            run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_all_tests_run.py
+          requires:
+            - "All Fields Integration Test"
+      - run_integration_test:
           name: "Start Date Integration Test"
           context:
             - circleci-user
@@ -133,7 +141,7 @@ workflows:
             run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_start_date.py
           requires:
             - "All Fields Integration Test"
-      - integration_test:
+      - run_integration_test:
           name: "Automatic Fields Integration Test"
           context:
             - circleci-user
@@ -141,7 +149,7 @@ workflows:
             run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_automatic_fields.py
           requires:
             - "All Fields Integration Test"
-      - integration_test:
+      - run_integration_test:
           name: "Pagination Integration Test"
           context:
             - circleci-user
@@ -149,7 +157,7 @@ workflows:
             run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_pagination.py
           requires:
             - "All Fields Integration Test"
-      - integration_test:
+      - run_integration_test:
           name: "Create Object Integration Test"
           context:
             - circleci-user
@@ -157,7 +165,7 @@ workflows:
             run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_create_object.py
           requires:
             - "All Fields Integration Test"
-      - integration_test:
+      - run_integration_test:
           name: "Event Updates Integration Test"
           context:
             - circleci-user
@@ -165,7 +173,7 @@ workflows:
             run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_event_updates.py
           requires:
             - "Create Object Integration Test"
-      - integration_test:
+      - run_integration_test:
           name: "Full Table Integration Test"
           context:
             - circleci-user
@@ -173,7 +181,7 @@ workflows:
             run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_full_replication.py
           requires:
             - "Event Updates Integration Test"
-      - integration_test:
+      - run_integration_test:
           name: "Incremental Integration Test"
           context:
             - circleci-user

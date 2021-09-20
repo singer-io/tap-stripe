@@ -7,7 +7,7 @@ executors:
     docker:
       - image: 218546966473.dkr.ecr.us-east-1.amazonaws.com/circle-ci:stitch-tap-tester
 jobs:
-  ensure_env:
+  build:
     executor: tap_tester
     steps:
       - checkout
@@ -93,20 +93,20 @@ workflows:
   version: 2
   commit: &commit_jobs
     jobs:
-      - ensure_env:
+      - build:
           context: circleci-user
       - pylint:
           context: circleci-user
           requires:
-            - ensure_env
+            - build
       - json_validate:
           context: circleci-user
           requires:
-            - ensure_env
+            - build
       - unittest:
           context: circleci-user
           requires:
-            - ensure_env
+            - build
       - integration_test:
           name: "All Fields Integration Test"
           context:

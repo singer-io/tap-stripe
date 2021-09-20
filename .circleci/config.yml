@@ -18,7 +18,7 @@ jobs:
             source /usr/local/share/virtualenvs/tap-stripe/bin/activate
             pip install -U pip setuptools
             pip install .[test]
-            aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/tap_tester_sandbox /usr/local/share/virutalenvs/dev_env.sh
+            aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/tap_tester_sandbox /usr/local/share/virtualenvs/dev_env.sh
       - persist_to_workspace:
           root: /usr/local/share/virtualenvs/
           paths:

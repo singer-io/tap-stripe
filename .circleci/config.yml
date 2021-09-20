@@ -18,11 +18,12 @@ jobs:
             source /usr/local/share/virtualenvs/tap-stripe/bin/activate
             pip install -U pip setuptools
             pip install .[test]
+            aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/tap_tester_sandbox /usr/local/share/virutalenvs/dev_env.sh
       - persist_to_workspace:
           root: /usr/local/share/virtualenvs/
           paths:
-            - dev_env.sh
             - tap-stripe
+            - dev_env.sh
   pylint:
     executor: tap_tester
     steps:
@@ -30,14 +31,12 @@ jobs:
       - attach_workspace:
           at: /usr/local/share/virtualenvs
       - run:
-          name: "Setup custom environment variables"
-          command: echo 'export MY_ENV_VAR="${PYLINT_DISABLE_LIST}"' >> $BASH_ENV
-      - run:
           name: 'pylint'
           command: |
             source /usr/local/share/virtualenvs/tap-stripe/bin/activate
-            echo "Will ignore the following errors ${MY_ENV_VAR}"
-            pylint tap_stripe -d ${MY_ENV_VAR}
+            source /usr/local/share/virtualenvs/dev_env.sh
+            echo "Will ignore the following errors $PYLINT_DISABLE_LIST"
+            pylint tap_stripe -d "$PYLINT_DISABLE_LIST"
   json_validate:
     executor: tap_tester
     steps:
@@ -82,10 +81,9 @@ jobs:
           name: 'Integration Test'
           no_output_timeout: 30m
           command: |
-            aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/tap_tester_sandbox dev_env.sh
             source /usr/local/share/virtualenvs/tap-stripe/bin/activate
             source /usr/local/share/virtualenvs/tap-tester/bin/activate
-            source dev_env.sh
+            source /usr/local/share/virtualenvs/dev_env.sh
             pip install 'stripe==2.42.0'
             << parameters.test_command >>
       - slack/notify-on-failure:

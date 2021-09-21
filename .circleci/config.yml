@@ -122,7 +122,7 @@ workflows:
           test_command: |-
             run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_all_tests_run.py
           requires:
-            - "All Fields Integration Test"
+            - build
       - run_integration_test:
           name: "Start Date Integration Test"
           context:
@@ -130,7 +130,7 @@ workflows:
           test_command: |-
             run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_start_date.py
           requires:
-            - "All Fields Integration Test"
+            - build
       - run_integration_test:
           name: "Automatic Fields Integration Test"
           context:
@@ -138,7 +138,7 @@ workflows:
           test_command: |-
             run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_automatic_fields.py
           requires:
-            - "All Fields Integration Test"
+            - build
       - run_integration_test:
           name: "Pagination Integration Test"
           context:
@@ -146,7 +146,7 @@ workflows:
           test_command: |-
             run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_pagination.py
           requires:
-            - "All Fields Integration Test"
+            - build
       - run_integration_test:
           name: "Create Object Integration Test"
           context:
@@ -154,7 +154,7 @@ workflows:
           test_command: |-
             run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_create_object.py
           requires:
-            - "All Fields Integration Test"
+            - build
       - run_integration_test:
           name: "Event Updates Integration Test"
           context:

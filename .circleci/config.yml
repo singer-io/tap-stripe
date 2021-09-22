@@ -108,6 +108,16 @@ workflows:
           requires:
             - build
       - run_integration_test:
+          name: "All Fields Integration Test"
+          context:
+            - circleci-user
+          test_command: |-
+            run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_all_fields.py
+          requires:
+            - unittest
+            - pylint
+            - json_validate
+      - run_integration_test:
           name: "Discovery Integration Test"
           context:
             - circleci-user

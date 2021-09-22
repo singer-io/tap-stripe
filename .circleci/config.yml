@@ -114,7 +114,7 @@ workflows:
           test_command: |-
             run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_discovery.py
           requires:
-            - build 
+            - "All Fields Integration Test"
       - run_integration_test:
           name: "Check All Integration Tests Running"
           context:

@@ -430,7 +430,7 @@ def sync_stream(stream_name):
         window_size = float(Context.config.get('date_window_size', DEFAULT_DATE_WINDOW_SIZE))
 
         if DEFAULT_DATE_WINDOW_SIZE != window_size:
-            LOGGER.info('Using non-default date window size of {}'.format(window_size))
+            LOGGER.info('Using non-default date window size of %.2f',window_size)
         start_window = bookmark
 
         # NB: Immutable streams are never synced for updates. We've

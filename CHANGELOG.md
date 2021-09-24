@@ -1,4 +1,8 @@
 # Changelog
+
+** 1.4.9
+  * Allow partial days in the `date_window_size` config value [#100](https://github.com/singer-io/tap-stripe/pull/100)
+
 ** 1.4.8
   * Reverts 1.4.7 [#82](https://github.com/singer-io/tap-stripe/pull/82)
 
@@ -18,7 +22,7 @@
   * Revert 1.4.2 changes from #59 [#60](https://github.com/singer-io/tap-stripe/pull/60)
   * Remove invalid and unused schema pieces [#60](https://github.com/singer-io/tap-stripe/pull/60)
 
-** 1.4.2	
+** 1.4.2
   * Revert 1.4.1 [#59](https://github.com/singer-io/tap-stripe/pull/59)
 
 ** 1.4.1

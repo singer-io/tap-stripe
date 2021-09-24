@@ -81,7 +81,7 @@ jobs:
           # TODO Instead of using always steps to make reading the output
           # easier, emit an xUnit report and let Circle tell you what
           # failed.
-          name: 'Testing << parameters.file >>'
+          name: 'Integration Testing'
           command: |
             source /usr/local/share/virtualenvs/tap-stripe/bin/activate
             source /usr/local/share/virtualenvs/tap-tester/bin/activate
@@ -110,6 +110,7 @@ workflows:
           requires:
             - build
       - run_integration_test: 
+          name: 'Testing all_fields'
           context: circleci-user
           file: all_fields
           requires:
@@ -117,36 +118,43 @@ workflows:
             - pylint
             - json_validate
       - run_integration_test:
+          name: 'Testing discovery'
           context: circleci-user
           file: discovery
           requires:
             - 'Testing all_fields'
       - run_integration_test:
+          name: 'Testing all_tests_run'
           context: circleci-user
           file: all_tests_run
           requires:
             - 'Testing all_fields'
       - run_integration_test:
+          name: 'Testing start_date'
           context: circleci-user
           file: start_date
           requires:
             - 'Testing all_fields'
       - run_integration_test:
+          name: 'Testing automatic_fields'
           context: circleci-user
           file: automatic_fields
           requires:
             - 'Testing all_fields'
       - run_integration_test:
+          name: 'Testing pagination'
           context: circleci-user
           file: pagination
           requires:
             - 'Testing all_fields'
       - run_integration_test:
+          name: 'Testing create_object'
           context: circleci-user
           file: create_object
           requires:
             - 'Testing all_fields'
       - run_integration_test:
+          name: 'Testing event_updates'
           context: circleci-user
           file: event_updates
           requires:
@@ -157,11 +165,13 @@ workflows:
             - 'Testing pagination'
             - 'Testing create_object'
       - run_integration_test:
+          name: 'Testing full_replication'
           context: circleci-user
           file: full_replication
           requires:
             - 'Testing event_updates'
       - run_integration_test:
+          name: 'Testing bookmarks'
           context: circleci-user
           file: bookmarks
           requires:

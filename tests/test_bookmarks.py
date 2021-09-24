@@ -20,7 +20,7 @@ class BookmarkTest(BaseTapTest):
 
     @staticmethod
     def name():
-        return "tap_tester_tap_stripe_bookmark_revised_test"
+        return "tt_stripe_bookmarks"
 
     def parse_bookmark_to_date(self, value):
         if value:

@@ -13,7 +13,7 @@ class FullReplicationTest(BaseTapTest):
 
     @staticmethod
     def name():
-        return "tap_tester_tap_stripe_full_test"
+        return "tt_stripe_full_table"
 
     def test_run(self):
         """

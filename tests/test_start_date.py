@@ -27,7 +27,7 @@ class StartDateTest(BaseTapTest):
 
     @staticmethod
     def name():
-        return "tap_tester_tap_stripe_start_date_test"
+        return "tt_stripe_start_date"
 
     def test_run(self):
         """Test we get a lot of data back based on the start date configured in base"""

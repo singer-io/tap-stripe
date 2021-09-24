@@ -157,7 +157,7 @@ class ALlFieldsTest(BaseTapTest):
 
     @staticmethod
     def name():
-        return "tap_tester_tap_stripe_all_fields_test"
+        return "tt_stripe_all_fields"
 
     def parse_bookmark_to_date(self, value):
         if value:

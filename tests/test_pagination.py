@@ -14,7 +14,7 @@ class PaginationTest(BaseTapTest):
 
     @staticmethod
     def name():
-        return "tap_tester_tap_stripe_pagination_test"
+        return "tt_stripe_pagination"
 
     def test_run(self):
         """

@@ -6,6 +6,27 @@ executors:
   tap_tester:
     docker:
       - image: 218546966473.dkr.ecr.us-east-1.amazonaws.com/circle-ci:stitch-tap-tester
+
+commands:
+  run_test:
+    description: Runs a TapTester test
+    parameters:
+      file:
+        type: string
+    steps:
+      - run:
+          # TODO Instead of using always steps to make reading the output
+          # easier, emit an xUnit report and let Circle tell you what
+          # failed.
+          when: always
+          name: Testing << parameters.file >>
+          command: |
+            source /usr/local/share/virtualenvs/tap-stripe/bin/activate
+            source /usr/local/share/virtualenvs/tap-tester/bin/activate
+            source /usr/local/share/virtualenvs/dev_env.sh
+            pip install 'stripe==2.42.0'
+            tests/test_<< parameters.file >>.py
+
 jobs:
   build:
     executor: tap_tester
@@ -66,26 +87,16 @@ jobs:
           command: |
             source /usr/local/share/virtualenvs/tap-stripe/bin/activate
             nosetests tests/unittests
-
   run_integration_test:
     parameters:
-      test_command:
+      file:
         type: string
     executor: tap_tester
     steps:
       - checkout
       - attach_workspace:
           at: /usr/local/share/virtualenvs
-      - add_ssh_keys
-      - run:
-          name: 'Integration Test'
-          no_output_timeout: 30m
-          command: |
-            source /usr/local/share/virtualenvs/tap-stripe/bin/activate
-            source /usr/local/share/virtualenvs/tap-tester/bin/activate
-            source /usr/local/share/virtualenvs/dev_env.sh
-            pip install 'stripe==2.42.0'
-            << parameters.test_command >>
+      - run_test: {file: << parameters.file >>}
       - slack/notify-on-failure:
           only_for_branches: master
 
@@ -97,98 +108,62 @@ workflows:
           context: circleci-user
       - pylint:
           context: circleci-user
-          requires:
-            - build
+          requires: build
       - json_validate:
           context: circleci-user
-          requires:
-            - build
+          requires: build
       - unittest:
           context: circleci-user
-          requires:
-            - build
-      - run_integration_test:
-          name: "All Fields Integration Test"
-          context:
-            - circleci-user
-          test_command: |-
-            run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_all_fields.py
+          requires: build
+      - run_integration_test: 
+          context: circleci-user
+          file: all_fields
           requires:
             - unittest
             - pylint
             - json_validate
       - run_integration_test:
-          name: "Discovery Integration Test"
-          context:
-            - circleci-user
-          test_command: |-
-            run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_discovery.py
-          requires:
-            - "All Fields Integration Test"
+          context: circleci-user
+          file: discovery
+          requires: Testing all_fields
       - run_integration_test:
-          name: "Check All Integration Tests Running"
-          context:
-            - circleci-user
-          test_command: |-
-            run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_all_tests_run.py
-          requires:
-            - "All Fields Integration Test"
+          context: circleci-user
+          file: all_tests_run
+          requires: Testing all_fields
       - run_integration_test:
-          name: "Start Date Integration Test"
-          context:
-            - circleci-user
-          test_command: |-
-            run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_start_date.py
-          requires:
-            - "All Fields Integration Test"
+          context: circleci-user
+          file: start_date
+          requires: Testing all_fields
       - run_integration_test:
-          name: "Automatic Fields Integration Test"
-          context:
-            - circleci-user
-          test_command: |-
-            run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_automatic_fields.py
-          requires:
-            - "All Fields Integration Test"
+          context: circleci-user
+          file: automatic_fields
+          requires: Testing all_fields
       - run_integration_test:
-          name: "Pagination Integration Test"
-          context:
-            - circleci-user
-          test_command: |-
-            run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_pagination.py
-          requires:
-            - "All Fields Integration Test"
+          context: circleci-user
+          file: pagination
+          requires: Testing all_fields
       - run_integration_test:
-          name: "Create Object Integration Test"
-          context:
-            - circleci-user
-          test_command: |-
-            run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_create_object.py
-          requires:
-            - "All Fields Integration Test"
+          context: circleci-user
+          file: create_object
+          requires: Testing all_fields
       - run_integration_test:
-          name: "Event Updates Integration Test"
-          context:
-            - circleci-user
-          test_command: |-
-            run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_event_updates.py
+          context: circleci-user
+          file: event_updates
           requires:
-            - "Create Object Integration Test"
+            - Testing discovery
+            - Testing all_tests_run
+            - Testing start_date
+            - Testing automatic_fields
+            - Testing pagination
+            - Testing create_object
       - run_integration_test:
-          name: "Full Table Integration Test"
-          context:
-            - circleci-user
-          test_command: |-
-            run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_full_replication.py
-          requires:
-            - "Event Updates Integration Test"
+          context: circleci-user
+          file: full_replication
+          requires: Testing event_updates
       - run_integration_test:
-          name: "Incremental Integration Test"
-          context:
-            - circleci-user
-          test_command: |-
-            run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_bookmarks.py
-          requires:
-            - "Full Table Integration Test"
+          context: circleci-user
+          file: bookmarks
+          requires: full_replication
 build_daily:
     <<: *commit_jobs
     triggers:

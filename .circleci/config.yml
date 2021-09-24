@@ -99,13 +99,16 @@ workflows:
           context: circleci-user
       - pylint:
           context: circleci-user
-          requires: build
+          requires:
+            - build
       - json_validate:
           context: circleci-user
-          requires: build
+          requires:
+            - build
       - unittest:
           context: circleci-user
-          requires: build
+          requires:
+            - build
       - run_integration_test: 
           context: circleci-user
           file: all_fields
@@ -116,27 +119,33 @@ workflows:
       - run_integration_test:
           context: circleci-user
           file: discovery
-          requires: Testing all_fields
+          requires:
+            - Testing all_fields
       - run_integration_test:
           context: circleci-user
           file: all_tests_run
-          requires: Testing all_fields
+          requires:
+            - Testing all_fields
       - run_integration_test:
           context: circleci-user
           file: start_date
-          requires: Testing all_fields
+          requires:
+            - Testing all_fields
       - run_integration_test:
           context: circleci-user
           file: automatic_fields
-          requires: Testing all_fields
+          requires:
+            - Testing all_fields
       - run_integration_test:
           context: circleci-user
           file: pagination
-          requires: Testing all_fields
+          requires:
+            - Testing all_fields
       - run_integration_test:
           context: circleci-user
           file: create_object
-          requires: Testing all_fields
+          requires:
+            - Testing all_fields
       - run_integration_test:
           context: circleci-user
           file: event_updates
@@ -150,11 +159,13 @@ workflows:
       - run_integration_test:
           context: circleci-user
           file: full_replication
-          requires: Testing event_updates
+          requires:
+            - Testing event_updates
       - run_integration_test:
           context: circleci-user
           file: bookmarks
-          requires: full_replication
+          requires:
+            - full_replication
 build_daily:
     <<: *commit_jobs
     triggers:

@@ -87,7 +87,7 @@ jobs:
             source /usr/local/share/virtualenvs/tap-tester/bin/activate
             source /usr/local/share/virtualenvs/dev_env.sh
             pip install 'stripe==2.42.0'
-            tests/test_<< parameters.file >>.py
+            run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_<< parameters.file >>.py
       - slack/notify-on-failure:
           only_for_branches: master
 

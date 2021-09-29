@@ -12,6 +12,10 @@ jobs:
   build:
     executor: tap_tester
     steps:
+      - run: echo 'CI done'
+  ensure_env:
+    executor: tap_tester
+    steps:
       - checkout
       - run:
           name: 'Setup virtual env'
@@ -95,20 +99,20 @@ workflows:
   version: 2
   commit: &commit_jobs
     jobs:
-      - build:
+      - ensure_env:
           context: circleci-user
       - pylint:
           context: circleci-user
           requires:
-            - build
+            - ensure_env
       - json_validate:
           context: circleci-user
           requires:
-            - build
+            - ensure_env
       - unittest:
           context: circleci-user
           requires:
-            - build
+            - ensure_env
       - run_integration_test: 
           name: 'Testing all_fields'
           context: circleci-user
@@ -176,6 +180,10 @@ workflows:
           file: bookmarks
           requires:
             - 'Testing full_replication'
+      - build:
+          context: circleci-user
+          requires:
+            - 'Testing bookmarks'
 build_daily:
     <<: *commit_jobs
     triggers:

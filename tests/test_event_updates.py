@@ -19,7 +19,7 @@ class EventUpdatesTest(BaseTapTest):
 
     @staticmethod
     def name():
-        return "tap_tester_tap_stripe_event_updates_test"
+        return "tt_stripe_event_updates"
 
     def test_run(self):
         """

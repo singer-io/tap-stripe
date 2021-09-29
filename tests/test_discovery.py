@@ -13,7 +13,7 @@ class DiscoveryTest(BaseTapTest):
 
     @staticmethod
     def name():
-        return "tap_tester_tap_stripe_discovery_test"
+        return "tt_stripe_discovery"
 
     def test_run(self):
         """

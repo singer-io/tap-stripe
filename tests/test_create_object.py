@@ -17,7 +17,7 @@ class CreateObjectTest(BaseTapTest):
 
     @staticmethod
     def name():
-        return "tap_tester_tap_stripe_create_object_test"
+        return "tt_stripe_create_objects"
 
     def test_run(self):
         """

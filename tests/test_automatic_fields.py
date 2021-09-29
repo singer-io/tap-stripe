@@ -13,7 +13,7 @@ class MinimumSelectionTest(BaseTapTest):
 
     @staticmethod
     def name():
-        return "tap_tester_tap_stripe_no_fields_test"
+        return "tt_stripe_auto_fields"
 
     def test_run(self):
         """

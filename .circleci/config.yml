@@ -1,11 +1,20 @@
 version: 2.1
+
 orbs:
   slack: circleci/slack@3.4.2
 
-jobs:
-  build:
+executors:
+  tap_tester:
     docker:
       - image: 218546966473.dkr.ecr.us-east-1.amazonaws.com/circle-ci:stitch-tap-tester
+
+jobs:
+  build:
+    executor: tap_tester
+    steps:
+      - run: echo 'CI done'
+  ensure_env:
+    executor: tap_tester
     steps:
       - checkout
       - run:
@@ -15,11 +24,43 @@ jobs:
             source /usr/local/share/virtualenvs/tap-stripe/bin/activate
             pip install -U pip setuptools
             pip install .[test]
+            aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/tap_tester_sandbox /usr/local/share/virtualenvs/dev_env.sh
+      - persist_to_workspace:
+          root: /usr/local/share/virtualenvs/
+          paths:
+            - tap-stripe
+            - dev_env.sh
+  pylint:
+    executor: tap_tester
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /usr/local/share/virtualenvs
       - run:
           name: 'pylint'
           command: |
             source /usr/local/share/virtualenvs/tap-stripe/bin/activate
-            pylint tap_stripe -d missing-docstring,too-many-branches
+            source /usr/local/share/virtualenvs/dev_env.sh
+            echo "Will ignore the following errors $PYLINT_DISABLE_LIST"
+            pylint tap_stripe -d "$PYLINT_DISABLE_LIST"
+  json_validate:
+    executor: tap_tester
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /usr/local/share/virtualenvs
+      - run:
+          name: 'JSON Validator'
+          command: |
+            source /usr/local/share/virtualenvs/tap-tester/bin/activate
+            stitch-validate-json tap_stripe/schemas/*.json
+            stitch-validate-json tap_stripe/schemas/shared/*.json
+  unittest:
+    executor: tap_tester
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /usr/local/share/virtualenvs
       - run:
           name: 'JSON Validator'
           command: |
@@ -31,26 +72,120 @@ jobs:
           command: |
             source /usr/local/share/virtualenvs/tap-stripe/bin/activate
             nosetests tests/unittests
-      - add_ssh_keys
+  run_integration_test:
+    parameters:
+      file:
+        type: string
+    executor: tap_tester
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /usr/local/share/virtualenvs
       - run:
-          name: 'Integration Tests'
-          no_output_timeout: 30m
+          # TODO Instead of using always steps to make reading the output
+          # easier, emit an xUnit report and let Circle tell you what
+          # failed.
+          name: 'Integration Testing'
           command: |
-            aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/tap_tester_sandbox dev_env.sh
-            source dev_env.sh
+            source /usr/local/share/virtualenvs/tap-stripe/bin/activate
             source /usr/local/share/virtualenvs/tap-tester/bin/activate
+            source /usr/local/share/virtualenvs/dev_env.sh
             pip install 'stripe==2.42.0'
-            run-test --tap=tap-stripe tests
+            run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_<< parameters.file >>.py
       - slack/notify-on-failure:
           only_for_branches: master
 
 workflows:
   version: 2
-  commit:
+  commit: &commit_jobs
     jobs:
+      - ensure_env:
+          context: circleci-user
+      - pylint:
+          context: circleci-user
+          requires:
+            - ensure_env
+      - json_validate:
+          context: circleci-user
+          requires:
+            - ensure_env
+      - unittest:
+          context: circleci-user
+          requires:
+            - ensure_env
+      - run_integration_test: 
+          name: 'Testing all_fields'
+          context: circleci-user
+          file: all_fields
+          requires:
+            - unittest
+            - pylint
+            - json_validate
+      - run_integration_test:
+          name: 'Testing discovery'
+          context: circleci-user
+          file: discovery
+          requires:
+            - 'Testing all_fields'
+      - run_integration_test:
+          name: 'Testing all_tests_run'
+          context: circleci-user
+          file: all_tests_run
+          requires:
+            - 'Testing all_fields'
+      - run_integration_test:
+          name: 'Testing start_date'
+          context: circleci-user
+          file: start_date
+          requires:
+            - 'Testing all_fields'
+      - run_integration_test:
+          name: 'Testing automatic_fields'
+          context: circleci-user
+          file: automatic_fields
+          requires:
+            - 'Testing all_fields'
+      - run_integration_test:
+          name: 'Testing pagination'
+          context: circleci-user
+          file: pagination
+          requires:
+            - 'Testing all_fields'
+      - run_integration_test:
+          name: 'Testing create_object'
+          context: circleci-user
+          file: create_object
+          requires:
+            - 'Testing all_fields'
+      - run_integration_test:
+          name: 'Testing event_updates'
+          context: circleci-user
+          file: event_updates
+          requires:
+            - 'Testing discovery'
+            - 'Testing all_tests_run'
+            - 'Testing start_date'
+            - 'Testing automatic_fields'
+            - 'Testing pagination'
+            - 'Testing create_object'
+      - run_integration_test:
+          name: 'Testing full_replication'
+          context: circleci-user
+          file: full_replication
+          requires:
+            - 'Testing event_updates'
+      - run_integration_test:
+          name: 'Testing bookmarks'
+          context: circleci-user
+          file: bookmarks
+          requires:
+            - 'Testing full_replication'
       - build:
           context: circleci-user
-  build_daily:
+          requires:
+            - 'Testing bookmarks'
+build_daily:
+    <<: *commit_jobs
     triggers:
       - schedule:
           cron: "0 12 * * *"
@@ -58,6 +193,3 @@ workflows:
             branches:
               only:
                 - master
-    jobs:
-      - build:
-          context: circleci-user

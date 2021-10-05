@@ -533,6 +533,160 @@
         "object"
       ],
       "properties": {
+        "card_present": {
+          "type": [
+            "null",
+            "object"
+          ],
+          "properties": {
+            "amount_authorized": {
+              "type": [
+                "null",
+                "integer"
+              ]
+            },
+            "brand": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "cardholder_name": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "country": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "emv_auth_data": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "exp_month": {
+              "type": [
+                "null",
+                "integer"
+              ]
+            },
+            "exp_year": {
+              "type": [
+                "null",
+                "integer"
+              ]
+            },
+            "fingerprint": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "funding": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "generated_card": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "last4": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "network": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "overcapture_supported": {
+              "type": [
+                "null",
+                "boolean"
+              ]
+            },
+            "read_method": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "receipt": {
+              "type": [
+                "null",
+                "object"
+              ],
+              "properties": {
+                "account_type": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "application_cryptogram": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "application_preferred_name": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "authorization_code": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "authorization_response_code": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "cardholder_verification_method": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "dedicated_file_name": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "terminal_verification_results": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                },
+                "transaction_status_information": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                }
+              }
+            }
+          }
+        },
         "ach_credit_transfer": {
           "type": [
             "null",

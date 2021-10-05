@@ -1,5 +1,8 @@
 # Changelog
 
+** 1.5.0
+  * Add schema for card_present charges [#101](https://github.com/singer-io/tap-stripe/pull/101)
+
 ** 1.4.9
   * Allow partial days in the `date_window_size` config value [#100](https://github.com/singer-io/tap-stripe/pull/100)
 

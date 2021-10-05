@@ -96,7 +96,6 @@ jobs:
           only_for_branches: master
 
 workflows:
-  version: 2
   commit: &commit_jobs
     jobs:
       - ensure_env:

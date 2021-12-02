@@ -401,7 +401,7 @@ def sync_stream(stream_name):
     LOGGER.info("Started syncing stream %s", stream_name)
 
     stream_metadata        = metadata.to_map(Context.get_catalog_entry(stream_name)['metadata'])
-    stream_query_params    = Context.get_catalog_entry(stream_name).get('query')
+    stream_query_params    = Context.get_catalog_entry(stream_name)['metadata'].get('query')
     LOGGER.info("QUERY PARAMS: ", stream_query_params)
     stream_field_whitelist = json.loads(Context.config.get('whitelist_map', '{}')).get(stream_name)
 

@@ -371,14 +371,17 @@ def reduce_foreign_keys(rec, stream_name):
     return rec
 
 
-def paginate(sdk_obj, filter_key, start_date, end_date, limit=100):
+def paginate(sdk_obj, filter_key, start_date, end_date, query=None, limit=100):
     yield from sdk_obj.list(
         limit=limit,
         stripe_account=Context.config.get('account_id'),
         # None passed to starting_after appears to retrieve
         # all of them so this should always be safe.
-        **{filter_key + "[gte]": start_date,
-           filter_key + "[lt]": end_date}
+        **{
+            filter_key + "[gte]": start_date,
+            filter_key + "[lt]": end_date,
+            **(query or {})
+          }
     ).auto_paging_iter()
 
 
@@ -397,7 +400,8 @@ def sync_stream(stream_name):
     """
     LOGGER.info("Started syncing stream %s", stream_name)
 
-    stream_metadata = metadata.to_map(Context.get_catalog_entry(stream_name)['metadata'])
+    stream_metadata        = metadata.to_map(Context.get_catalog_entry(stream_name)['metadata'])
+    stream_query_params    = Context.get_catalog_entry(stream_name).get('query')
     stream_field_whitelist = json.loads(Context.config.get('whitelist_map', '{}')).get(stream_name)
 
     extraction_time = singer.utils.now()
@@ -454,7 +458,7 @@ def sync_stream(stream_name):
                 stop_window = end_time
 
             for stream_obj in paginate(STREAM_SDK_OBJECTS[stream_name]['sdk_object'],
-                                       filter_key, start_window, stop_window):
+                                       filter_key, start_window, stop_window, query=stream_query_params):
 
                 # get the replication key value from the object
                 rec = unwrap_data_objects(stream_obj.to_dict_recursive())

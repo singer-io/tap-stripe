@@ -234,12 +234,12 @@ class ALlFieldsTest(BaseTapTest):
     def test_run(self):
 
         # first just run the test against customers
-        streams_to_test_1 = {'charges'}
+        streams_to_test_1 = {'customers'}
 
         # then run against all streams under test (except customers)
         streams_to_test_2 = self.streams_to_test.difference(streams_to_test_1)
 
-        for streams_to_test in [{'customer'}]:
+        for streams_to_test in [{'customers'}]:
             with self.subTest(streams_to_test=streams_to_test):
 
                 # get existing records and add them to our expectations

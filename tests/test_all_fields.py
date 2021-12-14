@@ -8,6 +8,9 @@ from dateutil.parser import parse
 
 from collections import namedtuple
 
+import singer
+LOGGER = singer.get_logger()
+
 from tap_tester import menagerie, runner, connections
 from base import BaseTapTest
 from utils import \
@@ -389,6 +392,8 @@ class ALlFieldsTest(BaseTapTest):
 
                                 expected_field_value = expected_record.get(field, "EXPECTED IS MISSING FIELD")
                                 actual_field_value = actual_record.get(field, "ACTUAL IS MISSING FIELD")
+                                LOGGER.info("********************{}".format(expected_field_value))
+                                LOGGER.info("********************{}".format(actual_field_value))
 
                                 try:
 

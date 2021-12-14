@@ -402,7 +402,6 @@ class ALlFieldsTest(BaseTapTest):
                                     expected_field_value.pop('promotion_code')
                                     expected_field_value.pop('checkout_session')
                                 elif field == 'created':
-                                    LOGGER.info("********************{}".format(dt.fromtimestamp(expected_field_value, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")))
                                     expected_field_value = dt.fromtimestamp(int(expected_field_value), tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
                                 try:

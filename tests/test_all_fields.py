@@ -239,7 +239,7 @@ class ALlFieldsTest(BaseTapTest):
         # then run against all streams under test (except customers)
         streams_to_test_2 = self.streams_to_test.difference(streams_to_test_1)
 
-        for streams_to_test in [{'invoices'}]:
+        for streams_to_test in [{'payouts'}]:
             with self.subTest(streams_to_test=streams_to_test):
 
                 # get existing records and add them to our expectations
@@ -392,18 +392,9 @@ class ALlFieldsTest(BaseTapTest):
 
                                 expected_field_value = expected_record.get(field, "EXPECTED IS MISSING FIELD")
                                 actual_field_value = actual_record.get(field, "ACTUAL IS MISSING FIELD")
-                                # LOGGER.info("********************{}".format(field))
-                                # LOGGER.info("********************{}".format(expected_field_value))
-                                # LOGGER.info("********************{}".format(actual_field_value))
-                                if field == 'discount' and expected_field_value:
-                                    expected_field_value.pop('id')
-                                    expected_field_value.pop('invoice')
-                                    expected_field_value.pop('invoice_item')
-                                    expected_field_value.pop('promotion_code')
-                                    expected_field_value.pop('checkout_session')
-                                elif field == 'created':
-                                    LOGGER.info("********************{}".format(type(actual_field_value)))
-                                    # expected_field_value = dt.fromtimestamp(int(expected_field_value), tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+                                LOGGER.info("********************{}".format(field))
+                                LOGGER.info("********************{}".format(expected_field_value))
+                                LOGGER.info("********************{}".format(actual_field_value))
 
                                 try:
 

@@ -392,16 +392,17 @@ class ALlFieldsTest(BaseTapTest):
 
                                 expected_field_value = expected_record.get(field, "EXPECTED IS MISSING FIELD")
                                 actual_field_value = actual_record.get(field, "ACTUAL IS MISSING FIELD")
+                                LOGGER.info("********************{}".format(field))
                                 LOGGER.info("********************{}".format(expected_field_value))
                                 LOGGER.info("********************{}".format(actual_field_value))
-                                if field == 'discount':
-                                    expected_field_value.pop('id')
-                                    expected_field_value.pop('invoice')
-                                    expected_field_value.pop('invoice_item')
-                                    expected_field_value.pop('promotion_code')
-                                    expected_field_value.pop('checkout_session')
-                                elif field == 'created':
-                                    expected_field_value = dt.fromtimestamp(expected_field_value, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+                                # if field == 'discount':
+                                #     expected_field_value.pop('id')
+                                #     expected_field_value.pop('invoice')
+                                #     expected_field_value.pop('invoice_item')
+                                #     expected_field_value.pop('promotion_code')
+                                #     expected_field_value.pop('checkout_session')
+                                # elif field == 'created':
+                                #     expected_field_value = dt.fromtimestamp(expected_field_value, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
                                 try:
 

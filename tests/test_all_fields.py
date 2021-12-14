@@ -3,7 +3,7 @@ import logging
 from pathlib import Path
 from random import random
 from time import sleep, perf_counter
-from datetime import datetime as dt
+from datetime import datetime as dt, timezone
 from dateutil.parser import parse
 
 from collections import namedtuple
@@ -394,6 +394,14 @@ class ALlFieldsTest(BaseTapTest):
                                 actual_field_value = actual_record.get(field, "ACTUAL IS MISSING FIELD")
                                 LOGGER.info("********************{}".format(expected_field_value))
                                 LOGGER.info("********************{}".format(actual_field_value))
+                                if field == 'discount':
+                                    expected_field_value.pop('id')
+                                    expected_field_value.pop('invoice')
+                                    expected_field_value.pop('invoice_item')
+                                    expected_field_value.pop('promotion_code')
+                                    expected_field_value.pop('checkout_session')
+                                elif field == 'created':
+                                    expected_field_value = dt.fromtimestamp(expected_field_value, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
                                 try:
 

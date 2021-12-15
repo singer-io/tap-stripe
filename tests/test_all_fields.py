@@ -239,7 +239,7 @@ class ALlFieldsTest(BaseTapTest):
         # then run against all streams under test (except customers)
         streams_to_test_2 = self.streams_to_test.difference(streams_to_test_1)
 
-        for streams_to_test in [{'invoices', 'invoice_line_items'}]:
+        for streams_to_test in [{'charges'}]:
             with self.subTest(streams_to_test=streams_to_test):
 
                 # get existing records and add them to our expectations
@@ -300,6 +300,9 @@ class ALlFieldsTest(BaseTapTest):
                 # collect actual values
                 actual_records = synced_records.get(stream)
                 actual_records_data = [message['data'] for message in actual_records.get('messages')]
+                LOGGER.info("expected object ***************** {}".format(self.expected_objects[stream]))
+                LOGGER.info("expected records ***************** {}".format(expected_records))
+                LOGGER.info("actual records ***************** {}".format(actual_records_data))
                 actual_records_keys = set()
                 for message in actual_records['messages']:
                     if message['action'] == 'upsert':

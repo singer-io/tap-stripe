@@ -17,6 +17,7 @@ NOW = dt.utcnow()
 metadata_value = {"test_value": "senorita_alice_{}@stitchdata.com".format(NOW)}
 
 stripe_client.api_key = BaseTapTest.get_credentials()["client_secret"]
+stripe_client.api_version = '2018-09-24'
 client = {
     'balance_transactions': stripe_client.BalanceTransaction,
     'charges': stripe_client.Charge,

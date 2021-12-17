@@ -46,7 +46,7 @@ STREAM_REPLICATION_KEY = {
     'events': 'created',
     'customers': 'created',
     'plans': 'created',
-    'invoices': 'date',
+    'invoices': 'created',
     'invoice_items': 'date',
     'transfers': 'created',
     'coupons': 'created',
@@ -414,11 +414,17 @@ def sync_stream(stream_name):
     extraction_time = singer.utils.now()
     replication_key = metadata.get(stream_metadata, (), 'valid-replication-keys')[0]
     # Invoice Items bookmarks on `date`, but queries on `created`
-    # Invoice write bookmarks with `date` which is deprecated field but keeping it same to handle bookmark of already running connection
-    # Invoice queries on `created` in latest API version.
-    filter_key = 'created' if stream_name in ['invoice_items', 'invoices'] else replication_key
-    stream_bookmark = singer.get_bookmark(Context.state, stream_name, replication_key) or \
-        int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
+    filter_key = 'created' if stream_name == 'invoice_items' else replication_key
+
+    # Invoice was bookmarking on `date` but in latest API version it is deprecated and replication key changed to `created`
+    # so try to get bookmark from both fields to respect bookmark of active connection too
+    if stream_name == 'invoices':
+        stream_bookmark = singer.get_bookmark(Context.state, stream_name, replication_key) or \
+            singer.get_bookmark(Context.state, stream_name, 'date') or \
+            int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
+    else:
+        stream_bookmark = singer.get_bookmark(Context.state, stream_name, replication_key) or \
+            int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
     bookmark = stream_bookmark
 
     # if this stream has a sub_stream, compare the bookmark

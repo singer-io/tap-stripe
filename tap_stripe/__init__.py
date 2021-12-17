@@ -80,6 +80,13 @@ STREAM_TO_TYPE_FILTER = {
     # payouts - these are called transfers with an event type of payout.*
 }
 
+# Some fields are not available by default with latest API version so
+# retrive it by passing expand paramater in SDK object
+STREAM_TO_EXPAND_FIELDS = {
+    'customers': ['data.sources', 'data.subscriptions', 'data.tax_ids'],
+    'plans': ['data.tiers']
+}
+
 SUB_STREAMS = {
     'subscriptions': 'subscription_items',
     'invoices': 'invoice_line_items',
@@ -162,7 +169,7 @@ def configure_stripe_client():
     # https://github.com/stripe/stripe-python/tree/a9a8d754b73ad47bdece6ac4b4850822fa19db4e#usage
     stripe.api_key = Context.config.get('client_secret')
     # Override the Stripe API Version for consistent access
-    stripe.api_version = '2018-09-24'
+    stripe.api_version = '2020-08-27'
     # Allow ourselves to retry retriable network errors 5 times
     # https://github.com/stripe/stripe-python/tree/a9a8d754b73ad47bdece6ac4b4850822fa19db4e#configuring-automatic-retries
     stripe.max_network_retries = 15
@@ -177,7 +184,7 @@ def configure_stripe_client():
     account = stripe.Account.retrieve(Context.config.get('account_id'))
     msg = "Successfully connected to Stripe Account with display name" \
           + " `%s`"
-    LOGGER.info(msg, account.display_name)
+    LOGGER.info(msg, account.settings.dashboard.display_name)
 
 def unwrap_data_objects(rec):
     """
@@ -371,10 +378,11 @@ def reduce_foreign_keys(rec, stream_name):
     return rec
 
 
-def paginate(sdk_obj, filter_key, start_date, end_date, limit=100):
+def paginate(sdk_obj, filter_key, start_date, end_date, stream_name, limit=100):
     yield from sdk_obj.list(
         limit=limit,
         stripe_account=Context.config.get('account_id'),
+        expand=STREAM_TO_EXPAND_FIELDS.get(stream_name, []),
         # None passed to starting_after appears to retrieve
         # all of them so this should always be safe.
         **{filter_key + "[gte]": start_date,
@@ -403,7 +411,9 @@ def sync_stream(stream_name):
     extraction_time = singer.utils.now()
     replication_key = metadata.get(stream_metadata, (), 'valid-replication-keys')[0]
     # Invoice Items bookmarks on `date`, but queries on `created`
-    filter_key = 'created' if stream_name == 'invoice_items' else replication_key
+    # Invoice write bookmarks with `date` which is deprecated field but keeping it same to handle bookmark of already running connection
+    # Invoice queries on `created` in latest API version.
+    filter_key = 'created' if stream_name in ['invoice_items', 'invoices'] else replication_key
     stream_bookmark = singer.get_bookmark(Context.state, stream_name, replication_key) or \
         int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
     bookmark = stream_bookmark
@@ -454,7 +464,7 @@ def sync_stream(stream_name):
                 stop_window = end_time
 
             for stream_obj in paginate(STREAM_SDK_OBJECTS[stream_name]['sdk_object'],
-                                       filter_key, start_window, stop_window):
+                                       filter_key, start_window, stop_window, stream_name):
 
                 # get the replication key value from the object
                 rec = unwrap_data_objects(stream_obj.to_dict_recursive())

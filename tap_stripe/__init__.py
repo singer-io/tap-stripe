@@ -83,8 +83,11 @@ STREAM_TO_TYPE_FILTER = {
 # Some fields are not available by default with latest API version so
 # retrive it by passing expand paramater in SDK object
 STREAM_TO_EXPAND_FIELDS = {
-    'customers': ['data.sources', 'data.subscriptions', 'data.tax_ids'],
-    'plans': ['data.tiers']
+    'customers': ['data.sources', 'data.subscriptions'],
+    'plans': ['data.tiers'],
+    'invoice_items': ['data.plan.tiers'],
+    'invoice_line_items': ['data.plan.tiers'],
+    'subscription_items': ['data.plan.tiers']
 }
 
 SUB_STREAMS = {

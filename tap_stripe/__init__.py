@@ -402,6 +402,7 @@ def epoch_to_dt(epoch_ts):
     return datetime.fromtimestamp(epoch_ts)
 
 # pylint: disable=too-many-locals
+# pylint: disable=too-many-statements
 def sync_stream(stream_name):
     """
     Sync each stream, looking for newly created records. Updates are captured by events stream.
@@ -416,15 +417,15 @@ def sync_stream(stream_name):
     # Invoice Items bookmarks on `date`, but queries on `created`
     filter_key = 'created' if stream_name == 'invoice_items' else replication_key
 
-    # Invoice was bookmarking on `date` but in latest API version it is deprecated and replication key changed to `created`
-    # so try to get bookmark from both fields to respect bookmark of active connection too
+    # Invoice was bookmarking on `date` but in latest API version, that field is deprecated and replication key changed to `created`
+    # kept `date` in bookmarking as it as to respect bookmark of active connection too
     if stream_name == 'invoices':
-        stream_bookmark = singer.get_bookmark(Context.state, stream_name, replication_key) or \
-            singer.get_bookmark(Context.state, stream_name, 'date') or \
+        stream_bookmark = singer.get_bookmark(Context.state, stream_name, 'date') or \
             int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
     else:
         stream_bookmark = singer.get_bookmark(Context.state, stream_name, replication_key) or \
             int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
+
     bookmark = stream_bookmark
 
     # if this stream has a sub_stream, compare the bookmark
@@ -507,10 +508,19 @@ def sync_stream(stream_name):
             # Update stream/sub-streams bookmarks as stop window
             if stop_window > stream_bookmark:
                 stream_bookmark = stop_window
-                singer.write_bookmark(Context.state,
-                                      stream_name,
-                                      replication_key,
-                                      stream_bookmark)
+                # Invoice was bookmarking on `date` but in latest API version,
+                # that field is deprecated and replication key changed to `created`
+                # kept `date` in bookmarking as it as to respect bookmark of active connection too.
+                if stream_name == "invoices":
+                    singer.write_bookmark(Context.state,
+                                          stream_name,
+                                          'date',
+                                          stream_bookmark)
+                else:
+                    singer.write_bookmark(Context.state,
+                                          stream_name,
+                                          replication_key,
+                                          stream_bookmark)
 
             # the sub stream bookmarks on its parent
             if should_sync_sub_stream and stop_window > sub_stream_bookmark:

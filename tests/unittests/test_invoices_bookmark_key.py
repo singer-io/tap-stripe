@@ -16,7 +16,6 @@ class TestInvoicesBookmarks(unittest.TestCase):
         mocked_get_bookmark.return_value = None
         tap_stripe.Context.catalog = tap_stripe.discover()
         tap_stripe.Context.config = {"start_date": "2021-01-01T00:00:00Z"}
-        replication_key = None
 
         # Call sync_stream which will use 'date' field for read and write bookmark
         tap_stripe.sync_stream("invoices")
@@ -30,5 +29,3 @@ class TestInvoicesBookmarks(unittest.TestCase):
         args, kwargs = mocked_write_bookmark.call_args
         self.assertEquals(args[1], "invoices")
         self.assertEquals(args[2], "date")
-
-        self.assertEqual(replication_key, "test")

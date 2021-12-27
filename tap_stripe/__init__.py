@@ -46,7 +46,7 @@ STREAM_REPLICATION_KEY = {
     'events': 'created',
     'customers': 'created',
     'plans': 'created',
-    'invoices': 'date',
+    'invoices': 'created',
     'invoice_items': 'date',
     'transfers': 'created',
     'coupons': 'created',
@@ -78,6 +78,16 @@ STREAM_TO_TYPE_FILTER = {
     # subscription_items - appears on subscriptions events
     # balance_transactions - seems to be immutable
     # payouts - these are called transfers with an event type of payout.*
+}
+
+# Some fields are not available by default with latest API version so
+# retrive it by passing expand paramater in SDK object
+STREAM_TO_EXPAND_FIELDS = {
+    'customers': ['data.sources', 'data.subscriptions'],
+    'plans': ['data.tiers'],
+    'invoice_items': ['data.plan.tiers'],
+    'invoice_line_items': ['data.plan.tiers'],
+    'subscription_items': ['data.plan.tiers']
 }
 
 SUB_STREAMS = {
@@ -162,7 +172,7 @@ def configure_stripe_client():
     # https://github.com/stripe/stripe-python/tree/a9a8d754b73ad47bdece6ac4b4850822fa19db4e#usage
     stripe.api_key = Context.config.get('client_secret')
     # Override the Stripe API Version for consistent access
-    stripe.api_version = '2018-09-24'
+    stripe.api_version = '2020-08-27'
     # Allow ourselves to retry retriable network errors 5 times
     # https://github.com/stripe/stripe-python/tree/a9a8d754b73ad47bdece6ac4b4850822fa19db4e#configuring-automatic-retries
     stripe.max_network_retries = 15
@@ -177,7 +187,7 @@ def configure_stripe_client():
     account = stripe.Account.retrieve(Context.config.get('account_id'))
     msg = "Successfully connected to Stripe Account with display name" \
           + " `%s`"
-    LOGGER.info(msg, account.display_name)
+    LOGGER.info(msg, account.settings.dashboard.display_name)
 
 def unwrap_data_objects(rec):
     """
@@ -371,10 +381,11 @@ def reduce_foreign_keys(rec, stream_name):
     return rec
 
 
-def paginate(sdk_obj, filter_key, start_date, end_date, limit=100):
+def paginate(sdk_obj, filter_key, start_date, end_date, stream_name, limit=100):
     yield from sdk_obj.list(
         limit=limit,
         stripe_account=Context.config.get('account_id'),
+        expand=STREAM_TO_EXPAND_FIELDS.get(stream_name, []),
         # None passed to starting_after appears to retrieve
         # all of them so this should always be safe.
         **{filter_key + "[gte]": start_date,
@@ -391,6 +402,7 @@ def epoch_to_dt(epoch_ts):
     return datetime.fromtimestamp(epoch_ts)
 
 # pylint: disable=too-many-locals
+# pylint: disable=too-many-statements
 def sync_stream(stream_name):
     """
     Sync each stream, looking for newly created records. Updates are captured by events stream.
@@ -404,8 +416,16 @@ def sync_stream(stream_name):
     replication_key = metadata.get(stream_metadata, (), 'valid-replication-keys')[0]
     # Invoice Items bookmarks on `date`, but queries on `created`
     filter_key = 'created' if stream_name == 'invoice_items' else replication_key
-    stream_bookmark = singer.get_bookmark(Context.state, stream_name, replication_key) or \
-        int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
+
+    # Invoice was bookmarking on `date` but in latest API version, that field is deprecated and replication key changed to `created`
+    # kept `date` in bookmarking as it as to respect bookmark of active connection too
+    if stream_name == 'invoices':
+        stream_bookmark = singer.get_bookmark(Context.state, stream_name, 'date') or \
+            int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
+    else:
+        stream_bookmark = singer.get_bookmark(Context.state, stream_name, replication_key) or \
+            int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
+
     bookmark = stream_bookmark
 
     # if this stream has a sub_stream, compare the bookmark
@@ -454,7 +474,7 @@ def sync_stream(stream_name):
                 stop_window = end_time
 
             for stream_obj in paginate(STREAM_SDK_OBJECTS[stream_name]['sdk_object'],
-                                       filter_key, start_window, stop_window):
+                                       filter_key, start_window, stop_window, stream_name):
 
                 # get the replication key value from the object
                 rec = unwrap_data_objects(stream_obj.to_dict_recursive())
@@ -488,10 +508,19 @@ def sync_stream(stream_name):
             # Update stream/sub-streams bookmarks as stop window
             if stop_window > stream_bookmark:
                 stream_bookmark = stop_window
-                singer.write_bookmark(Context.state,
-                                      stream_name,
-                                      replication_key,
-                                      stream_bookmark)
+                # Invoice was bookmarking on `date` but in latest API version,
+                # that field is deprecated and replication key changed to `created`
+                # kept `date` in bookmarking as it as to respect bookmark of active connection too.
+                if stream_name == "invoices":
+                    singer.write_bookmark(Context.state,
+                                          stream_name,
+                                          'date',
+                                          stream_bookmark)
+                else:
+                    singer.write_bookmark(Context.state,
+                                          stream_name,
+                                          replication_key,
+                                          stream_bookmark)
 
             # the sub stream bookmarks on its parent
             if should_sync_sub_stream and stop_window > sub_stream_bookmark:

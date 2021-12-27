@@ -71,7 +71,8 @@ jobs:
           name: 'Unit Tests'
           command: |
             source /usr/local/share/virtualenvs/tap-stripe/bin/activate
-            nosetests tests/unittests
+            nosetests --with-coverage --cover-erase --cover-package=tap_stripe --cover-html-dir=htmlcov tests/unittests
+            coverage html
   run_integration_test:
     parameters:
       file:

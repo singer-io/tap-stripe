@@ -79,12 +79,7 @@ class BaseTapTest(unittest.TestCase):
             'events': default,
             'customers': default,
             'plans': default,
-            'invoices': {
-                self.AUTOMATIC_FIELDS: {"updated"},
-                self.REPLICATION_KEYS: {"date"},
-                self.PRIMARY_KEYS: {"id"},
-                self.REPLICATION_METHOD: self.INCREMENTAL,
-            },
+            'invoices': default,
             'invoice_items': {
                 self.AUTOMATIC_FIELDS: {"updated"},
                 self.REPLICATION_KEYS: {"date"},

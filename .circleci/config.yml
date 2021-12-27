@@ -164,7 +164,7 @@ workflows:
           file: event_updates
           requires:
             - 'Testing discovery'
-            - 'Testing all_tests_run'
+            # - 'Testing all_tests_run'
             - 'Testing start_date'
             - 'Testing automatic_fields'
             - 'Testing pagination'

@@ -165,22 +165,22 @@ workflows:
           requires:
             - 'Testing discovery'
             # - 'Testing all_tests_run'
-            - 'Testing start_date'
-            - 'Testing automatic_fields'
-            - 'Testing pagination'
-            - 'Testing create_object'
+            # - 'Testing start_date'
+            # - 'Testing automatic_fields'
+            # - 'Testing pagination'
+            # - 'Testing create_object'
       - run_integration_test:
           name: 'Testing full_replication'
           context: circleci-user
           file: full_replication
           requires:
-            - 'Testing event_updates'
+            - ensure_env
       - run_integration_test:
           name: 'Testing bookmarks'
           context: circleci-user
           file: bookmarks
           requires:
-            - 'Testing full_replication'
+            - ensure_env
       - build:
           context: circleci-user
           requires:

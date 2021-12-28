@@ -8,6 +8,7 @@ import json
 import decimal
 from datetime import datetime as dt
 from datetime import timezone as tz
+from dateutil import parser
 
 from tap_tester import connections, menagerie, runner
 
@@ -309,15 +310,27 @@ class BaseTapTest(unittest.TestCase):
                                    'schema': batch['schema'],
                                    'key_names' : batch.get('key_names'),
                                    'table_version': batch.get('table_version')}
-            created[stream]['messages'] += [m for m in batch['messages']
-                                                if m['data'].get("updated") == m['data'].get(bookmark_key)]
+            # Bookmark key changed for `invoices` from `date` to `created` due to latest API change
+            # but for `invoices` stream, the `created` field have integer type(epoch format) from starting so
+            # converting `updated` to epoch for comparison.
+            if stream == "invoices":
+                created[stream]['messages'] += [m for m in batch['messages']
+                                                    if self.dt_to_ts(m['data'].get("updated")) == m['data'].get(bookmark_key)]
+            else:
+                created[stream]['messages'] += [m for m in batch['messages']
+                                                    if m['data'].get("updated") == m['data'].get(bookmark_key)]
+
             if stream not in updated:
                 updated[stream] = {'messages': [],
                                    'schema': batch['schema'],
                                    'key_names' : batch.get('key_names'),
                                    'table_version': batch.get('table_version')}
-            updated[stream]['messages'] += [m for m in batch['messages']
-                                                if m['data'].get("updated") != m['data'].get(bookmark_key)]
+            if stream == "invoices":
+                updated[stream]['messages'] += [m for m in batch['messages']
+                                                    if self.dt_to_ts(m['data'].get("updated")) != m['data'].get(bookmark_key)]
+            else:
+                updated[stream]['messages'] += [m for m in batch['messages']
+                                                    if m['data'].get("updated") != m['data'].get(bookmark_key)]
         return created, updated
 
     def select_all_streams_and_fields(self, conn_id, catalogs, select_all_fields: bool = True, exclude_streams=None):
@@ -518,3 +531,7 @@ class BaseTapTest(unittest.TestCase):
         super().__init__(*args, **kwargs)
         self.start_date = self.get_properties().get('start_date')
         self.maxDiff=None
+
+
+    def dt_to_ts(self, dtime):
+        return parser.parse(dtime).timestamp()

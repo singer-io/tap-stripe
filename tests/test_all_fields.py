@@ -294,7 +294,11 @@ class ALlFieldsTest(BaseTapTest):
                 # collect actual values
                 actual_records = synced_records.get(stream)
                 actual_records_data = [message['data'] for message in actual_records.get('messages')]
-
+                actual_records_keys = set()
+                for message in actual_records['messages']:
+                    if message['action'] == 'upsert':
+                        actual_records_keys.update(set(message['data'].keys()))
+                schema_keys = set(self.expected_schema_keys(stream)) # read in from schema files
 
                 # Log the fields that are included in the schema but not in the expectations.
                 # These are fields we should strive to get data for in our test data set

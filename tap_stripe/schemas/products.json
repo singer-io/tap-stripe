@@ -164,6 +164,18 @@
         "null",
         "string"
       ]
+    },
+    "tax_code": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "skus": {
+      "type": [
+        "null",
+        "string"
+      ]
     }
   }
 }

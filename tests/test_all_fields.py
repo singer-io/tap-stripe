@@ -316,7 +316,7 @@ class ALlFieldsTest(BaseTapTest):
                 )
                 if stream == 'invoice_items':
                     adjusted_actual_keys = adjusted_actual_keys.union({'subscription_item'})  # BUG_13666
-                #self.assertSetEqual(adjusted_expected_keys, adjusted_actual_keys)
+                self.assertSetEqual(adjusted_expected_keys, adjusted_actual_keys)
 
                 # verify the missing fields from KNOWN_MISSING_FIELDS are always missing (stability check)
                 self.assertSetEqual(actual_records_keys.difference(KNOWN_MISSING_FIELDS.get(stream, set())), actual_records_keys)

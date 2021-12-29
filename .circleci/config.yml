@@ -188,11 +188,11 @@ workflows:
           file: event_updates
           requires:
             - 'Testing discovery'
-            # - 'Testing all_tests_run'
-            # - 'Testing start_date'
-            # - 'Testing automatic_fields'
-            # - 'Testing pagination'
-            # - 'Testing create_object'
+            - 'Testing all_tests_run'
+            - 'Testing start_date'
+            - 'Testing automatic_fields'
+            - 'Testing pagination'
+            - 'Testing create_object'
       - run_integration_test:
           name: 'Testing full_replication'
           context:

@@ -325,6 +325,10 @@ class BaseTapTest(unittest.TestCase):
                                    'schema': batch['schema'],
                                    'key_names' : batch.get('key_names'),
                                    'table_version': batch.get('table_version')}
+
+            # Bookmark key changed for `invoices` from `date` to `created` due to latest API change
+            # but for `invoices` stream, the `created` field have integer type(epoch format) from starting so
+            # converting `updated` to epoch for comparison.
             if stream == "invoices":
                 updated[stream]['messages'] += [m for m in batch['messages']
                                                     if self.dt_to_ts(m['data'].get("updated")) != m['data'].get(bookmark_key)]

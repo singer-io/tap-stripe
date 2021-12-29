@@ -18,9 +18,7 @@ from utils import \
 #             Fields that are consistently missing during replication
 #             Original Ticket [https://stitchdata.atlassian.net/browse/SRCE-4736]
 KNOWN_MISSING_FIELDS = {
-    'customers':{
-        'tax_ids',
-    },
+    'customers':set(),
     'subscriptions':{
         'payment_settings',
         'default_tax_rates',

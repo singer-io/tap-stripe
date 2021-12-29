@@ -101,22 +101,32 @@ workflows:
   commit: &commit_jobs
     jobs:
       - ensure_env:
-          context: circleci-user
+          context:
+            - circleci-user
+            - tier-1-tap-user
       - pylint:
-          context: circleci-user
+          context:
+            - circleci-user
+            - tier-1-tap-user
           requires:
             - ensure_env
       - json_validate:
-          context: circleci-user
+          context:
+            - circleci-user
+            - tier-1-tap-user
           requires:
             - ensure_env
       - unittest:
-          context: circleci-user
+          context:
+            - circleci-user
+            - tier-1-tap-user
           requires:
             - ensure_env
       - run_integration_test: 
           name: 'Testing all_fields'
-          context: circleci-user
+          context:
+            - circleci-user
+            - tier-1-tap-user
           file: all_fields
           requires:
             - unittest
@@ -124,43 +134,57 @@ workflows:
             - json_validate
       - run_integration_test:
           name: 'Testing discovery'
-          context: circleci-user
+          context:
+            - circleci-user
+            - tier-1-tap-user
           file: discovery
           requires:
             - ensure_env
       - run_integration_test:
           name: 'Testing all_tests_run'
-          context: circleci-user
+          context:
+            - circleci-user
+            - tier-1-tap-user
           file: all_tests_run
           requires:
             - ensure_env
       - run_integration_test:
           name: 'Testing start_date'
-          context: circleci-user
+          context:
+            - circleci-user
+            - tier-1-tap-user
           file: start_date
           requires:
             - ensure_env
       - run_integration_test:
           name: 'Testing automatic_fields'
-          context: circleci-user
+          context:
+            - circleci-user
+            - tier-1-tap-user
           file: automatic_fields
           requires:
             - ensure_env
       - run_integration_test:
           name: 'Testing pagination'
-          context: circleci-user
+          context:
+            - circleci-user
+            - tier-1-tap-user
           file: pagination
           requires:
             - ensure_env
       - run_integration_test:
           name: 'Testing create_object'
-          context: circleci-user
+          context:
+            - circleci-user
+            - tier-1-tap-user
           file: create_object
           requires:
             - ensure_env
       - run_integration_test:
           name: 'Testing event_updates'
-          context: circleci-user
+          context:
+            - circleci-user
+            - tier-1-tap-user
           file: event_updates
           requires:
             - 'Testing discovery'
@@ -171,25 +195,31 @@ workflows:
             # - 'Testing create_object'
       - run_integration_test:
           name: 'Testing full_replication'
-          context: circleci-user
+          context:
+            - circleci-user
+            - tier-1-tap-user
           file: full_replication
           requires:
             - ensure_env
       - run_integration_test:
           name: 'Testing bookmarks'
-          context: circleci-user
+          context:
+            - circleci-user
+            - tier-1-tap-user
           file: bookmarks
           requires:
             - ensure_env
       - build:
-          context: circleci-user
+          context:
+            - circleci-user
+            - tier-1-tap-user
           requires:
             - 'Testing bookmarks'
 build_daily:
     <<: *commit_jobs
     triggers:
       - schedule:
-          cron: "0 12 * * *"
+          cron: "0 1 * * *"
           filters:
             branches:
               only:

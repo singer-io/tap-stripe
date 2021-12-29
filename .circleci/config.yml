@@ -139,7 +139,7 @@ workflows:
             - tier-1-tap-user
           file: discovery
           requires:
-            - ensure_env
+            - 'Testing all_fields'
       - run_integration_test:
           name: 'Testing all_tests_run'
           context:
@@ -147,7 +147,7 @@ workflows:
             - tier-1-tap-user
           file: all_tests_run
           requires:
-            - ensure_env
+            - 'Testing all_fields'
       - run_integration_test:
           name: 'Testing start_date'
           context:
@@ -155,7 +155,7 @@ workflows:
             - tier-1-tap-user
           file: start_date
           requires:
-            - ensure_env
+            - 'Testing all_fields'
       - run_integration_test:
           name: 'Testing automatic_fields'
           context:
@@ -163,7 +163,7 @@ workflows:
             - tier-1-tap-user
           file: automatic_fields
           requires:
-            - ensure_env
+            - 'Testing all_fields'
       - run_integration_test:
           name: 'Testing pagination'
           context:
@@ -171,7 +171,7 @@ workflows:
             - tier-1-tap-user
           file: pagination
           requires:
-            - ensure_env
+            - 'Testing all_fields'
       - run_integration_test:
           name: 'Testing create_object'
           context:
@@ -179,7 +179,7 @@ workflows:
             - tier-1-tap-user
           file: create_object
           requires:
-            - ensure_env
+            - 'Testing all_fields'
       - run_integration_test:
           name: 'Testing event_updates'
           context:
@@ -200,7 +200,7 @@ workflows:
             - tier-1-tap-user
           file: full_replication
           requires:
-            - ensure_env
+            - 'Testing event_updates'
       - run_integration_test:
           name: 'Testing bookmarks'
           context:
@@ -208,7 +208,7 @@ workflows:
             - tier-1-tap-user
           file: bookmarks
           requires:
-            - ensure_env
+            - 'Testing full_replication'
       - build:
           context:
             - circleci-user

@@ -16,6 +16,7 @@ midnight = int(dt.combine(dt.today(), time.min).timestamp())
 NOW = dt.utcnow()
 metadata_value = {"test_value": "senorita_alice_{}@stitchdata.com".format(NOW)}
 
+stripe_client.api_version = '2020-08-27'
 stripe_client.api_key = BaseTapTest.get_credentials()["client_secret"]
 client = {
     'balance_transactions': stripe_client.BalanceTransaction,
@@ -338,6 +339,7 @@ def standard_create(stream):
             package_dimensions={"height": 92670.16, "length": 9158.65, "weight": 582.73, "width": 96656496.18},
             shippable=True,
             url='fakeurl.stitch',
+            type='good' # In API version '2020-08-27', it is mandatory to provide type='good' while creating a record
         )
 
     return None

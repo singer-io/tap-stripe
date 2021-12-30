@@ -170,12 +170,6 @@
         "null",
         "string"
       ]
-    },
-    "skus": {
-      "type": [
-        "null",
-        "string"
-      ]
     }
   }
 }

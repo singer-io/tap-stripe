@@ -11,12 +11,13 @@ setup(
     py_modules=["tap_stripe"],
     install_requires=[
         "singer-python==5.5.1",
-        "stripe==2.10.1",
+        "stripe==2.64.0",
     ],
     extras_require={
         'test': [
             'pylint==2.7.2',
-            'nose==1.3.7'
+            'nose==1.3.7',
+            'coverage'
         ],
         'dev': [
             'ipdb',

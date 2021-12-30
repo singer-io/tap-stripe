@@ -155,31 +155,6 @@
         "object"
       ]
     },
-    "reversals": {
-      "type": [
-        "null",
-        "array"
-      ],
-      "items": {
-        "type": [
-          "null",
-          "object"
-        ],
-        "properties": {}
-      }
-    },
-    "reversed": {
-      "type": [
-        "null",
-        "boolean"
-      ]
-    },
-    "application_fee": {
-      "type": [
-        "null",
-        "integer"
-      ]
-    },
     "date": {
       "type": [
         "null",

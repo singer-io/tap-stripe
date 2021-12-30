@@ -16,6 +16,7 @@ midnight = int(dt.combine(dt.today(), time.min).timestamp())
 NOW = dt.utcnow()
 metadata_value = {"test_value": "senorita_alice_{}@stitchdata.com".format(NOW)}
 
+stripe_client.api_version = '2020-08-27'
 stripe_client.api_key = BaseTapTest.get_credentials()["client_secret"]
 client = {
     'balance_transactions': stripe_client.BalanceTransaction,
@@ -224,10 +225,10 @@ def list_all_object(stream, max_limit: int = 100, get_invoice_lines: bool = Fals
             if dict_obj.get('data'):
                 for obj in dict_obj['data']:
 
-                    if obj['sources']:
+                    if obj.get('sources'): # As obj['sources'] was throwing KeyError
                         sources = obj['sources']['data']
                         obj['sources'] = sources
-                    if obj['subscriptions']:
+                    if obj.get('subscriptions'): # obj['subscriptions'] was throwing KeyError
                         subscription_ids = [subscription['id'] for subscription in obj['subscriptions']['data']]
                         obj['subscriptions'] = subscription_ids
 
@@ -272,7 +273,7 @@ def standard_create(stream):
             address={'city': 'Philadelphia', 'country': 'US', 'line1': 'APT 2R.',
                 'line1': '666 Street Rd.', 'postal_code': '11111', 'state': 'PA'},
             description="Description {}".format(NOW),
-            email="senor_bob_{}@stitchdata.com".format(NOW),
+            email="stitchdata.test@gmail.com", # In the latest API version it asks for a valid email address
             metadata=metadata_value,
             name="Roberto Alicia",
             # pyment_method=, see source explanation
@@ -365,7 +366,7 @@ def create_object(stream):
         elif stream == 'customers':
             customer = standard_create(stream)
             customer_dict = stripe_obj_to_dict(customer)
-            if customer_dict['subscriptions']:
+            if customer_dict.get('subscriptions'): # As customer_dict['subscriptions'] was throwing KeyError
                 subscription_ids = [subscription['id'] for subscription in customer_dict['subscriptions']['data']]
                 customer_dict['subscriptions'] = subscription_ids
             return customer_dict

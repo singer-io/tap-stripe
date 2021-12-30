@@ -294,9 +294,12 @@ class ALlFieldsTest(BaseTapTest):
 
                 # collect actual values
                 actual_records = synced_records.get(stream)
-                actual_records_data = [message['data'] for message in actual_records.get('messages')]
+                # Only 1st half records belong to actual stream, next half records belong to events of that stream
+                # So, skipping records of events
+                actual_record_message = actual_records.get('messages')[:len(actual_records.get('messages'))//2]
+                actual_records_data = [message['data'] for message in actual_record_message]
                 actual_records_keys = set()
-                for message in actual_records['messages']:
+                for message in actual_record_message:
                     if message['action'] == 'upsert':
                         actual_records_keys.update(set(message['data'].keys()))
                 schema_keys = set(self.expected_schema_keys(stream)) # read in from schema files
@@ -318,6 +321,11 @@ class ALlFieldsTest(BaseTapTest):
                 )
                 if stream == 'invoice_items':
                     adjusted_actual_keys = adjusted_actual_keys.union({'subscription_item'})  # BUG_13666
+                elif stream == 'customers':
+                    # As per stripe documentation(https://stripe.com/docs/api/customers/object) `subscriptions` field is not included by default.
+                    # `adjusted_expected_keys` is a set of default keys while `adjusted_actual_keys` is the set of keys collected from target 
+                    # side records in which `subscriptions` field is selected. So, adding this key into `adjusted_expected_keys`.
+                    adjusted_expected_keys = adjusted_expected_keys.union({'subscriptions'})
                 self.assertSetEqual(adjusted_expected_keys, adjusted_actual_keys)
 
                 # verify the missing fields from KNOWN_MISSING_FIELDS are always missing (stability check)

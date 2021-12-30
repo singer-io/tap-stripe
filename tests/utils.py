@@ -16,6 +16,7 @@ midnight = int(dt.combine(dt.today(), time.min).timestamp())
 NOW = dt.utcnow()
 metadata_value = {"test_value": "senorita_alice_{}@stitchdata.com".format(NOW)}
 
+stripe_client.api_version = '2020-08-27'
 stripe_client.api_key = BaseTapTest.get_credentials()["client_secret"]
 client = {
     'balance_transactions': stripe_client.BalanceTransaction,
@@ -224,10 +225,10 @@ def list_all_object(stream, max_limit: int = 100, get_invoice_lines: bool = Fals
             if dict_obj.get('data'):
                 for obj in dict_obj['data']:
 
-                    if obj['sources']:
+                    if obj.get('sources'): # As obj['sources'] was throwing KeyError
                         sources = obj['sources']['data']
                         obj['sources'] = sources
-                    if obj['subscriptions']:
+                    if obj.get('subscriptions'): # obj['subscriptions'] was throwing KeyError
                         subscription_ids = [subscription['id'] for subscription in obj['subscriptions']['data']]
                         obj['subscriptions'] = subscription_ids
 

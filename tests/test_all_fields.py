@@ -296,9 +296,12 @@ class ALlFieldsTest(BaseTapTest):
 
                 # collect actual values
                 actual_records = synced_records.get(stream)
-                actual_records_data = [message['data'] for message in actual_records.get('messages')]
+                # Only 1st half records belong to actual stream, next half records belong to events of that stream
+                # So, skipping records of events
+                actual_record_message = actual_records.get('messages')[:len(actual_records.get('messages'))//2]
+                actual_records_data = [message['data'] for message in actual_record_message]
                 actual_records_keys = set()
-                for message in actual_records['messages']:
+                for message in actual_record_message:
                     if message['action'] == 'upsert':
                         actual_records_keys.update(set(message['data'].keys()))
                 schema_keys = set(self.expected_schema_keys(stream)) # read in from schema files

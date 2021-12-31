@@ -18,9 +18,7 @@ from utils import \
 #             Fields that are consistently missing during replication
 #             Original Ticket [https://stitchdata.atlassian.net/browse/SRCE-4736]
 KNOWN_MISSING_FIELDS = {
-    'customers':{
-        'tax_ids',
-    },
+    'customers':set(),
     'subscriptions':{
         'payment_settings',
         'default_tax_rates',
@@ -28,7 +26,6 @@ KNOWN_MISSING_FIELDS = {
         'automatic_tax',
     },
     'products':{
-        'skus',
         'tax_code',
     },
     'invoice_items':{
@@ -50,10 +47,33 @@ KNOWN_MISSING_FIELDS = {
     'plans': set(),
     'invoice_line_items': {
         'tax_rates',
-        'unique_id',
         'updated',
         'price',
     },
+}
+
+FIELDS_TO_NOT_CHECK = {
+    'customers': {
+        # As per stripe documentation(https://stripe.com/docs/api/customers/object) `subscriptions` and `sources` fields
+        # are not included by default.
+        'subscriptions',
+        'sources',
+    },
+    'subscriptions':set(),
+    'products':set(),
+    'coupons':set(),
+    'invoice_items':set(),
+    'payouts':set(),
+    'charges': {
+        # These both fields `card` and `statement_description` are deprecated. (https://stripe.com/docs/upgrades#2015-02-18, https://stripe.com/docs/upgrades#2014-12-17)
+        'card',
+        'statement_description',
+        'refunds'
+    },
+    'subscription_items':set(),
+    'invoices':set(),
+    'plans': set(),
+    'invoice_line_items': set(),
 }
 
 KNOWN_FAILING_FIELDS = {
@@ -142,7 +162,6 @@ FIELDS_ADDED_BY_TAP = {
     'invoice_line_items': {
         'updated',
         'invoice',
-        'subscription_item'
     },
 }
 
@@ -263,7 +282,6 @@ class ALlFieldsTest(BaseTapTest):
     def all_fields_test(self, streams_to_test):
         """
         Verify that for each stream data is synced when all fields are selected.
-
         Verify the synced data matches our expectations based off of the applied schema
         and results from the test client utils.
         """
@@ -317,7 +335,6 @@ class ALlFieldsTest(BaseTapTest):
                         actual_records_keys.update(set(message['data'].keys()))
                 schema_keys = set(self.expected_schema_keys(stream)) # read in from schema files
 
-
                 # Log the fields that are included in the schema but not in the expectations.
                 # These are fields we should strive to get data for in our test data set
                 if schema_keys.difference(expected_records_keys):
@@ -334,6 +351,10 @@ class ALlFieldsTest(BaseTapTest):
                 )
                 if stream == 'invoice_items':
                     adjusted_actual_keys = adjusted_actual_keys.union({'subscription_item'})  # BUG_13666
+                   
+                adjusted_actual_keys = adjusted_actual_keys - FIELDS_TO_NOT_CHECK[stream]
+                    
+
                 self.assertSetEqual(adjusted_expected_keys, adjusted_actual_keys)
 
                 # verify the missing fields from KNOWN_MISSING_FIELDS are always missing (stability check)
@@ -417,8 +438,8 @@ class ALlFieldsTest(BaseTapTest):
                                     if self.find_nested_key(nested_key, expected_field_value, field):
                                         continue
 
-                                    if field in KNOWN_FAILING_FIELDS[stream]:
-                                        continue # skip the following workaround
+                                    if field in KNOWN_FAILING_FIELDS[stream] or field in FIELDS_TO_NOT_CHECK[stream]:
+                                        continue # skip the following wokaround
 
                                     elif actual_field_value and field in FICKLE_FIELDS[stream]:
                                         self.assertIsInstance(actual_field_value, type(expected_field_value))

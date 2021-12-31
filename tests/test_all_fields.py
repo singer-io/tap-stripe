@@ -51,9 +51,7 @@ KNOWN_MISSING_FIELDS = {
     },
     'plans': set(),
     'invoice_line_items': {
-        'tax_rates',
         'updated',
-        'price',
     },
 }
 

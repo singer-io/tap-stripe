@@ -435,8 +435,16 @@ def sync_stream(stream_name):
     # If there is a sub-stream and its selected, get its bookmark (or the start date if no bookmark)
     should_sync_sub_stream = sub_stream_name and Context.is_selected(sub_stream_name)
     if should_sync_sub_stream:
-        sub_stream_bookmark = singer.get_bookmark(Context.state, sub_stream_name, replication_key) \
-            or int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
+
+        # Invoices's replication key changed from `date` to `created` in latest API version.
+        # Invoice line Items write bookmark with Invoice's replication key but it changed to `created`
+        # so kept `date` in bookmarking as it as to respect bookmark of active connection too.
+        if sub_stream_name == "invoice_line_items":
+            sub_stream_bookmark = singer.get_bookmark(Context.state, sub_stream_name, 'date') \
+                or int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
+        else:
+            sub_stream_bookmark = singer.get_bookmark(Context.state, sub_stream_name, replication_key) \
+                or int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
 
         # if there is a sub stream, set bookmark to sub stream's bookmark
         # since we know it must be earlier than the stream's bookmark

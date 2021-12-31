@@ -659,7 +659,7 @@ def sync_sub_stream(sub_stream_name, parent_obj, updates=False):
                                         metadata.to_map(
                                             Context.get_catalog_entry(sub_stream_name)['metadata']
                                         ))
-            
+
             if sub_stream_name == 'subscription_items':
                 stream_metadata = metadata.to_map(Context.get_catalog_entry(sub_stream_name)['metadata'])
                 replication_key = metadata.get(stream_metadata, (), 'valid-replication-keys')[0]

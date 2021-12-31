@@ -16,6 +16,7 @@ midnight = int(dt.combine(dt.today(), time.min).timestamp())
 NOW = dt.utcnow()
 metadata_value = {"test_value": "senorita_alice_{}@stitchdata.com".format(NOW)}
 
+stripe_client.api_version = '2020-08-27'
 stripe_client.api_key = BaseTapTest.get_credentials()["client_secret"]
 client = {
     'balance_transactions': stripe_client.BalanceTransaction,

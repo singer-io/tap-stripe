@@ -413,7 +413,7 @@ class ALlFieldsTest(BaseTapTest):
                                     print(f"WARNING {base_err_msg} failed exact comparison.\n"
                                           f"AssertionError({failure_1})")
 
-                                    nested_key = KNOWN_NESTED_MISSING_FIELDS.get(stream, set())
+                                    nested_key = KNOWN_NESTED_MISSING_FIELDS.get(stream, {})
                                     if self.find_nested_key(nested_key, expected_field_value, field):
                                         continue
 

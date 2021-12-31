@@ -59,16 +59,21 @@ KNOWN_MISSING_FIELDS = {
 
 FIELDS_TO_NOT_CHECK = {
     'customers': {
+        # As per stripe documentation(https://stripe.com/docs/api/customers/object) `subscriptions` and `sources` fields
+        # are not included by default.
         'subscriptions',
-        'sources'
+        'sources',
     },
     'subscriptions':set(),
     'products':set(),
+    'coupons':set(),
     'invoice_items':set(),
     'payouts':set(),
     'charges': {
+        # These both fields `card` and `statement_description` are deprecated. (https://stripe.com/docs/upgrades#2015-02-18, https://stripe.com/docs/upgrades#2014-12-17)
         'card',
-        'statement_description'
+        'statement_description',
+        'refunds'
     },
     'subscription_items':set(),
     'invoices':set(),

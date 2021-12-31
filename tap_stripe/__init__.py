@@ -28,7 +28,7 @@ STREAM_SDK_OBJECTS = {
                            'key_properties': ['id', 'invoice']},
     'transfers': {'sdk_object': stripe.Transfer, 'key_properties': ['id']},
     'coupons': {'sdk_object': stripe.Coupon, 'key_properties': ['id']},
-    'subscriptions': {'sdk_object': stripe.Subscription, 'key_properties': ['id']},
+    'subscriptions': {'sdk_object': stripe.Subscription, 'key_properties': ['id'], 'params': {'status': 'all'}},
     'subscription_items': {'sdk_object': stripe.SubscriptionItem, 'key_properties': ['id']},
     'balance_transactions': {'sdk_object': stripe.BalanceTransaction,
                              'key_properties': ['id']},
@@ -371,14 +371,15 @@ def reduce_foreign_keys(rec, stream_name):
     return rec
 
 
-def paginate(sdk_obj, filter_key, start_date, end_date, limit=100):
+def paginate(sdk_obj, filter_key, start_date, end_date, limit=100, **kwargs):
     yield from sdk_obj.list(
         limit=limit,
         stripe_account=Context.config.get('account_id'),
         # None passed to starting_after appears to retrieve
         # all of them so this should always be safe.
         **{filter_key + "[gte]": start_date,
-           filter_key + "[lt]": end_date}
+           filter_key + "[lt]": end_date},
+        **kwargs
     ).auto_paging_iter()
 
 
@@ -444,6 +445,7 @@ def sync_stream(stream_name):
             # immutable streams at first to confirm the suspicion.
             start_window -= IMMUTABLE_STREAM_LOOKBACK
 
+        custom_params = STREAM_SDK_OBJECTS[stream_name].get('params', {})
         # NB: We observed records coming through newest->oldest and so
         # date-windowing was added and the tap only bookmarks after it has
         # gotten through a date window
@@ -454,8 +456,7 @@ def sync_stream(stream_name):
                 stop_window = end_time
 
             for stream_obj in paginate(STREAM_SDK_OBJECTS[stream_name]['sdk_object'],
-                                       filter_key, start_window, stop_window):
-
+                                       filter_key, start_window, stop_window, **custom_params):
                 # get the replication key value from the object
                 rec = unwrap_data_objects(stream_obj.to_dict_recursive())
                 rec = reduce_foreign_keys(rec, stream_name)

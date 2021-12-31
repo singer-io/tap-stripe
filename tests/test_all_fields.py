@@ -170,15 +170,15 @@ class ALlFieldsTest(BaseTapTest):
         logging.info("Start Setup")
         # Create data prior to first sync
         cls.streams_to_test = {
-            "customers",
-            "charges",
-            "coupons",
-            "invoice_items",
-            "invoice_line_items",
-            "invoices",
-            "payouts",
-            "plans",
-            "products",
+            # "customers",
+            # "charges",
+            # "coupons",
+            # "invoice_items",
+            # "invoice_line_items",
+            # "invoices",
+            # "payouts",
+            # "plans",
+            # "products",
             "subscription_items",
             "subscriptions",
         }
@@ -234,7 +234,8 @@ class ALlFieldsTest(BaseTapTest):
         # then run against all streams under test (except customers)
         streams_to_test_2 = self.streams_to_test.difference(streams_to_test_1)
 
-        for streams_to_test in [streams_to_test_1, streams_to_test_2]:
+        for streams_to_test in [{'subscriptions', 'subscription_items'}]:
+        # [streams_to_test_1, streams_to_test_2]:
             with self.subTest(streams_to_test=streams_to_test):
 
                 # get existing records and add them to our expectations

@@ -391,7 +391,7 @@ class BaseTapTest(unittest.TestCase):
             ]
             object_keys = [
                 'discount', 'plan', 'coupon', 'status_transitions', 'period', 'sources', 'source',
-                'package_dimensions',
+                'package_dimensions','price'
             ]
 
             # timestamp to datetime

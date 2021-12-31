@@ -18,9 +18,7 @@ from utils import \
 #             Fields that are consistently missing during replication
 #             Original Ticket [https://stitchdata.atlassian.net/browse/SRCE-4736]
 KNOWN_MISSING_FIELDS = {
-    'customers':{
-        'tax_ids',
-    },
+    'customers':set(),
     'subscriptions':{
         'payment_settings',
         'default_tax_rates',
@@ -28,7 +26,6 @@ KNOWN_MISSING_FIELDS = {
         'automatic_tax',
     },
     'products':{
-        'skus',
         'tax_code',
     },
     'invoice_items':{
@@ -55,7 +52,6 @@ KNOWN_MISSING_FIELDS = {
     'plans': set(),
     'invoice_line_items': {
         'tax_rates',
-        'unique_id',
         'updated',
         'price',
     },
@@ -147,7 +143,6 @@ FIELDS_ADDED_BY_TAP = {
     'invoice_line_items': {
         'updated',
         'invoice',
-        'subscription_item'
     },
 }
 
@@ -178,7 +173,7 @@ class ALlFieldsTest(BaseTapTest):
             "invoice_items",
             "invoice_line_items",
             "invoices",
-            "payouts",
+            #"payouts",
             "plans",
             "products",
             "subscription_items",
@@ -252,7 +247,6 @@ class ALlFieldsTest(BaseTapTest):
     def all_fields_test(self, streams_to_test):
         """
         Verify that for each stream data is synced when all fields are selected.
-
         Verify the synced data matches our expectations based off of the applied schema
         and results from the test client utils.
         """
@@ -296,9 +290,12 @@ class ALlFieldsTest(BaseTapTest):
 
                 # collect actual values
                 actual_records = synced_records.get(stream)
-                actual_records_data = [message['data'] for message in actual_records.get('messages')]
+                # Only 1st half records belong to actual stream, next half records belong to events of that stream
+                # So, skipping records of events
+                actual_record_message = actual_records.get('messages')[:len(actual_records.get('messages'))//2]
+                actual_records_data = [message['data'] for message in actual_record_message]
                 actual_records_keys = set()
-                for message in actual_records['messages']:
+                for message in actual_record_message:
                     if message['action'] == 'upsert':
                         actual_records_keys.update(set(message['data'].keys()))
                 schema_keys = set(self.expected_schema_keys(stream)) # read in from schema files
@@ -320,6 +317,12 @@ class ALlFieldsTest(BaseTapTest):
                 )
                 if stream == 'invoice_items':
                     adjusted_actual_keys = adjusted_actual_keys.union({'subscription_item'})  # BUG_13666
+                elif stream == 'customers':
+                    # As per stripe documentation(https://stripe.com/docs/api/customers/object) `subscriptions` and `sources` field is not included in response by default.
+                    # `adjusted_expected_keys` is a set of default keys while `adjusted_actual_keys` is the set of keys collected from target
+                    # side records in which all fields are selected. So, adding these keys explicitly into `adjusted_expected_keys`.
+                    adjusted_expected_keys = adjusted_expected_keys.union({'subscriptions', 'sources'})
+
                 self.assertSetEqual(adjusted_expected_keys, adjusted_actual_keys)
 
                 # verify the missing fields from KNOWN_MISSING_FIELDS are always missing (stability check)

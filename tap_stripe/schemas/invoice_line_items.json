@@ -169,6 +169,23 @@
         }
       }
     },
+    "tax_rates":{
+      "anyOf": [
+        {
+          "type": [
+            "null",
+            "array"
+          ],
+          "items": {
+            "$ref": "shared/tax_rates.json#/"
+          }
+        },
+        {
+          "$ref": "shared/tax_rates.json#/"
+        }
+      ]
+    },
+    "price": {"$ref": "shared/price.json#/"},
     "subscription": {
       "type": [
         "null",

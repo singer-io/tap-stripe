@@ -31,11 +31,7 @@ KNOWN_MISSING_FIELDS = {
     'invoice_items':{
         'price',
     },
-    'payouts':{
-        'application_fee',
-        'reversals',
-        'reversed',
-    },
+    'payouts':set(),
     'charges': set(),
     'subscription_items':{
         'tax_rates',

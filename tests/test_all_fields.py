@@ -31,11 +31,7 @@ KNOWN_MISSING_FIELDS = {
     'invoice_items':{
         'price',
     },
-    'payouts':{
-        'application_fee',
-        'reversals',
-        'reversed',
-    },
+    'payouts':set(),
     'charges': set(),
     'subscription_items':{
         'tax_rates',
@@ -70,10 +66,9 @@ FIELDS_TO_NOT_CHECK = {
     'invoice_items':set(),
     'payouts':set(),
     'charges': {
-        # These both fields `card` and `statement_description` are deprecated. (https://stripe.com/docs/upgrades#2015-02-18, https://stripe.com/docs/upgrades#2014-12-17)
+        # Following both fields `card` and `statement_description` are deprecated. (https://stripe.com/docs/upgrades#2015-02-18, https://stripe.com/docs/upgrades#2014-12-17)
         'card',
-        'statement_description',
-        'refunds'
+        'statement_description'
     },
     'subscription_items':set(),
     'invoices':set(),

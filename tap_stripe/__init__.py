@@ -87,6 +87,7 @@ STREAM_TO_EXPAND_FIELDS = {
     'plans': ['data.tiers'],
     'invoice_items': ['data.plan.tiers'],
     'invoice_line_items': ['data.plan.tiers'],
+    'subscriptions': ['data.plan.tiers'],
     'subscription_items': ['data.plan.tiers']
 }
 
@@ -434,8 +435,16 @@ def sync_stream(stream_name):
     # If there is a sub-stream and its selected, get its bookmark (or the start date if no bookmark)
     should_sync_sub_stream = sub_stream_name and Context.is_selected(sub_stream_name)
     if should_sync_sub_stream:
-        sub_stream_bookmark = singer.get_bookmark(Context.state, sub_stream_name, replication_key) \
-            or int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
+
+        # Invoices's replication key changed from `date` to `created` in latest API version.
+        # Invoice line Items write bookmark with Invoice's replication key but it changed to `created`
+        # so kept `date` in bookmarking as it as to respect bookmark of active connection too.
+        if sub_stream_name == "invoice_line_items":
+            sub_stream_bookmark = singer.get_bookmark(Context.state, sub_stream_name, 'date') \
+                or int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
+        else:
+            sub_stream_bookmark = singer.get_bookmark(Context.state, sub_stream_name, replication_key) \
+                or int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
 
         # if there is a sub stream, set bookmark to sub stream's bookmark
         # since we know it must be earlier than the stream's bookmark
@@ -525,10 +534,20 @@ def sync_stream(stream_name):
             # the sub stream bookmarks on its parent
             if should_sync_sub_stream and stop_window > sub_stream_bookmark:
                 sub_stream_bookmark = stop_window
-                singer.write_bookmark(Context.state,
-                                      sub_stream_name,
-                                      replication_key,
-                                      sub_stream_bookmark)
+
+                # Invoices's replication key changed from `date` to `created` in latest API version.
+                # Invoice line Items write bookmark with Invoice's replication key but it changed to `created`
+                # so kept `date` in bookmarking as it as to respect bookmark of active connection too.
+                if sub_stream_name == "invoice_line_items":
+                    singer.write_bookmark(Context.state,
+                                          sub_stream_name,
+                                          'date',
+                                          sub_stream_bookmark)
+                else:
+                    singer.write_bookmark(Context.state,
+                                          sub_stream_name,
+                                          replication_key,
+                                          sub_stream_bookmark)
 
             singer.write_state(Context.state)
 

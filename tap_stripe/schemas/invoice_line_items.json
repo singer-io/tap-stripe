@@ -253,6 +253,19 @@
               "null",
               "string"
             ]
+          },
+          "tax_type": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "metadata": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {}
           }
         }
       }
@@ -377,7 +390,8 @@
                 "type": [
                   "null",
                   "string"
-                ]
+                ],
+                "format": "singer.decimal"
               },
               "unit_amount": {
                 "type": [
@@ -389,7 +403,8 @@
                 "type": [
                   "null",
                   "string"
-                ]
+                ],
+                "format": "singer.decimal"
               },
               "up_to": {
                 "type": [
@@ -442,7 +457,8 @@
           "type": [
             "null",
             "string"
-          ]
+          ],
+          "format": "singer.decimal"
         },
         "livemode": {
           "type": [

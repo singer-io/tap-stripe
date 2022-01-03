@@ -242,6 +242,12 @@ class ALlFieldsTest(BaseTapTest):
         return pks_to_record_dict_1, pks_to_record_dict_2
 
 
+    def epoch_to_dt(self, epoch_ts):
+        """
+        Convert epoch timestamp value to standard datetime format
+        """
+        return dt.fromtimestamp(epoch_ts).strftime(self.TS_COMPARISON_FORMAT)
+
     def test_run(self):
 
         # first just run the test against customers
@@ -401,10 +407,14 @@ class ALlFieldsTest(BaseTapTest):
                         #      we will log the inequality and assert that the datatypes at least match.
 
                         for field in set(actual_record.keys()).difference(field_adjustment_set):  # skip known bugs
+
                             with self.subTest(field=field):
                                 base_err_msg = f"Stream[{stream}] Record[{pks_tuple}] Field[{field}]"
 
                                 expected_field_value = expected_record.get(field, "EXPECTED IS MISSING FIELD")
+                                if field == "price" and expected_field_value != "EXPECTED IS MISSING FIELD" and expected_field_value.get('created'):
+                                    # Convert timestamp to datetime format.
+                                    expected_field_value['created'] = self.epoch_to_dt(expected_field_value['created'])
                                 actual_field_value = actual_record.get(field, "ACTUAL IS MISSING FIELD")
 
                                 try:

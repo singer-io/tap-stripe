@@ -293,7 +293,7 @@ def standard_create(stream):
         )
     elif stream == 'payouts':
         return client[stream].create(
-            amount=random.randint(0, 10),
+            amount=random.randint(1, 10),
             currency="usd",
             description="Comfortable cotton t-shirt {}".format(NOW),
             statement_descriptor="desc",
@@ -303,7 +303,7 @@ def standard_create(stream):
     elif stream == 'plans':
         return client[stream].create(
             active=True,
-            amount=random.randint(0, 10000),
+            amount=random.randint(1, 10000),
             currency="usd",
             interval="year",
             metadata=metadata_value,
@@ -383,7 +383,7 @@ def create_object(stream):
 
         if stream == 'invoice_items':
             return client[stream].create(
-                amount=random.randint(0, 10000),
+                amount=random.randint(1, 10000),
                 currency="usd",
                 customer=cust['id'],
                 description="Comfortable cotton t-shirt {}".format(NOW),
@@ -395,7 +395,7 @@ def create_object(stream):
         elif stream == 'invoices':
             # Invoices requires the customer has an item associated with them
             item = client["{}_items".format(stream[:-1])].create(
-                amount=random.randint(0, 10000),
+                amount=random.randint(1, 10000),
                 currency="usd",
                 customer=cust['id'],
                 description="Comfortable cotton t-shirt {}".format(NOW),

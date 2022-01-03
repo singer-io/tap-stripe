@@ -38,6 +38,7 @@ KNOWN_MISSING_FIELDS = {
         'reversals',
         'reversed',
     },
+    # 'payouts':set(),
     'charges': set(),
     'subscription_items':{
         'tax_rates',
@@ -72,10 +73,9 @@ FIELDS_TO_NOT_CHECK = {
     'invoice_items':set(),
     'payouts':set(),
     'charges': {
-        # These both fields `card` and `statement_description` are deprecated. (https://stripe.com/docs/upgrades#2015-02-18, https://stripe.com/docs/upgrades#2014-12-17)
+        # Following both fields `card` and `statement_description` are deprecated. (https://stripe.com/docs/upgrades#2015-02-18, https://stripe.com/docs/upgrades#2014-12-17)
         'card',
-        'statement_description',
-        'refunds'
+        'statement_description'
     },
     'subscription_items':set(),
     'invoices':set(),
@@ -169,6 +169,7 @@ FIELDS_ADDED_BY_TAP = {
     'invoice_line_items': {
         'updated',
         'invoice',
+        'subscription_item'
     },
 }
 
@@ -342,10 +343,8 @@ class ALlFieldsTest(BaseTapTest):
                 )
                 if stream == 'invoice_items':
                     adjusted_actual_keys = adjusted_actual_keys.union({'subscription_item'})  # BUG_13666
-                   
                 adjusted_actual_keys = adjusted_actual_keys - FIELDS_TO_NOT_CHECK[stream]
                     
-
                 self.assertSetEqual(adjusted_expected_keys, adjusted_actual_keys)
 
                 # verify the missing fields from KNOWN_MISSING_FIELDS are always missing (stability check)

@@ -31,14 +31,7 @@ KNOWN_MISSING_FIELDS = {
     'invoice_items':{
         'price',
     },
-    'payouts':{
-        # As per the Stipe API doc, these fields are not available in the payout object,
-        # hence keeping them inside the missing fields.
-        'application_fee',
-        'reversals',
-        'reversed',
-    },
-    # 'payouts':set(),
+    'payouts':set(),
     'charges': set(),
     'subscription_items':{
         'tax_rates',

@@ -162,6 +162,7 @@ FIELDS_ADDED_BY_TAP = {
     'invoice_line_items': {
         'updated',
         'invoice',
+        'subscription_item'
     },
 }
 
@@ -335,10 +336,8 @@ class ALlFieldsTest(BaseTapTest):
                 )
                 if stream == 'invoice_items':
                     adjusted_actual_keys = adjusted_actual_keys.union({'subscription_item'})  # BUG_13666
-                   
                 adjusted_actual_keys = adjusted_actual_keys - FIELDS_TO_NOT_CHECK[stream]
                     
-
                 self.assertSetEqual(adjusted_expected_keys, adjusted_actual_keys)
 
                 # verify the missing fields from KNOWN_MISSING_FIELDS are always missing (stability check)

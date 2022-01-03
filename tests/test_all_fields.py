@@ -55,10 +55,11 @@ KNOWN_MISSING_FIELDS = {
 
 FIELDS_TO_NOT_CHECK = {
     'customers': {
-        # As per stripe documentation(https://stripe.com/docs/api/customers/object) `subscriptions` and `sources` fields
-        # are not included by default.
+        # As per stripe documentation(https://stripe.com/docs/api/customers/object) `subscriptions`, `sources` and `tax_ids` fields
+        # are not included by default in API response.
         'subscriptions',
         'sources',
+        'tax_ids'
     },
     'subscriptions':set(),
     'products':set(),

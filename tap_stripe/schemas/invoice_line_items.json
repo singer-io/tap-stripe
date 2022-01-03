@@ -169,7 +169,6 @@
         }
       }
     },
-    "price": {"$ref": "shared/price.json#/"},
     "subscription": {
       "type": [
         "null",

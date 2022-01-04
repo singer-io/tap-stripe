@@ -162,12 +162,7 @@ FIELDS_ADDED_BY_TAP = {
     'invoices': {'updated'},
     'plans': {'updated'},
     'invoice_line_items': {
-<<<<<<< HEAD
         'invoice',
-=======
-        'updated',
-        'invoice'
->>>>>>> update-sdk-and-api-version
     },
 }
 

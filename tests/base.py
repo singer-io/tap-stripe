@@ -97,7 +97,7 @@ class BaseTapTest(unittest.TestCase):
             'coupons': default,
             'subscriptions': default,
             'subscription_items': {
-                self.AUTOMATIC_FIELDS: {'updated'},
+                self.AUTOMATIC_FIELDS: None,
                 self.REPLICATION_KEYS: {"created"},
                 self.PRIMARY_KEYS: {"id"},
                 self.REPLICATION_METHOD: self.INCREMENTAL,

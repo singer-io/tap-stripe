@@ -677,7 +677,6 @@ def sync_sub_stream(sub_stream_name, parent_obj, updates=False):
                                         metadata.to_map(
                                             Context.get_catalog_entry(sub_stream_name)['metadata']
                                         ))
-
             # NB: Older structures (such as invoice_line_items) may not have had their ID present.
             #     Skip these if they don't match the structure we expect.
             if "id" in rec:

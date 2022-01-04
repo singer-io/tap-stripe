@@ -74,7 +74,7 @@ FIELDS_TO_NOT_CHECK = {
         # 'subscription_item' is field that generated invoice item. It does not replicate in response if the line item is not an explicit result of a subscription.
         # So, due to uncertainty of this field, skipped it.
         'subscription_item'
-    },
+    }
 }
 
 KNOWN_FAILING_FIELDS = {
@@ -162,7 +162,12 @@ FIELDS_ADDED_BY_TAP = {
     'invoices': {'updated'},
     'plans': {'updated'},
     'invoice_line_items': {
+<<<<<<< HEAD
         'invoice',
+=======
+        'updated',
+        'invoice'
+>>>>>>> update-sdk-and-api-version
     },
 }
 

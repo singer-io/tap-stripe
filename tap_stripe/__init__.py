@@ -665,7 +665,6 @@ def sync_sub_stream(sub_stream_name, parent_obj, updates=False):
                              parent_obj.id))
             obj_ad_dict = sub_stream_obj.to_dict_recursive()
 
-
             if sub_stream_name == "invoice_line_items":
                 # Synthetic addition of a key to the record we sync
                 obj_ad_dict["invoice"] = parent_obj.id
@@ -679,11 +678,6 @@ def sync_sub_stream(sub_stream_name, parent_obj, updates=False):
                                             Context.get_catalog_entry(sub_stream_name)['metadata']
                                         ))
 
-            if sub_stream_name == 'subscription_items':
-                stream_metadata = metadata.to_map(Context.get_catalog_entry(sub_stream_name)['metadata'])
-                replication_key = metadata.get(stream_metadata, (), 'valid-replication-keys')[0]
-                stream_obj_created = rec[replication_key]
-                rec['updated'] = stream_obj_created
             # NB: Older structures (such as invoice_line_items) may not have had their ID present.
             #     Skip these if they don't match the structure we expect.
             if "id" in rec:

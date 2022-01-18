@@ -59,8 +59,17 @@ FIELDS_TO_NOT_CHECK = {
         # are not included by default.
         'subscriptions',
         'sources',
+        # Below fields are deprecated or renamed.(https://stripe.com/docs/upgrades#2019-10-17, https://stripe.com/docs/upgrades#2019-12-03)
+        'account_balance',
+        'tax_info',
+        'tax_info_verification'
     },
-    'subscriptions':set(),
+    'subscriptions':{
+        # Below fields are deprecated or renamed.(https://stripe.com/docs/upgrades#2019-10-17, https://stripe.com/docs/upgrades#2019-12-03, https://stripe.com/docs/upgrades#2020-08-27)
+        'billing',
+        'start',
+        'tax_percent'
+    },
     'products':set(),
     'coupons':set(),
     'invoice_items':set(),
@@ -71,7 +80,17 @@ FIELDS_TO_NOT_CHECK = {
         'statement_description'
     },
     'subscription_items':set(),
-    'invoices':set(),
+    'invoices':{
+        # Below fields are deprecated or renamed.(https://stripe.com/docs/upgrades#2019-03-14, https://stripe.com/docs/upgrades#2019-10-17, https://stripe.com/docs/upgrades#2018-08-11
+        # https://stripe.com/docs/upgrades#2020-08-27)
+        'application_fee',
+        'billing',
+        'closed',
+        'date',
+        'finalized_at',
+        'forgiven',
+        'tax_percent'
+    },
     'plans': set(),
     'invoice_line_items': {
         # As per stripe documentation(https://stripe.com/docs/api/invoices/line_item#invoice_line_item_object-subscription_item),

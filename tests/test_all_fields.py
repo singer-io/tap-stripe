@@ -44,13 +44,10 @@ KNOWN_MISSING_FIELDS = {
         'custom_fields',
         'automatic_tax',
         'quote',
+        'paid_out_of_band'
     },
     'plans': set(),
-    'invoice_line_items': {
-        'tax_rates',
-        'updated',
-        'price',
-    },
+    'invoice_line_items': set()
 }
 
 FIELDS_TO_NOT_CHECK = {
@@ -68,18 +65,49 @@ FIELDS_TO_NOT_CHECK = {
         # Below fields are deprecated or renamed.(https://stripe.com/docs/upgrades#2019-10-17, https://stripe.com/docs/upgrades#2019-12-03, https://stripe.com/docs/upgrades#2020-08-27)
         'billing',
         'start',
-        'tax_percent'
+        'tax_percent',
+        'invoice_customer_balance_settings'
     },
-    'products':set(),
+    'products':{
+        # Below fields are available in the product record only if the value of the type field is `service`.
+        # But, currently, during crud operation in all_fields test case, it creates product records of type `good`.
+        'statement_descriptor',
+        'unit_label'  
+    },
     'coupons':set(),
     'invoice_items':set(),
-    'payouts':set(),
+    'payouts':{
+
+        # Following fields are not mentioned in the documentation and also not returned by API (https://stripe.com/docs/api/payouts/object)
+        'statement_description',
+        'transfer_group',
+        'source_transaction',
+        'bank_account',
+        'date',
+        'amount_reversed',
+        'recipient'
+    },
     'charges': {
         # Following both fields `card` and `statement_description` are deprecated. (https://stripe.com/docs/upgrades#2015-02-18, https://stripe.com/docs/upgrades#2014-12-17)
         'card',
         'statement_description'
     },
-    'subscription_items':set(),
+    'subscription_items':{
+      'current_period_end',
+      'customer',
+      'trial_start',
+      'discount',
+      'start',
+      'tax_percent',
+      'livemode',
+      'application_fee_percent',
+      'status',
+      'trial_end',
+      'ended_at',
+      'current_period_start',
+      'canceled_at',
+      'cancel_at_period_end'
+    },
     'invoices':{
         # Below fields are deprecated or renamed.(https://stripe.com/docs/upgrades#2019-03-14, https://stripe.com/docs/upgrades#2019-10-17, https://stripe.com/docs/upgrades#2018-08-11
         # https://stripe.com/docs/upgrades#2020-08-27)
@@ -89,9 +117,17 @@ FIELDS_TO_NOT_CHECK = {
         'date',
         'finalized_at',
         'forgiven',
-        'tax_percent'
+        'tax_percent',
+        'statement_description',
+        'payment'
     },
-    'plans': set(),
+    'plans': {
+        # Below fields are deprecated or renamed. (https://stripe.com/docs/upgrades#2018-02-05, https://stripe.com/docs/api/plans/object)
+        'statement_descriptor',
+        'statement_description',
+        'name',
+        'tiers'
+    },
     'invoice_line_items': {
         # As per stripe documentation(https://stripe.com/docs/api/invoices/line_item#invoice_line_item_object-subscription_item),
         # 'subscription_item' is field that generated invoice item. It does not replicate in response if the line item is not an explicit result of a subscription.
@@ -184,7 +220,6 @@ FIELDS_ADDED_BY_TAP = {
     'invoices': {'updated'},
     'plans': {'updated'},
     'invoice_line_items': {
-        'updated',
         'invoice'
     },
 }
@@ -343,23 +378,26 @@ class ALlFieldsTest(BaseTapTest):
                         actual_records_keys.update(set(message['data'].keys()))
                 schema_keys = set(self.expected_schema_keys(stream)) # read in from schema files
 
-                # Log the fields that are included in the schema but not in the expectations.
-                # These are fields we should strive to get data for in our test data set
-                if schema_keys.difference(expected_records_keys):
-                    print("WARNING Stream[{}] Fields missing from expectations: [{}]".format(
-                        stream, schema_keys.difference(expected_records_keys)
-                    ))
+                schema_keys = schema_keys - FIELDS_TO_NOT_CHECK.get(stream, set())
+                actual_records_keys = actual_records_keys - FIELDS_TO_NOT_CHECK[stream]
 
                 # Verify schema covers all fields
                 adjusted_expected_keys = expected_records_keys.union(
                     FIELDS_ADDED_BY_TAP.get(stream, set())
                 )
+
+                # Log the fields that are included in the schema but not in the expectations.
+                # These are fields we should strive to get data for in our test data set
+                if schema_keys.difference(adjusted_expected_keys):
+                    print("WARNING Stream[{}] Fields missing from expectations: [{}]".format(
+                        stream, schema_keys.difference(adjusted_expected_keys)
+                    ))
+
                 adjusted_actual_keys = actual_records_keys.union(  # BUG_12478
                     KNOWN_MISSING_FIELDS.get(stream, set())
                 )
                 if stream == 'invoice_items':
                     adjusted_actual_keys = adjusted_actual_keys.union({'subscription_item'})  # BUG_13666
-                adjusted_actual_keys = adjusted_actual_keys - FIELDS_TO_NOT_CHECK[stream]
                     
                 self.assertSetEqual(adjusted_expected_keys, adjusted_actual_keys)
 

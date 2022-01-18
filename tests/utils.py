@@ -219,7 +219,8 @@ def list_all_object(stream, max_limit: int = 100, get_invoice_lines: bool = Fals
             return objects
 
         elif stream == "customers":
-            stripe_obj = client[stream].list(limit=max_limit, created={"gte": midnight})
+            stripe_obj = client[stream].list(limit=max_limit, created={"gte": midnight}, 
+                                             expand=['data.sources', 'data.subscriptions', 'data.tax_ids'])
             dict_obj = stripe_obj_to_dict(stripe_obj)
 
             if dict_obj.get('data'):

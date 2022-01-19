@@ -157,16 +157,21 @@ KNOWN_FAILING_FIELDS = {
     },
     'payouts': set(),
     'charges': set(),
-    'subscription_items': set(),
+    'subscription_items': {
+        # BUG_12478 | missing subfields on plan ['statement_description', 'statement_descriptor', 'name']
+        # BUG_13711 | https://jira.talendforge.org/browse/TDL-13711
+        #             Schema wrong for subfield 'transform_usage', should be object not string
+        'plan',
+    },
     'invoices': {
         'discount', # BUG_12478 | missing subfields
         'plans', # BUG_12478 | missing subfields
         'finalized_at', # BUG_13711 | schema missing datetime format
         'created', # BUG_13711 | schema missing datetime format
     },
-    # As changed in the plans field which is a shared schema, the error for the discrepancy in the type of `transform_usage`
-    # plans stream would be resolved.
-    'plans': set(),
+    'plans': {
+            'transform_usage' # BUG_13711 schema is wrong, should be an object not string
+    },
     # 'invoice_line_items': { # TODO This is a test issue that prevents us from consistently passing
     #     'unique_line_item_id',
     #     'invoice_item',

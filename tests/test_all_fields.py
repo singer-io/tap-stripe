@@ -33,7 +33,7 @@ KNOWN_MISSING_FIELDS = {
     },
     'payouts':set(),
     'charges': set(),
-    'subscription_items': set(),
+    'subscription_items': {'updated'},
     'invoices':{
         'payment_settings',
         'on_behalf_of',
@@ -217,7 +217,7 @@ FIELDS_ADDED_BY_TAP = {
     },
     'payouts': {'updated'},
     'charges': {'updated'},
-    'subscription_items': {'updated'}, # `updated` field is not added by the tap.
+    'subscription_items': {'updated'},
     'invoices': {'updated'},
     'plans': {'updated'},
     'invoice_line_items': {

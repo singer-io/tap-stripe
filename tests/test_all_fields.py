@@ -469,7 +469,7 @@ class ALlFieldsTest(BaseTapTest):
 
                                 # to fix the failure warning of `created` for `invoices` stream
                                 if stream == 'invoices' and expected_field_value != "EXPECTED IS MISSING FIELD" and field == 'created':
-                                    actual_field_value = self.dt_to_ds(expected_field_value)
+                                    actual_field_value = self.dt_to_ts(expected_field_value)
                                 try:
 
                                     self.assertEqual(expected_field_value, actual_field_value)

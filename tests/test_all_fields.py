@@ -248,17 +248,17 @@ class ALlFieldsTest(BaseTapTest):
         logging.info("Start Setup")
         # Create data prior to first sync
         cls.streams_to_test = {
-            # "customers",
-            # "charges",
-            # "coupons",
-            # "invoice_items",
+            "customers",
+            "charges",
+            "coupons",
+            "invoice_items",
             "invoice_line_items",
             "invoices",
-            # "payouts",
-            # "plans",
-            # "products",
-            # "subscription_items",
-            # "subscriptions",
+            "payouts",
+            "plans",
+            "products",
+            "subscription_items",
+            "subscriptions",
         }
 
         cls.expected_objects = {stream: [] for stream in cls.streams_to_test}
@@ -312,7 +312,7 @@ class ALlFieldsTest(BaseTapTest):
         # then run against all streams under test (except customers)
         streams_to_test_2 = self.streams_to_test.difference(streams_to_test_1)
 
-        for streams_to_test in [streams_to_test_2]:
+        for streams_to_test in [streams_to_test_1, streams_to_test_2]:
             with self.subTest(streams_to_test=streams_to_test):
 
                 # get existing records and add them to our expectations
@@ -467,31 +467,29 @@ class ALlFieldsTest(BaseTapTest):
                         #      we will log the inequality and assert that the datatypes at least match.
 
                         for field in set(actual_record.keys()).difference(field_adjustment_set):  # skip known bugs
-
                             with self.subTest(field=field):
                                 base_err_msg = f"Stream[{stream}] Record[{pks_tuple}] Field[{field}]"
 
                                 expected_field_value = expected_record.get(field, "EXPECTED IS MISSING FIELD")
                                 actual_field_value = actual_record.get(field, "ACTUAL IS MISSING FIELD")
 
-                                if field == "price":
-                                    try:
+                                try:
 
-                                        self.assertEqual(expected_field_value, actual_field_value)
+                                    self.assertEqual(expected_field_value, actual_field_value)
 
-                                    except AssertionError as failure_1:
+                                except AssertionError as failure_1:
 
-                                        print(f"WARNING {base_err_msg} failed exact comparison.\n"
-                                            f"AssertionError({failure_1})")
+                                    print(f"WARNING {base_err_msg} failed exact comparison.\n"
+                                        f"AssertionError({failure_1})")
 
-                                        if field in KNOWN_FAILING_FIELDS[stream] or field in FIELDS_TO_NOT_CHECK[stream]:
-                                            continue # skip the following wokaround
+                                    if field in KNOWN_FAILING_FIELDS[stream] or field in FIELDS_TO_NOT_CHECK[stream]:
+                                        continue # skip the following wokaround
 
-                                        elif actual_field_value and field in FICKLE_FIELDS[stream]:
-                                            self.assertIsInstance(actual_field_value, type(expected_field_value))
+                                    elif actual_field_value and field in FICKLE_FIELDS[stream]:
+                                        self.assertIsInstance(actual_field_value, type(expected_field_value))
 
-                                        elif actual_field_value:
-                                            raise AssertionError(f"{base_err_msg} Unexpected field is being fickle.")
+                                    elif actual_field_value:
+                                        raise AssertionError(f"{base_err_msg} Unexpected field is being fickle.")
 
-                                        else:
-                                            print(f"WARNING {base_err_msg} failed datatype comparison. Field is None.")
+                                    else:
+                                        print(f"WARNING {base_err_msg} failed datatype comparison. Field is None.")

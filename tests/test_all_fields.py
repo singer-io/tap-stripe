@@ -58,7 +58,9 @@ FIELDS_TO_NOT_CHECK = {
         # Below fields are deprecated or renamed.(https://stripe.com/docs/upgrades#2019-10-17, https://stripe.com/docs/upgrades#2019-12-03)
         'account_balance',
         'tax_info',
-        'tax_info_verification'
+        'tax_info_verification',
+        'cards',
+        'default_card'
     },
     'subscriptions':{
         # Below fields are deprecated or renamed.(https://stripe.com/docs/upgrades#2019-10-17, https://stripe.com/docs/upgrades#2019-12-03, https://stripe.com/docs/upgrades#2020-08-27)

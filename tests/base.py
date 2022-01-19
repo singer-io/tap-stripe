@@ -389,9 +389,10 @@ class BaseTapTest(unittest.TestCase):
             int_or_float_to_decimal_keys = [
                 'percent_off', 'percent_off_precise', 'height', 'length', 'weight', 'width'
             ]
+            # Convert epoch timestamp value to standard datetime format
             object_keys = [
                 'discount', 'plan', 'coupon', 'status_transitions', 'period', 'sources', 'source',
-                'package_dimensions',
+                'package_dimensions', 'price'
             ]
 
             # timestamp to datetime

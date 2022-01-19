@@ -201,7 +201,7 @@ FICKLE_FIELDS = {
 FIELDS_ADDED_BY_TAP = {
     'coupons': {'updated'},
     'customers': {'updated'},
-    'subscriptions': set(), # `updated` field is not added by the tap.
+    'subscriptions': {'updated'},
     'products': {'updated'},
     'invoice_items': {
         'updated',
@@ -212,7 +212,7 @@ FIELDS_ADDED_BY_TAP = {
     },
     'payouts': {'updated'},
     'charges': {'updated'},
-    'subscription_items': {'updated'},
+    'subscription_items': {'updated'}, # `updated` field is not added by the tap.
     'invoices': {'updated'},
     'plans': {'updated'},
     'invoice_line_items': {

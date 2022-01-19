@@ -97,8 +97,22 @@
     "transform_usage": {
       "type": [
         "null",
-        "string"
-      ]
+        "object"
+      ],
+      "properties": {
+        "divide_by": {
+          "type": [
+            "null",
+            "integer"
+          ]
+        },
+        "round": {
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      }
     },
     "name": {
       "type": [

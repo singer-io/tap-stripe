@@ -392,7 +392,7 @@ class BaseTapTest(unittest.TestCase):
             object_keys = [
                 'discount', 'plan', 'coupon', 'status_transitions', 'period', 'sources', 'source',
                 'package_dimensions','price'
-            ]
+            ] # the list contains the map which contains the keys which needs to converted to the datetime.
 
             # timestamp to datetime
             for key in timestamp_to_datetime_keys:

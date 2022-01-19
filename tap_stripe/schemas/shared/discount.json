@@ -106,7 +106,7 @@
         "percent_off": {
           "type": [
             "null",
-            "integer"
+            "number"
           ]
         },
         "created": {

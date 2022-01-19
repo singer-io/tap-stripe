@@ -113,6 +113,7 @@ FIELDS_TO_NOT_CHECK = {
         'billing',
         'closed',
         'date',
+        # This field is deprcated in the version 2020-08-27
         'finalized_at',
         'forgiven',
         'tax_percent',
@@ -161,9 +162,7 @@ KNOWN_FAILING_FIELDS = {
         'plan',
     },
     'invoices': {
-        'discount', # BUG_12478 | missing subfields
         'plans', # BUG_12478 | missing subfields
-        'finalized_at', # BUG_13711 | schema missing datetime format
     },
     'plans': {
         'transform_usage' # BUG_13711 schema is wrong, should be an object not string
@@ -469,7 +468,7 @@ class ALlFieldsTest(BaseTapTest):
 
                                 # to fix the failure warning of `created` for `invoices` stream
                                 if stream == 'invoices' and expected_field_value != "EXPECTED IS MISSING FIELD" and field == 'created':
-                                    expected_field_value = self.dt_to_ts(expected_field_value)
+                                    expected_field_value = int(self.dt_to_ts(expected_field_value))
                                 try:
 
                                     self.assertEqual(expected_field_value, actual_field_value)

@@ -145,9 +145,7 @@ KNOWN_FAILING_FIELDS = {
     'coupons': {
         'percent_off', # BUG_9720 | Decimal('67') != Decimal('66.6') (value is changing in duplicate records)
     },
-    'customers': {
-        'discount',  # BUG_12478 | missing subfields in coupon where coupon is subfield within discount
-    },
+    'customers': set(),
     'subscriptions': {
         # BUG_12478 | missing subfields in coupon where coupon is subfield within discount
         # BUG_12478 | missing subfields on discount ['checkout_session', 'id', 'invoice', 'invoice_item', 'promotion_code']

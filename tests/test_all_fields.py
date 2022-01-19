@@ -47,15 +47,14 @@ KNOWN_MISSING_FIELDS = {
         'paid_out_of_band'
     },
     'plans': set(),
-    'invoice_line_items': set()
+    'invoice_line_items': {
+        'tax_rates',
+        'price'
+    }
 }
 
 FIELDS_TO_NOT_CHECK = {
     'customers': {
-        # As per stripe documentation(https://stripe.com/docs/api/customers/object) `subscriptions` and `sources` fields
-        # are not included by default.
-        'subscriptions',
-        'sources',
         # Below fields are deprecated or renamed.(https://stripe.com/docs/upgrades#2019-10-17, https://stripe.com/docs/upgrades#2019-12-03)
         'account_balance',
         'tax_info',
@@ -74,7 +73,10 @@ FIELDS_TO_NOT_CHECK = {
         'statement_descriptor',
         'unit_label'  
     },
-    'coupons':set(),
+    'coupons':{
+        # Field is not available in stripe documentation and also not returned by API response.(https://stripe.com/docs/api/coupons/object)
+        'percent_off_precise'
+    },
     'invoice_items':set(),
     'payouts':{
 
@@ -93,6 +95,7 @@ FIELDS_TO_NOT_CHECK = {
         'statement_description'
     },
     'subscription_items':{
+        # Field is not available in stripe documentation and also not returned by API response. (https://stripe.com/docs/api/subscription_items/object)
       'current_period_end',
       'customer',
       'trial_start',
@@ -126,7 +129,7 @@ FIELDS_TO_NOT_CHECK = {
         'statement_descriptor',
         'statement_description',
         'name',
-        'tiers'
+        'tiers' # Field is not returned by API
     },
     'invoice_line_items': {
         # As per stripe documentation(https://stripe.com/docs/api/invoices/line_item#invoice_line_item_object-subscription_item),
@@ -378,10 +381,11 @@ class ALlFieldsTest(BaseTapTest):
                         actual_records_keys.update(set(message['data'].keys()))
                 schema_keys = set(self.expected_schema_keys(stream)) # read in from schema files
 
+                # To avoid warning, skipping fields of FIELDS_TO_NOT_CHECK
                 schema_keys = schema_keys - FIELDS_TO_NOT_CHECK.get(stream, set())
                 actual_records_keys = actual_records_keys - FIELDS_TO_NOT_CHECK[stream]
 
-                # Verify schema covers all fields
+                # Append fields which are added by tap to expectation
                 adjusted_expected_keys = expected_records_keys.union(
                     FIELDS_ADDED_BY_TAP.get(stream, set())
                 )

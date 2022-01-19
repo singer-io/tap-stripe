@@ -36,7 +36,6 @@ KNOWN_MISSING_FIELDS = {
     'subscription_items':{
         'tax_rates',
         'price',
-        'updated',
     },
     'invoices':{
         'payment_settings',
@@ -221,7 +220,7 @@ FIELDS_ADDED_BY_TAP = {
     },
     'payouts': {'updated'},
     'charges': {'updated'},
-    'subscription_items': {'updated'},
+    'subscription_items': set(), # `updated` is not added by the tap for child streams.
     'invoices': {'updated'},
     'plans': {'updated'},
     'invoice_line_items': {

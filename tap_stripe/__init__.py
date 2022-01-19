@@ -81,7 +81,7 @@ STREAM_TO_TYPE_FILTER = {
 }
 
 # Some fields are not available by default with latest API version so
-# retrive it by passing expand paramater in SDK object
+# retrieve it by passing expand paramater in SDK object
 STREAM_TO_EXPAND_FIELDS = {
     # `tax_ids` field is not included in API response by default. To include it in the response, pass it in expand paramater.
     # Reference: https://stripe.com/docs/api/customers/object#customer_object-tax_ids
@@ -389,6 +389,8 @@ def paginate(sdk_obj, filter_key, start_date, end_date, stream_name, limit=100):
     yield from sdk_obj.list(
         limit=limit,
         stripe_account=Context.config.get('account_id'),
+        # Some fields are not available by default with latest API version so
+        # retrieve it by passing expand paramater in SDK object
         expand=STREAM_TO_EXPAND_FIELDS.get(stream_name, []),
         # None passed to starting_after appears to retrieve
         # all of them so this should always be safe.
@@ -422,7 +424,7 @@ def sync_stream(stream_name):
     filter_key = 'created' if stream_name == 'invoice_items' else replication_key
 
     # Invoice was bookmarking on `date` but in latest API version, that field is deprecated and replication key changed to `created`
-    # kept `date` in bookmarking as it as to respect bookmark of active connection too
+    # kept `date` in bookmarking as it has to respect bookmark of active connection too
     if stream_name == 'invoices':
         stream_bookmark = singer.get_bookmark(Context.state, stream_name, 'date') or \
             int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
@@ -441,7 +443,7 @@ def sync_stream(stream_name):
 
         # Invoices's replication key changed from `date` to `created` in latest API version.
         # Invoice line Items write bookmark with Invoice's replication key but it changed to `created`
-        # so kept `date` in bookmarking as it as to respect bookmark of active connection too.
+        # so kept `date` in bookmarking as it has to respect bookmark of active connection too.
         if sub_stream_name == "invoice_line_items":
             sub_stream_bookmark = singer.get_bookmark(Context.state, sub_stream_name, 'date') \
                 or int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
@@ -522,7 +524,7 @@ def sync_stream(stream_name):
                 stream_bookmark = stop_window
                 # Invoice was bookmarking on `date` but in latest API version,
                 # that field is deprecated and replication key changed to `created`
-                # kept `date` in bookmarking as it as to respect bookmark of active connection too.
+                # kept `date` in bookmarking as it has to respect bookmark of active connection too.
                 if stream_name == "invoices":
                     singer.write_bookmark(Context.state,
                                           stream_name,
@@ -540,7 +542,7 @@ def sync_stream(stream_name):
 
                 # Invoices's replication key changed from `date` to `created` in latest API version.
                 # Invoice line Items write bookmark with Invoice's replication key but it changed to `created`
-                # so kept `date` in bookmarking as it as to respect bookmark of active connection too.
+                # so kept `date` in bookmarking as it has to respect bookmark of active connection too.
                 if sub_stream_name == "invoice_line_items":
                     singer.write_bookmark(Context.state,
                                           sub_stream_name,

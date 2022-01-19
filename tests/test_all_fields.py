@@ -33,7 +33,7 @@ KNOWN_MISSING_FIELDS = {
     },
     'payouts':set(),
     'charges': set(),
-    'subscription_items': {'updated'},
+    'subscription_items': set(),
     'invoices':{
         'payment_settings',
         'on_behalf_of',

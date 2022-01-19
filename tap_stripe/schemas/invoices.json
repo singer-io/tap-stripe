@@ -899,6 +899,12 @@
         }
       }
     },
+    "paid_out_of_band": {
+      "type": [
+        "null",
+        "boolean"
+      ]
+    },
     "automatic_tax": {
       "type": [
         "null",

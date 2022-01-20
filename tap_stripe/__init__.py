@@ -539,7 +539,7 @@ def sync_stream(stream_name):
             # Update stream/sub-streams bookmarks as stop window
             if stop_window > stream_bookmark:
                 stream_bookmark = stop_window
-                # Write bookmark for the sub_stream
+                # Write bookmark for the stream
                 write_bookmark_for_stream(stream_name, replication_key, stream_bookmark)
 
             # the sub stream bookmarks on its parent

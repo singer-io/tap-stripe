@@ -438,21 +438,12 @@ def write_bookmark_for_stream(stream_name, replication_key, stream_bookmark):
                               replication_key,
                               stream_bookmark)
 
-def maybe_to_stripe_object_recursive(value):
-    """
-    Convert datatype of dict to `stripe.stripe_object.StripeObject` and return it
-    """
-    if isinstance(value, dict):
-        return convert_to_stripe_object(value)
-
-    return value
-
 def convert_dict_to_stripe_object(record):
     """
     Convert field datatype of dict object to `stripe.stripe_object.StripeObject`.
     Example:
     record = {'id': 'dummy_id', 'tiers':  [{"flat_amount": 4578"unit_amount": 7241350}]}
-    This function will convert datatype of each record of 'tiers' field to `stripe.stripe_object.StripeObject`.
+    This function convert datatype of each record of 'tiers' field to `stripe.stripe_object.StripeObject`.
     """
     # Loop through each fields of `record` object
     for key, val in record.items():
@@ -460,8 +451,8 @@ def convert_dict_to_stripe_object(record):
         if isinstance(val, list):
             # Loop through each records of list
             for index, field_val in enumerate(val):
-                # Check for dict type in nested `list` object
-                record[key][index] = maybe_to_stripe_object_recursive(field_val)
+                # Convert datatype of dict to `stripe.stripe_object.StripeObject`
+                record[key][index] = convert_to_stripe_object(record[key][index])
 
     return record
 

@@ -445,6 +445,8 @@ def maybe_to_stripe_object_recursive(value):
     if isinstance(value, dict):
         return convert_to_stripe_object(value)
 
+    return value
+
 def convert_dict_to_stripe_object(record):
     """
     Convert field datatype of dict object to `stripe.stripe_object.StripeObject`.

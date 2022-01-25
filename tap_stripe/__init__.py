@@ -451,8 +451,9 @@ def convert_dict_to_stripe_object(record):
         if isinstance(val, list):
             # Loop through each records of list
             for index, field_val in enumerate(val):
-                # Convert datatype of dict to `stripe.stripe_object.StripeObject`
-                record[key][index] = convert_to_stripe_object(record[key][index])
+                if isinstance(field_val, dict):
+                    # Convert datatype of dict to `stripe.stripe_object.StripeObject`
+                    record[key][index] = convert_to_stripe_object(record[key][index])
 
     return record
 

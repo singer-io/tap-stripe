@@ -466,6 +466,8 @@ class ALlFieldsTest(BaseTapTest):
                                 actual_field_value = actual_record.get(field, "ACTUAL IS MISSING FIELD")
 
                                 # to fix the failure warning of `created` for `invoices` stream
+                                # BUG_13711 | the schema was missing datetime format and the tests were throwing a warning message.
+                                # Hence, a workaround to remove that warning message.
                                 if stream == 'invoices' and expected_field_value != "EXPECTED IS MISSING FIELD" and field == 'created':
                                     expected_field_value = int(self.dt_to_ts(expected_field_value))
                                 try:

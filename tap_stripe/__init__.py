@@ -83,7 +83,10 @@ STREAM_TO_TYPE_FILTER = {
 # Some fields are not available by default with latest API version so
 # retrieve it by passing expand paramater in SDK object
 STREAM_TO_EXPAND_FIELDS = {
-    'customers': ['data.sources', 'data.subscriptions'],
+    # `tax_ids` field is not included in API response by default. To include it in the response, pass it in expand paramater.
+    # Reference: https://stripe.com/docs/api/customers/object#customer_object-tax_ids
+
+    'customers': ['data.sources', 'data.subscriptions', 'data.tax_ids'],
     'plans': ['data.tiers'],
     'invoice_items': ['data.plan.tiers'],
     'invoice_line_items': ['data.plan.tiers'],

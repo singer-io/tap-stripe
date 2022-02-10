@@ -110,6 +110,19 @@
               "null",
               "string"
             ]
+          },
+          "tax_type": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "metadata": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {}
           }
         }
       }

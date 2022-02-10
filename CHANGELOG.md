@@ -1,37 +1,40 @@
 # Changelog
 
-** 1.5.0
+## 1.5.1
+  * Subscriptions stream will now request subscriptions of all statuses [#113](https://github.com/singer-io/tap-stripe/pull/113)
+
+## 1.5.0
   * Add schema for card_present charges [#101](https://github.com/singer-io/tap-stripe/pull/101)
 
-** 1.4.9
+## 1.4.9
   * Allow partial days in the `date_window_size` config value [#100](https://github.com/singer-io/tap-stripe/pull/100)
 
-** 1.4.8
+## 1.4.8
   * Reverts 1.4.7 [#82](https://github.com/singer-io/tap-stripe/pull/82)
 
-** 1.4.7
+## 1.4.7
   * Updates singer-python from 5.5.1 to 5.12.1 [#81](https://github.com/singer-io/tap-stripe/pull/81)
 
-** 1.4.6
+## 1.4.6
   * Removed fields that caused transform errors
 
-** 1.4.5
+## 1.4.5
   * Added various schema [#77](https://github.com/singer-io/tap-stripe/pull/77)
 
-** 1.4.4
+## 1.4.4
   * Use the default timeout in the stripe client [#61](https://github.com/singer-io/tap-stripe/pull/61)
 
-** 1.4.3
+## 1.4.3
   * Revert 1.4.2 changes from #59 [#60](https://github.com/singer-io/tap-stripe/pull/60)
   * Remove invalid and unused schema pieces [#60](https://github.com/singer-io/tap-stripe/pull/60)
 
-** 1.4.2
+## 1.4.2
   * Revert 1.4.1 [#59](https://github.com/singer-io/tap-stripe/pull/59)
 
-** 1.4.1
+## 1.4.1
   * Add functionality that recursively converts `StripeObject`s to dictionaries. [#53](https://github.com/singer-io/tap-stripe/pull/53)
 
-** 1.4.0
+## 1.4.0
   * Added the `payment_method_details` field to the charges stream. [#49](https://github.com/singer-io/tap-stripe/pull/49)
 
 ## 1.3.7

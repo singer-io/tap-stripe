@@ -25,28 +25,16 @@ KNOWN_MISSING_FIELDS = {
         'pending_update',
         'automatic_tax',
     },
-    'products':{
-        'tax_code',
-    },
+    'products':set(),
     'invoice_items':{
         'price',
     },
     'payouts':set(),
     'charges': set(),
     'subscription_items': set(),
-    'invoices':{
-        'payment_settings',
-        'on_behalf_of',
-        'custom_fields',
-        'automatic_tax',
-        'quote',
-        'paid_out_of_band'
-    },
     'plans': set(),
-    'invoice_line_items': {
-        'tax_rates',
-        'price'
-    }
+    'invoice_line_items': set(),
+    'invoices': set()
 }
 
 FIELDS_TO_NOT_CHECK = {
@@ -116,6 +104,7 @@ FIELDS_TO_NOT_CHECK = {
         'billing',
         'closed',
         'date',
+        # This field is deprcated in the version 2020-08-27
         'finalized_at',
         'forgiven',
         'tax_percent',
@@ -141,9 +130,7 @@ KNOWN_FAILING_FIELDS = {
     'coupons': {
         'percent_off', # BUG_9720 | Decimal('67') != Decimal('66.6') (value is changing in duplicate records)
     },
-    'customers': {
-        'discount',  # BUG_12478 | missing subfields in coupon where coupon is subfield within discount
-    },
+    'customers': set(),
     'subscriptions': {
         # BUG_12478 | missing subfields in coupon where coupon is subfield within discount
         # BUG_12478 | missing subfields on discount ['checkout_session', 'id', 'invoice', 'invoice_item', 'promotion_code']
@@ -164,14 +151,12 @@ KNOWN_FAILING_FIELDS = {
         'plan',
     },
     'invoices': {
-        'discount', # BUG_12478 | missing subfields
         'plans', # BUG_12478 | missing subfields
-        'finalized_at', # BUG_13711 | schema missing datetime format
-        'created', # BUG_13711 | schema missing datetime format
     },
     'plans': {
         'transform_usage' # BUG_13711 schema is wrong, should be an object not string
     },
+    'invoice_line_items': set()
     # 'invoice_line_items': { # TODO This is a test issue that prevents us from consistently passing
     #     'unique_line_item_id',
     #     'invoice_item',
@@ -494,6 +479,11 @@ class ALlFieldsTest(BaseTapTest):
                                 expected_field_value = expected_record.get(field, "EXPECTED IS MISSING FIELD")
                                 actual_field_value = actual_record.get(field, "ACTUAL IS MISSING FIELD")
 
+                                # to fix the failure warning of `created` for `invoices` stream
+                                # BUG_13711 | the schema was missing datetime format and the tests were throwing a warning message.
+                                # Hence, a workaround to remove that warning message.
+                                if stream == 'invoices' and expected_field_value != "EXPECTED IS MISSING FIELD" and field == 'created':
+                                    expected_field_value = int(self.dt_to_ts(expected_field_value))
                                 try:
 
                                     self.assertEqual(expected_field_value, actual_field_value)
@@ -501,7 +491,7 @@ class ALlFieldsTest(BaseTapTest):
                                 except AssertionError as failure_1:
 
                                     print(f"WARNING {base_err_msg} failed exact comparison.\n"
-                                          f"AssertionError({failure_1})")
+                                        f"AssertionError({failure_1})")
 
                                     nested_key = KNOWN_NESTED_MISSING_FIELDS.get(stream, {})
                                     if self.find_nested_key(nested_key, expected_field_value, field):

@@ -389,9 +389,10 @@ class BaseTapTest(unittest.TestCase):
             int_or_float_to_decimal_keys = [
                 'percent_off', 'percent_off_precise', 'height', 'length', 'weight', 'width'
             ]
+            
             object_keys = [
                 'discount', 'plan', 'coupon', 'status_transitions', 'period', 'sources', 'source',
-                'package_dimensions',
+                'package_dimensions', 'price' # Convert epoch timestamp value of 'price.created' to standard datetime format. This field is available specific for invoice_line_items stream
             ]
 
             # timestamp to datetime

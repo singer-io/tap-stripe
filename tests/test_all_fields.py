@@ -36,11 +36,8 @@ KNOWN_MISSING_FIELDS = {
         'price',
     },
     'plans': set(),
-    'invoices': set(),
-    'invoice_line_items': {
-        'tax_rates',
-        'price'
-    }
+    'invoice_line_items': set(),
+    'invoices': set()
 }
 
 FIELDS_TO_NOT_CHECK = {
@@ -162,6 +159,7 @@ KNOWN_FAILING_FIELDS = {
     'plans': {
         'transform_usage' # BUG_13711 schema is wrong, should be an object not string
     },
+    'invoice_line_items': set()
     # 'invoice_line_items': { # TODO This is a test issue that prevents us from consistently passing
     #     'unique_line_item_id',
     #     'invoice_item',
@@ -473,7 +471,7 @@ class ALlFieldsTest(BaseTapTest):
                                 except AssertionError as failure_1:
 
                                     print(f"WARNING {base_err_msg} failed exact comparison.\n"
-                                          f"AssertionError({failure_1})")
+                                        f"AssertionError({failure_1})")
 
                                     if field in KNOWN_FAILING_FIELDS[stream] or field in FIELDS_TO_NOT_CHECK[stream]:
                                         continue # skip the following wokaround

@@ -164,6 +164,12 @@
         "null",
         "string"
       ]
+    },
+    "tax_code": {
+      "type": [
+        "null",
+        "string"
+      ]
     }
   }
 }

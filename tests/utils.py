@@ -16,6 +16,7 @@ midnight = int(dt.combine(dt.today(), time.min).timestamp())
 NOW = dt.utcnow()
 metadata_value = {"test_value": "senorita_alice_{}@stitchdata.com".format(NOW)}
 
+stripe_client.api_version = '2020-08-27'
 stripe_client.api_key = BaseTapTest.get_credentials()["client_secret"]
 client = {
     'balance_transactions': stripe_client.BalanceTransaction,
@@ -218,16 +219,17 @@ def list_all_object(stream, max_limit: int = 100, get_invoice_lines: bool = Fals
             return objects
 
         elif stream == "customers":
-            stripe_obj = client[stream].list(limit=max_limit, created={"gte": midnight})
+            stripe_obj = client[stream].list(limit=max_limit, created={"gte": midnight}, 
+                                             expand=['data.sources', 'data.subscriptions', 'data.tax_ids']) # retrieve fields by passing expand paramater in SDK object
             dict_obj = stripe_obj_to_dict(stripe_obj)
 
             if dict_obj.get('data'):
                 for obj in dict_obj['data']:
 
-                    if obj['sources']:
+                    if obj.get('sources'):
                         sources = obj['sources']['data']
                         obj['sources'] = sources
-                    if obj['subscriptions']:
+                    if obj.get('subscriptions'):
                         subscription_ids = [subscription['id'] for subscription in obj['subscriptions']['data']]
                         obj['subscriptions'] = subscription_ids
 
@@ -272,7 +274,7 @@ def standard_create(stream):
             address={'city': 'Philadelphia', 'country': 'US', 'line1': 'APT 2R.',
                 'line1': '666 Street Rd.', 'postal_code': '11111', 'state': 'PA'},
             description="Description {}".format(NOW),
-            email="senor_bob_{}@stitchdata.com".format(NOW),
+            email="stitchdata.test@gmail.com", # In the latest API version, it is mandatory to provide a valid email address
             metadata=metadata_value,
             name="Roberto Alicia",
             # pyment_method=, see source explanation
@@ -292,7 +294,7 @@ def standard_create(stream):
         )
     elif stream == 'payouts':
         return client[stream].create(
-            amount=random.randint(0, 10000),
+            amount=random.randint(1, 10),
             currency="usd",
             description="Comfortable cotton t-shirt {}".format(NOW),
             statement_descriptor="desc",
@@ -302,7 +304,7 @@ def standard_create(stream):
     elif stream == 'plans':
         return client[stream].create(
             active=True,
-            amount=random.randint(0, 10000),
+            amount=random.randint(1, 10000),
             currency="usd",
             interval="year",
             metadata=metadata_value,
@@ -338,6 +340,7 @@ def standard_create(stream):
             package_dimensions={"height": 92670.16, "length": 9158.65, "weight": 582.73, "width": 96656496.18},
             shippable=True,
             url='fakeurl.stitch',
+            type='good' # In the latest API version, it is mandatory to provide the value of the `type` field in the body. 
         )
 
     return None
@@ -365,7 +368,7 @@ def create_object(stream):
         elif stream == 'customers':
             customer = standard_create(stream)
             customer_dict = stripe_obj_to_dict(customer)
-            if customer_dict['subscriptions']:
+            if customer_dict.get('subscriptions'):
                 subscription_ids = [subscription['id'] for subscription in customer_dict['subscriptions']['data']]
                 customer_dict['subscriptions'] = subscription_ids
             return customer_dict
@@ -381,7 +384,7 @@ def create_object(stream):
 
         if stream == 'invoice_items':
             return client[stream].create(
-                amount=random.randint(0, 10000),
+                amount=random.randint(1, 10000),
                 currency="usd",
                 customer=cust['id'],
                 description="Comfortable cotton t-shirt {}".format(NOW),
@@ -393,7 +396,7 @@ def create_object(stream):
         elif stream == 'invoices':
             # Invoices requires the customer has an item associated with them
             item = client["{}_items".format(stream[:-1])].create(
-                amount=random.randint(0, 10000),
+                amount=random.randint(1, 10000),
                 currency="usd",
                 customer=cust['id'],
                 description="Comfortable cotton t-shirt {}".format(NOW),
@@ -519,7 +522,6 @@ def create_object(stream):
 def update_object(stream, oid):
     """
     Update a specific record for a given object.
-
     The update will always change the test_value under the metadata field
     which is found in all object streams.
     """

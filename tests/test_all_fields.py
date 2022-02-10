@@ -31,10 +31,7 @@ KNOWN_MISSING_FIELDS = {
     },
     'payouts':set(),
     'charges': set(),
-    'subscription_items':{
-        'tax_rates',
-        'price',
-    },
+    'subscription_items': set(),
     'plans': set(),
     'invoice_line_items': set(),
     'invoices': set()
@@ -213,6 +210,11 @@ FIELDS_ADDED_BY_TAP = {
     },
 }
 
+# As for the `price` field added in the schema, the API doc doesn't mention any
+# `trial_period_days` in the field, hence skipping the assertion error for the same.
+KNOWN_NESTED_MISSING_FIELDS = {
+    'subscription_items': {'price': 'recurring.trial_period_days'}
+}
 
 class ALlFieldsTest(BaseTapTest):
     """Test tap sets a bookmark and respects it for the next sync of a stream"""
@@ -310,6 +312,24 @@ class ALlFieldsTest(BaseTapTest):
                 # run the test
                 self.all_fields_test(streams_to_test)
 
+    def find_nested_key(self, nested_key, actual_field_value, field):
+        '''
+        Find the nested key that is failing in the field and ignore the assertion error
+        gained from it, if any.
+        '''
+        for field_name, each_keys in nested_key.items():
+            # split the keys through `.`, for getting the nested keys
+            keys = each_keys.split('.')
+            temp_value = actual_field_value
+            if field == field_name:
+                for failing_key in keys:
+                    # if the failing key is not present in the actual key or not
+                    if not temp_value.get(failing_key, None):
+                        return False
+                    else:
+                        temp_value = temp_value.get(failing_key)
+                        if keys[-1] in temp_value:
+                            return True
 
     def all_fields_test(self, streams_to_test):
         """
@@ -472,6 +492,10 @@ class ALlFieldsTest(BaseTapTest):
 
                                     print(f"WARNING {base_err_msg} failed exact comparison.\n"
                                         f"AssertionError({failure_1})")
+
+                                    nested_key = KNOWN_NESTED_MISSING_FIELDS.get(stream, {})
+                                    if self.find_nested_key(nested_key, expected_field_value, field):
+                                        continue
 
                                     if field in KNOWN_FAILING_FIELDS[stream] or field in FIELDS_TO_NOT_CHECK[stream]:
                                         continue # skip the following wokaround

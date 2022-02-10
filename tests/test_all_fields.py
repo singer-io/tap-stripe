@@ -25,9 +25,7 @@ KNOWN_MISSING_FIELDS = {
         'pending_update',
         'automatic_tax',
     },
-    'products':{
-        'tax_code',
-    },
+    'products':set(),
     'invoice_items':{
         'price',
     },

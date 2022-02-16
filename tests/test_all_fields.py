@@ -51,6 +51,7 @@ KNOWN_MISSING_FIELDS = {
         'custom_fields',
         'automatic_tax',
         'quote',
+        'paid_out_of_band',
     },
     'plans': set(),
     'invoice_line_items': {

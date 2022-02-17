@@ -51,6 +51,7 @@ KNOWN_MISSING_FIELDS = {
         'custom_fields',
         'automatic_tax',
         'quote',
+        'paid_out_of_band',
     },
     'plans': set(),
     'invoice_line_items': {
@@ -122,7 +123,10 @@ FICKLE_FIELDS = {
         'status', # expect 'paid', get 'succeeded'
     },
     'subscription_items': set(),
-    'invoices': set(),
+    'invoices': {
+        'hosted_invoice_url', # expect https://invoice.stripe.com/i/acct_14zvmQDcBSxinnbL/test...zcy0200wBekbjGw?s=ap
+        'invoice_pdf',        # get    https://invoice.stripe.com/i/acct_14zvmQDcBSxinnbL/test...DE102006vZ98t5I?s=ap
+    },
     'plans': set(),
     'invoice_line_items': set()
 }

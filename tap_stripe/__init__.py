@@ -693,13 +693,15 @@ def sync_event_updates(stream_name):
     '''
     LOGGER.info("Started syncing event based updates")
 
+    date_window_size = 60 * 60 * 24 # Seconds in a day
+
     bookmark_value = singer.get_bookmark(Context.state,
                                          stream_name + '_events',
                                          'updates_created') or \
                      int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
     max_created = bookmark_value
     date_window_start = max_created
-    date_window_end = max_created + 604800 # Number of seconds in a week
+    date_window_end = max_created + date_window_size
 
     stop_paging = False
 
@@ -726,6 +728,7 @@ def sync_event_updates(stream_name):
         for events_obj in response.auto_paging_iter():
             event_resource_obj = events_obj.data.object
             sub_stream_name = SUB_STREAMS.get(stream_name)
+
 
             # Check whether we should sync the event based on its created time
             if not should_sync_event(events_obj,
@@ -779,8 +782,10 @@ def sync_event_updates(stream_name):
             if events_obj.created > max_created:
                 max_created = events_obj.created
 
+        # The events stream returns results in descending order, so we
+        # cannot bookmark until the entire page is processed
         date_window_start = date_window_end
-        date_window_end = date_window_end + 604800
+        date_window_end = date_window_end + date_window_size
         singer.write_bookmark(Context.state,
                               stream_name + '_events',
                               'updates_created',

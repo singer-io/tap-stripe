@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.5.2
+  * Event date window reduced from one week to one day [#120](https://github.com/singer-io/tap-stripe/pull/120)
+
 ## 1.5.1
   * Subscriptions stream will now request subscriptions of all statuses [#113](https://github.com/singer-io/tap-stripe/pull/113)
 

@@ -16,6 +16,12 @@
         "string"
       ]
     },
+    "event_type": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
     "active": {
       "type": [
         "null",

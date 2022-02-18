@@ -18,6 +18,12 @@
       ],
       "format": "date-time"
     },
+    "event_type": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
     "schedule": {
       "type": [
         "null",

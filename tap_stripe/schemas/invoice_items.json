@@ -10,6 +10,12 @@
         "integer"
       ]
     },
+    "event_type": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
     "metadata": {
       "type": [
         "null",

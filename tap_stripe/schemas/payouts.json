@@ -13,6 +13,12 @@
         "string"
       ]
     },
+    "event_type": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
     "id": {
       "type": [
         "null",

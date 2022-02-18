@@ -11,6 +11,12 @@
       ],
       "properties": {}
     },
+    "event_type": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
     "times_redeemed": {
       "type": [
         "null",

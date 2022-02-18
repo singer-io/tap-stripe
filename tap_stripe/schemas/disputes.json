@@ -9,6 +9,12 @@
         "string"
       ]
     },
+    "event_type": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
     "object": {
       "type": [
         "null",

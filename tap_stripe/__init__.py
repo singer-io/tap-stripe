@@ -107,7 +107,7 @@ SUB_STREAMS = {
 
 # NB: These streams will only sync through once for creates, never updates.
 IMMUTABLE_STREAMS = {'balance_transactions', 'events'}
-IMMUTABLE_STREAM_LOOKBACK = 300 # 5 min in epoch time, Stripe accuracy is to the second
+IMMUTABLE_STREAM_LOOKBACK = 600 # 10 min in epoch time, Stripe accuracy is to the second
 
 LOGGER = singer.get_logger()
 
@@ -521,7 +521,8 @@ def sync_stream(stream_name):
             # TODO: This may be an issue for other streams' created_at
             # entries, but to keep the surface small, doing this only for
             # immutable streams at first to confirm the suspicion.
-            start_window -= IMMUTABLE_STREAM_LOOKBACK
+            lookback_window = int(Context.config.get('lookback_window', IMMUTABLE_STREAM_LOOKBACK)) # added configurable lookback window
+            start_window -= lookback_window
 
         # NB: We observed records coming through newest->oldest and so
         # date-windowing was added and the tap only bookmarks after it has

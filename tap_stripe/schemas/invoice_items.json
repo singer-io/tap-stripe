@@ -10,7 +10,7 @@
         "integer"
       ]
     },
-    "event_type": {
+    "updated_by_event_type": {
       "type": [
         "null",
         "string"

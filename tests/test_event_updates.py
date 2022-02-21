@@ -28,7 +28,7 @@ class EventUpdatesTest(BaseTapTest):
         Verify that the second sync includes at least one update for each stream
         Verify that the second sync includes less records than the first sync
         Verify that the updated metadata was picked up on the second sync
-        Verify that the `event_type` field is available in all records emitted by event_updates
+        Verify that the `updated_by_event_type` field is available in all records emitted by event_updates
 
         PREREQUISITE
         For EACH stream that gets updates through events stream, there's at least 1 row
@@ -167,13 +167,13 @@ class EventUpdatesTest(BaseTapTest):
                     "the test metadata should be different",
                 )
 
-                # Verify that the `event_type` field is available in all records emitted by event_updates
+                # Verify that the `updated_by_event_type` field is available in all records emitted by event_updates
                 for message in second_sync_updated.get(stream, {}).get("messages", []):
                     if message['action'] == 'upsert':
                         self.assertIn(
-                            'event_type', 
+                            'updated_by_event_type',
                             message['data'].keys(),
-                            "event_type field is missing in event_updates records")
+                            "updated_by_event_type field is missing in event_updates records")
 
                 if stream in new_objects:
                     delete_object(stream, new_objects[stream]["id"])

@@ -145,12 +145,10 @@ KNOWN_FAILING_FIELDS = {
     },
     'payouts': set(),
     'charges': set(),
-    'subscription_items': set(),
-    #     # BUG_12478 | missing subfields on plan ['statement_description', 'statement_descriptor', 'name']
-    #     # BUG_13711 | https://jira.talendforge.org/browse/TDL-13711
-    #     #             Schema wrong for subfield 'transform_usage', should be object not string
-    #     'plan',
-    # },
+    'subscription_items': {
+        # BUG_12478 | missing subfields on plan ['statement_description', 'statement_descriptor', 'name']
+        'plan',
+    },
     'invoices': {
         'plans', # BUG_12478 | missing subfields
     },

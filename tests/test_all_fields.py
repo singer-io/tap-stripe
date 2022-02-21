@@ -37,7 +37,7 @@ KNOWN_MISSING_FIELDS = {
     'invoices': set()
 }
 
-# `event_type` field's value available in the records only if records are emitted by `event_updates`.
+# `updated_by_event_type` field's value available in the records only if records are emitted by `event_updates`.
 FIELDS_TO_NOT_CHECK = {
     'customers': {
         # Below fields are deprecated or renamed.(https://stripe.com/docs/upgrades#2019-10-17, https://stripe.com/docs/upgrades#2019-12-03)
@@ -46,7 +46,7 @@ FIELDS_TO_NOT_CHECK = {
         'tax_info_verification',
         'cards',
         'default_card',
-        'event_type'
+        'updated_by_event_type'
     },
     'subscriptions':{
         # Below fields are deprecated or renamed.(https://stripe.com/docs/upgrades#2019-10-17, https://stripe.com/docs/upgrades#2019-12-03, https://stripe.com/docs/upgrades#2020-08-27)
@@ -54,22 +54,22 @@ FIELDS_TO_NOT_CHECK = {
         'start',
         'tax_percent',
         'invoice_customer_balance_settings',
-        'event_type'
+        'updated_by_event_type'
     },
     'products':{
         # Below fields are available in the product record only if the value of the type field is `service`.
         # But, currently, during crud operation in all_fields test case, it creates product records of type `good`.
         'statement_descriptor',
         'unit_label',
-        'event_type'
+        'updated_by_event_type'
     },
     'coupons':{
         # Field is not available in stripe documentation and also not returned by API response.(https://stripe.com/docs/api/coupons/object)
         'percent_off_precise',
-        'event_type'
+        'updated_by_event_type'
     },
     'invoice_items':{
-        'event_type'
+        'updated_by_event_type'
     },
     'payouts':{
 
@@ -81,13 +81,13 @@ FIELDS_TO_NOT_CHECK = {
         'date',
         'amount_reversed',
         'recipient',
-        'event_type'
+        'updated_by_event_type'
     },
     'charges': {
         # Following both fields `card` and `statement_description` are deprecated. (https://stripe.com/docs/upgrades#2015-02-18, https://stripe.com/docs/upgrades#2014-12-17)
         'card',
         'statement_description',
-        'event_type'
+        'updated_by_event_type'
     },
     'subscription_items':{
         # Field is not available in stripe documentation and also not returned by API response. (https://stripe.com/docs/api/subscription_items/object)
@@ -120,14 +120,14 @@ FIELDS_TO_NOT_CHECK = {
         'statement_description',
         'payment'
         'paid_out_of_band',
-        'event_type'
+        'updated_by_event_type'
     },
     'plans': {
         # Below fields are deprecated or renamed. (https://stripe.com/docs/upgrades#2018-02-05, https://stripe.com/docs/api/plans/object)
         'statement_descriptor',
         'statement_description',
         'name',
-        'event_type',
+        'updated_by_event_type',
         'tiers' # Field is not returned by API
     },
     'invoice_line_items': {

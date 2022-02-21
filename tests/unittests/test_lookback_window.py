@@ -3,11 +3,14 @@ from unittest import mock
 from tap_stripe import IMMUTABLE_STREAM_LOOKBACK, Context, sync_stream, datetime
 
 class MockClass():
+    '''The mock class for the Balance Transactions object.'''
     lines = "lines"
     def __init__(self):
         return None
+
     @classmethod
     def to_dict_recursive(cls):
+        '''The mocked to_dict_recursive method of the Balance Transactions class.'''
         return "Test Data"
 
 start_date_before_lookback = 1645056000 # epoch start_date time

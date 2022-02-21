@@ -310,15 +310,8 @@ class BaseTapTest(unittest.TestCase):
                                    'schema': batch['schema'],
                                    'key_names' : batch.get('key_names'),
                                    'table_version': batch.get('table_version')}
-            # Bookmark key changed for `invoices` from `date` to `created` due to latest API change
-            # but for `invoices` stream, the `created` field have integer type(epoch format) from starting so
-            # converting `updated` to epoch for comparison.
-            if stream == "invoices":
-                created[stream]['messages'] += [m for m in batch['messages']
-                                                    if self.dt_to_ts(m['data'].get("updated")) == m['data'].get(bookmark_key)]
-            else:
-                created[stream]['messages'] += [m for m in batch['messages']
-                                                    if m['data'].get("updated") == m['data'].get(bookmark_key)]
+            created[stream]['messages'] += [m for m in batch['messages']
+                                                if m['data'].get("updated") == m['data'].get(bookmark_key)]
 
             if stream not in updated:
                 updated[stream] = {'messages': [],
@@ -326,15 +319,8 @@ class BaseTapTest(unittest.TestCase):
                                    'key_names' : batch.get('key_names'),
                                    'table_version': batch.get('table_version')}
 
-            # Bookmark key changed for `invoices` from `date` to `created` due to latest API change
-            # but for `invoices` stream, the `created` field have integer type(epoch format) from starting so
-            # converting `updated` to epoch for comparison.
-            if stream == "invoices":
-                updated[stream]['messages'] += [m for m in batch['messages']
-                                                    if self.dt_to_ts(m['data'].get("updated")) != m['data'].get(bookmark_key)]
-            else:
-                updated[stream]['messages'] += [m for m in batch['messages']
-                                                    if m['data'].get("updated") != m['data'].get(bookmark_key)]
+            updated[stream]['messages'] += [m for m in batch['messages']
+                                                if m['data'].get("updated") != m['data'].get(bookmark_key)]
         return created, updated
 
     def select_all_streams_and_fields(self, conn_id, catalogs, select_all_fields: bool = True, exclude_streams=None):

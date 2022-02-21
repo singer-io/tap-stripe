@@ -87,7 +87,7 @@ jobs:
           # easier, emit an xUnit report and let Circle tell you what
           # failed.
           name: 'Integration Testing'
-          no_output_timeout: 60m
+          no_output_timeout: 30m
           command: |
             source /usr/local/share/virtualenvs/tap-stripe/bin/activate
             source /usr/local/share/virtualenvs/tap-tester/bin/activate

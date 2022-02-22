@@ -23,6 +23,7 @@ STREAM_SDK_OBJECTS = {
     'events': {'sdk_object': stripe.Event, 'key_properties': ['id']},
     'customers': {'sdk_object': stripe.Customer, 'key_properties': ['id']},
     'plans': {'sdk_object': stripe.Plan, 'key_properties': ['id']},
+    'payment_intents': {'sdk_object': stripe.PaymentIntent, 'key_properties': ['id']},
     'invoices': {'sdk_object': stripe.Invoice, 'key_properties': ['id']},
     'invoice_items': {'sdk_object': stripe.InvoiceItem, 'key_properties': ['id']},
     'invoice_line_items': {'sdk_object': stripe.InvoiceLineItem,
@@ -51,6 +52,7 @@ STREAM_REPLICATION_KEY = {
     'events': 'created',
     'customers': 'created',
     'plans': 'created',
+    'payment_intents': 'created',
     'invoices': 'created',
     'invoice_items': 'date',
     'transfers': 'created',
@@ -71,6 +73,7 @@ STREAM_TO_TYPE_FILTER = {
     'charges': {'type': 'charge.*', 'object': 'charge'},
     'customers': {'type': 'customer.*', 'object': 'customer'},
     'plans': {'type': 'plan.*', 'object': 'plan'},
+    'payment_intents': {'type': 'payment_intent.*', 'object': 'payment_intent'},
     'invoices': {'type': 'invoice.*', 'object': 'invoice'},
     'invoice_items': {'type': 'invoiceitem.*', 'object': 'invoiceitem'},
     'coupons': {'type': 'coupon.*', 'object': 'coupon'},
@@ -93,6 +96,9 @@ STREAM_TO_EXPAND_FIELDS = {
 
     'customers': ['data.sources', 'data.subscriptions', 'data.tax_ids'],
     'plans': ['data.tiers'],
+    # To include whole payment_intent in the response, pass it in expand paramater.
+    # Reference: https://stripe.com/docs/api/charges/object#charge_object-payment_intent
+    'charges': ['data.payment_intent'],
     'invoice_items': ['data.plan.tiers'],
     'invoice_line_items': ['data.plan.tiers'],
     'subscriptions': ['data.plan.tiers'],

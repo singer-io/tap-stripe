@@ -43,6 +43,7 @@ class BookmarkTest(BaseTapTest):
             "invoices",
             "payouts",
             "plans",
+            "payment_intents",
             "products",
             "subscription_items",
             "subscriptions",

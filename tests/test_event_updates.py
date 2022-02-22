@@ -47,6 +47,7 @@ class EventUpdatesTest(BaseTapTest):
             # "payout_transactions",  # See bug in create_test
             "payouts",
             "plans",
+            "payment_intents",
             "products",
             # "subscription_items", # BUG_9916 | https://jira.talendforge.org/browse/TDL-9916
             "subscriptions",
@@ -159,12 +160,20 @@ class EventUpdatesTest(BaseTapTest):
                     "updated timestamp for second sync is not greater than first sync",
                 )
 
-                # verify the metadata[test] value actually changed
-                self.assertNotEqual(
-                    second_data["metadata"].get("test_value", 0),
-                    first_data["metadata"].get("test_value", 0),
-                    "the test metadata should be different",
-                )
+                if stream == "payment_intents":
+                    # verify the payment_method value actually changed
+                    self.assertNotEqual(
+                        second_data["payment_method"],
+                        first_data["payment_method"],
+                        "the payment_method should be different",
+                    )
+                else:
+                    # verify the metadata[test] value actually changed
+                    self.assertNotEqual(
+                        second_data["metadata"].get("test_value", 0),
+                        first_data["metadata"].get("test_value", 0),
+                        "the test metadata should be different",
+                    )
 
                 if stream in new_objects:
                     delete_object(stream, new_objects[stream]["id"])

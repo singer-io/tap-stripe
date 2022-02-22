@@ -31,6 +31,7 @@ client = {
     'payout_transactions' : None, # not a native stream to Stripe
     'payouts': stripe_client.Payout,
     'plans': stripe_client.Plan,
+    'payment_intents': stripe_client.PaymentIntent,
     'products': stripe_client.Product,
     'subscription_items': stripe_client.SubscriptionItem,
     'subscriptions': stripe_client.Subscription,
@@ -269,6 +270,13 @@ def standard_create(stream):
             percent_off=66.6,
             max_redemptions=1000000
         )
+    elif stream == 'payment_intents':
+        return client[stream].create(
+            amount=random.randint(100, 10000),
+            currency="usd",
+            customer="cus_LAXuu6qTrq8LSf",
+            statement_descriptor="stitchdata"
+        )
     elif stream == 'customers':
         return client[stream].create(
             address={'city': 'Philadelphia', 'country': 'US', 'line1': 'APT 2R.',
@@ -362,7 +370,7 @@ def create_object(stream):
         if stream in {"disputes", "transfers"}:
             return None
 
-        elif stream in {'products', 'coupons', 'plans', 'payouts'}:
+        elif stream in {'products', 'coupons', 'plans', 'payouts', 'payment_intents'}:
             return standard_create(stream)
 
         elif stream == 'customers':
@@ -538,7 +546,10 @@ def update_object(stream, oid):
             #     return update_object("charges", bt['source'])
 
             return None
-
+        if stream == "payment_intents":
+            return client[stream].confirm(
+                oid, payment_method="pm_card_visa",
+            )
         return client[stream].modify(
             oid, metadata={"test_value": "senor_bob_{}@stitchdata.com".format(NOW)},
         )
@@ -549,7 +560,7 @@ def update_object(stream, oid):
 def delete_object(stream, oid):
     """Delete a specific record for a given object"""
     if stream in client:
-        if stream in {"payouts","charges"}:
+        if stream in {"payouts","charges","payment_intents"}:
             return None
 
             # return client[stream].cancel(oid)

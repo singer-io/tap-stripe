@@ -34,7 +34,8 @@ KNOWN_MISSING_FIELDS = {
     'subscription_items': set(),
     'plans': set(),
     'invoice_line_items': set(),
-    'invoices': set()
+    'invoices': set(),
+    'payment_intents': set()
 }
 
 FIELDS_TO_NOT_CHECK = {
@@ -124,7 +125,8 @@ FIELDS_TO_NOT_CHECK = {
         # 'subscription_item' is field that generated invoice item. It does not replicate in response if the line item is not an explicit result of a subscription.
         # So, due to uncertainty of this field, skipped it.
         'subscription_item'
-    }
+    },
+    'payment_intents': set()
 }
 
 KNOWN_FAILING_FIELDS = {
@@ -154,6 +156,9 @@ KNOWN_FAILING_FIELDS = {
     'invoices': {
         'plans', # BUG_12478 | missing subfields
     },
+    'payment_intents':{
+      'charges' 
+    },
     'plans': {
         'transform_usage' # BUG_13711 schema is wrong, should be an object not string
     },
@@ -177,6 +182,7 @@ FICKLE_FIELDS = {
     'subscriptions': set(),
     'products': set(),
     'invoice_items': set(),
+    'payment_intents': set(),
     'payouts': {
         'object', # expect 'transfer', get 'payout'
     },
@@ -209,6 +215,7 @@ FIELDS_ADDED_BY_TAP = {
     'subscription_items': set(), # `updated` is not added by the tap for child streams.
     'invoices': {'updated'},
     'plans': {'updated'},
+    'payment_intents': {'updated'},
     'invoice_line_items': {
         'invoice'
     },

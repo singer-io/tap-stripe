@@ -80,6 +80,7 @@ class BaseTapTest(unittest.TestCase):
             'events': default,
             'customers': default,
             'plans': default,
+            'payment_intents': default,
             'invoices': default,
             'invoice_items': {
                 self.AUTOMATIC_FIELDS: {"updated"},

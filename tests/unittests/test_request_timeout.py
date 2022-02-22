@@ -16,6 +16,7 @@ class TestRequestTimeoutValue(unittest.TestCase):
         config = { "client_secret": "test_secret", "account_id": "test_account", "start_date": "test_start_date", "request_timeout": 100}
         Context.config = config
         configure_stripe_client()
+        # Verify that the client is called with config provided request timeout
         mock_client.assert_called_with(timeout=100.0)
 
     @mock.patch('stripe.http_client.RequestsClient')
@@ -28,6 +29,7 @@ class TestRequestTimeoutValue(unittest.TestCase):
         config = {"client_secret": "test_secret", "account_id": "test_account", "start_date": "test_start_date"}
         Context.config = config
         configure_stripe_client()
+        # Verify that the client is called with default request timeout
         mock_client.assert_called_with(timeout=300.0)
 
     @mock.patch('stripe.http_client.RequestsClient')
@@ -40,6 +42,7 @@ class TestRequestTimeoutValue(unittest.TestCase):
         config = {"client_secret": "test_secret", "account_id": "test_account", "request_timeout": ""}
         Context.config = config
         configure_stripe_client()
+        # Verify that the client is called with default request timeout
         mock_client.assert_called_with(timeout=300.0)
         
     @mock.patch('stripe.http_client.RequestsClient')
@@ -52,6 +55,7 @@ class TestRequestTimeoutValue(unittest.TestCase):
         config = {"client_secret": "test_secret", "account_id": "test_account", "request_timeout": "100"}
         Context.config = config
         configure_stripe_client()
+        # Verify that the client is called with config provided request timeout
         mock_client.assert_called_with(timeout=100.0)
 
     @mock.patch('stripe.http_client.RequestsClient')
@@ -64,4 +68,5 @@ class TestRequestTimeoutValue(unittest.TestCase):
         config = {"client_secret": "test_secret", "account_id": "test_account", "request_timeout": 100.8}
         Context.config = config
         configure_stripe_client()
+        # Verify that the client is called with config provided float request timeout
         mock_client.assert_called_with(timeout=100.8)

@@ -529,7 +529,7 @@
       "application_fee_amount": {
           "type": [
             "null",
-            "string"
+            "integer"
           ]
       },
       "automatic_payment_methods": {
@@ -1072,8 +1072,22 @@
       "transfer_group": {
           "type": [
             "null",
-            "string"
-          ]
+            "object"
+          ],
+          "properties":{
+            "transfer_data": {
+                "amount": [
+                  "null",
+                  "integer"
+                ]
+            },
+            "destination": {
+                "amount": [
+                  "null",
+                  "integer"
+                ]
+            }
+          }
       },
       "updated": {
         "type": [

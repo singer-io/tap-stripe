@@ -96,9 +96,6 @@ STREAM_TO_EXPAND_FIELDS = {
 
     'customers': ['data.sources', 'data.subscriptions', 'data.tax_ids'],
     'plans': ['data.tiers'],
-    # To include whole payment_intent in the response, pass it in expand paramater.
-    # Reference: https://stripe.com/docs/api/charges/object#charge_object-payment_intent
-    'charges': ['data.payment_intent'],
     'invoice_items': ['data.plan.tiers'],
     'invoice_line_items': ['data.plan.tiers'],
     'subscriptions': ['data.plan.tiers'],

@@ -240,12 +240,7 @@ def list_all_object(stream, max_limit: int = 100, get_invoice_lines: bool = Fals
                 return [dict_obj]
             return dict_obj
 
-        elif stream == "charges":
-            # To include whole payment_intent in the response, pass it in expand paramater.
-            stripe_obj = client[stream].list(limit=max_limit, created={"gte": midnight}, expand=['data.payment_intent'])
-        else:
-            stripe_obj = client[stream].list(limit=max_limit, created={"gte": midnight})
-
+        stripe_obj = client[stream].list(limit=max_limit, created={"gte": midnight})
         dict_obj = stripe_obj_to_dict(stripe_obj)
         if dict_obj.get('data'):
             if not isinstance(dict_obj['data'], list):

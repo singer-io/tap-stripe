@@ -750,6 +750,105 @@
                     }
                 }
             },
+            "card": {
+                "type": [
+                  "null",
+                  "object"
+                ],
+                "properties": {
+                  "installments": {
+                      "type": [
+                        "null",
+                        "object"
+                      ],
+                      "properties": {
+                          "available_plans": {
+                            "type": [
+                              "null",
+                              "object"
+                            ],
+                            "properties": {
+                                "count": {
+                                    "type": [
+                                      "null",
+                                      "integer"
+                                    ]
+                                },
+                                "interval": {
+                                    "type": [
+                                      "null",
+                                      "string"
+                                    ]
+                                },
+                                "type": {
+                                  "type": [
+                                    "null",
+                                    "string"
+                                  ]
+                              }
+                            }
+                          },
+                          "enabled": {
+                              "type": [
+                                "null",
+                                "boolean"
+                              ]
+                          },
+                          "plan": {
+                              "type": [
+                                "null",
+                                "object"
+                              ],
+                              "properties": {
+                                  "count": {
+                                      "type": [
+                                        "null",
+                                        "integer"
+                                      ]
+                                  },
+                                  "interval": {
+                                      "type": [
+                                        "null",
+                                        "string"
+                                      ]
+                                  },
+                                  "type": {
+                                    "type": [
+                                      "null",
+                                      "string"
+                                    ]
+                                }
+                              }
+                          }
+                        }
+                  },
+                  "network": {
+                      "type": [
+                        "null",
+                        "string"
+                      ]
+                  },
+                  "request_three_d_secure": {
+                      "type": [
+                        "null",
+                        "string"
+                      ]
+                  },
+                  "setup_future_usage": {
+                      "type": [
+                        "null",
+                        "string"
+                      ]
+                  }
+                }
+            },
+            "card_present": {
+                "type": [
+                  "null",
+                  "object"
+                ],
+                "properties": {}
+            },
             "eps": {
                 "type": [
                   "null",

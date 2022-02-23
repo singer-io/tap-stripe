@@ -1084,7 +1084,7 @@
             "destination": {
                 "type": [
                   "null",
-                  "integer"
+                  "string"
                 ]
             }
           }

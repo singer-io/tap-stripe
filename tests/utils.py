@@ -246,7 +246,6 @@ def list_all_object(stream, max_limit: int = 100, get_invoice_lines: bool = Fals
         else:
             stripe_obj = client[stream].list(limit=max_limit, created={"gte": midnight})
 
-        stripe_obj = client[stream].list(limit=max_limit, created={"gte": midnight})
         dict_obj = stripe_obj_to_dict(stripe_obj)
         if dict_obj.get('data'):
             if not isinstance(dict_obj['data'], list):

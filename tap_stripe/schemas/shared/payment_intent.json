@@ -1075,14 +1075,14 @@
             "object"
           ],
           "properties":{
-            "transfer_data": {
-                "amount": [
+            "amount": {
+                "type": [
                   "null",
                   "integer"
                 ]
             },
             "destination": {
-                "amount": [
+                "type": [
                   "null",
                   "integer"
                 ]

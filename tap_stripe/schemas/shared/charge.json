@@ -11,12 +11,6 @@
       ],
       "properties": {}
     },
-    "event_type": {
-      "type": [
-        "null",
-        "string"
-      ]
-    },
     "fraud_details": {
       "type": [
         "null",

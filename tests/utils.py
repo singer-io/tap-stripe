@@ -547,6 +547,9 @@ def update_object(stream, oid):
 
             return None
         if stream == "payment_intents":
+            # payment_intents does not generate `updated` events on metadata update.
+            # Moreover, updating the payment_method will always require you to confirm the PaymentIntent. That's why here we are using confirm method.
+            # Reference: https://stripe.com/docs/api/payment_intents/update
             return client[stream].confirm(
                 oid, payment_method="pm_card_visa",
             )
@@ -560,7 +563,7 @@ def update_object(stream, oid):
 def delete_object(stream, oid):
     """Delete a specific record for a given object"""
     if stream in client:
-        if stream in {"payouts","charges","payment_intents"}:
+        if stream in {"payouts","charges"}:
             return None
 
             # return client[stream].cancel(oid)

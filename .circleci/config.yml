@@ -208,6 +208,14 @@ workflows:
           file: bookmarks
           requires:
             - 'Testing full_replication'
+      - run_integration_test:
+          name: 'Testing automatic_payout_transactions'
+          context:
+            - circleci-user
+            - tier-1-tap-user
+          file: automatic_payout_transactions
+          requires:
+            - 'Testing all_fields'
       - build:
           context:
             - circleci-user

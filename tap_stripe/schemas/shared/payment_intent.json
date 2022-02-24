@@ -1066,12 +1066,6 @@
       "transfer_data": {
           "type": [
             "null",
-            "string"
-          ]
-      },
-      "transfer_group": {
-          "type": [
-            "null",
             "object"
           ],
           "properties":{
@@ -1088,6 +1082,12 @@
                 ]
             }
           }
+      },
+      "transfer_group": {
+          "type": [
+            "null",
+            "string"
+          ]
       },
       "updated": {
         "type": [

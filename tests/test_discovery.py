@@ -74,6 +74,11 @@ class DiscoveryTest(BaseTapTest):
                 self.assertTrue(len(stream_properties) == 1,
                                 msg="There is more than one top level breadcrumb")
 
+                actual_fields = [md_entry.get("breadcrumb")[1] for md_entry in metadata if md_entry.get("breadcrumb") != []]
+
+                # verify there are no duplicate metadata entries
+                self.assertEqual(len(actual_fields), len(set(actual_fields)), msg = f"duplicates in the fields retrieved")
+                
                 # verify replication key(s)
                 actual = set(stream_properties[0].get("metadata", {self.REPLICATION_KEYS: []}).get(self.REPLICATION_KEYS) or [])
                 expected = self.expected_replication_keys()[stream] or set()

@@ -41,9 +41,7 @@ class StartDateTest(BaseTapTest):
         # IF THERE ARE STREAMS THAT SHOULD NOT BE TESTED
         # REPLACE THE EMPTY SET BELOW WITH THOSE STREAMS
         untested_streams = self.child_streams().union({
-            'disputes',
             'events',
-            'transfers',
             'payout_transactions'
         })
         our_catalogs = get_catalogs(conn_id, incremental_streams.difference(untested_streams))
@@ -118,6 +116,7 @@ class StartDateTest(BaseTapTest):
         # verify that at least one record synced and less records synced than the 1st connection
         self.assertGreater(second_total_records, 0)
         self.assertLess(first_total_records, second_total_records)
+        stream_primary_keys = self.expected_primary_keys()
 
         # validate that all newly created records are greater than the start_date
         for stream in incremental_streams.difference(untested_streams):
@@ -132,6 +131,21 @@ class StartDateTest(BaseTapTest):
                 # verify all data from 2nd sync >= start_date
                 target_mark = second_min_bookmarks.get(stream, {"mark": None})
                 target_value = next(iter(target_mark.values()))  # there should be only one
+                
+                record_count_1 = first_sync_record_count[stream]
+                record_count_2 = second_sync_record_count[stream]
+                primary_keys_list_1 = [tuple(message.get('data').get(expected_pk) for expected_pk in stream_primary_keys[stream])
+                                       for message in first_sync_records.get(stream).get('messages')
+                                       if message.get('action') == 'upsert']
+                primary_keys_list_2 = [tuple(message.get('data').get(expected_pk) for expected_pk in stream_primary_keys[stream])
+                                       for message in second_sync_records.get(stream).get('messages')
+                                       if message.get('action') == 'upsert']
+                primary_keys_sync_1 = set(primary_keys_list_1)
+                primary_keys_sync_2 = set(primary_keys_list_2)
+
+                # Verify by primary key values, that all records in the 1st sync are included in the 2nd sync.
+                self.assertTrue(
+                        primary_keys_sync_1.issubset(primary_keys_sync_2))
 
                 if target_value:
 

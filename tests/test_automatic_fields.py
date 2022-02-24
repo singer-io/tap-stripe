@@ -41,8 +41,6 @@ class MinimumSelectionTest(BaseTapTest):
             "subscriptions", # this will create a new plan and payment method
          }
         untested_streams = {
-            "disputes",
-            "transfers",
             "payout_transactions"
         }
         new_objects = {
@@ -59,8 +57,10 @@ class MinimumSelectionTest(BaseTapTest):
 
         # Run a sync job using orchestrator
         record_count_by_stream = self.run_and_verify_sync(conn_id)
+        synced_records = runner.get_records_from_target_output()
 
         actual_fields_by_stream = runner.examine_target_output_for_fields()
+        stream_primary_keys = self.expected_primary_keys()
 
         for stream in self.expected_streams().difference(untested_streams):
             with self.subTest(stream=stream):
@@ -80,3 +80,15 @@ class MinimumSelectionTest(BaseTapTest):
                     msg=("The fields sent to the target are not the automatic fields. Expected: {}, Actual: {}"
                          .format(actual, expected))
                 )
+                
+                # Only 1st half records belong to actual stream, next half records belong to events of that stream
+                # So, skipping records of events
+                actual_record_message = synced_records.get(stream).get('messages')[:len(synced_records.get(stream).get('messages'))//2]
+
+                primary_keys_list = [tuple([message.get('data').get(expected_pk) for expected_pk in stream_primary_keys[stream]])
+                                        for message in actual_record_message
+                                        if message.get('action') == 'upsert']
+
+                # Verify we did not have duplicate any records
+                self.assertCountEqual(set(primary_keys_list), primary_keys_list,
+                                      msg=f"We have duplicate records for {stream}")

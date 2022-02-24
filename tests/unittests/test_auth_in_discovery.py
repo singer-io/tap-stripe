@@ -28,8 +28,8 @@ class TestBasicAuthInDiscoverMode(unittest.TestCase):
     @mock.patch('stripe.http_client.requests.Session.request')
     def test_basic_auth_no_access_401(self, mock_request, mocked_discover, mocked_args):
         '''
-            Verify exception is raised for no access(401) error code for basic auth
-            and discover is called once for setup Context.
+            Verify exception is raised for no access(401) error code for authentication through sdk
+            and discover is called zero times for setup Context.
         '''
         mock_request.return_value = get_mock_http_response(401, {'error': {'message': 'Invalid API Key provided: test_secret', 'type': 'invalid_request_error'}})
         mocked_args.return_value = Args()
@@ -46,8 +46,8 @@ class TestBasicAuthInDiscoverMode(unittest.TestCase):
     @mock.patch('stripe.http_client.requests.Session.request')
     def test_basic_auth_access_200(self, mock_retrieve, mocked_discover, mocked_args):
         '''
-            Verify discover mode is called if basic auth credentials are valid
-            and discover function is called twice for setup Context and discover mode.
+            Verify discover mode is called if credentials are valid by setting up the client and calling the sdk function
+            and discover function is called once for setup Context and discover mode.
         '''
         mock_retrieve.return_value = get_mock_http_response(200, {"settings":{"dashboard": {"display_name": "Stitch"}}})
         mocked_args.return_value = Args()

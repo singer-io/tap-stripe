@@ -348,7 +348,7 @@
         "transform_usage": {
           "type": [
             "null",
-            "string"
+            "object"
           ]
         },
         "interval_count": {

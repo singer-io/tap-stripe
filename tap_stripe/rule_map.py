@@ -139,7 +139,8 @@ class RuleMap:
         # return original name of stream if it is not changed.
         return stream_name
 
-    def apply_rules_to_original_field(self, key):
+    @classmethod
+    def apply_rules_to_original_field(cls, key):
         """
         Apply defined rules on field.
         - Divide alphanumeric strings containing small letters followed by capital letters into multiple words and joined with underscores.

@@ -327,8 +327,8 @@ def add_child_into_metadata(schema, m_data, mdata, rule_map, parent=()):
                 mdata.get(breadcrumb).update({'original-name': rule_map[breadcrumb]})
 
     if schema.get('anyOf'):
-        for sc in schema.get('anyOf'):
-            add_child_into_metadata(sc, m_data, mdata, rule_map, parent)
+        for schema_fields in schema.get('anyOf'):
+            add_child_into_metadata(schema_fields, m_data, mdata, rule_map, parent)
 
     if schema and isinstance(schema, dict) and schema.get('items'):
         breadcrumb = parent + ('items',)

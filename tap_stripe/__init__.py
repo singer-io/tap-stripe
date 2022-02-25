@@ -290,6 +290,7 @@ def get_discovery_metadata(schema, key_properties, replication_method, replicati
         mdata = metadata.write(mdata, (), 'valid-replication-keys', [replication_key])
 
     if 'stream_name' in rule_map:
+        # Write original-name of stream name in top level metadata
         mdata = metadata.write(mdata, (), 'original-name', stream_name)
 
     for field_name in schema['properties'].keys():
@@ -298,31 +299,40 @@ def get_discovery_metadata(schema, key_properties, replication_method, replicati
         else:
             mdata = metadata.write(mdata, ('properties', field_name), 'inclusion', 'available')
 
-        add_child_into_metadta(schema['properties'][field_name], metadata, mdata, rule_map, ('properties', field_name), )
+        # Add metadata for nested(child) fields also if it's name is changed from original name.
+        add_child_into_metadata(schema['properties'][field_name], metadata, mdata, rule_map, ('properties', field_name), )
         if ('properties', field_name) in rule_map:
             mdata.get(('properties', field_name)).update({'original-name': rule_map[('properties', field_name)]})
 
     return metadata.to_list(mdata)
 
-def add_child_into_metadta(schema, metadata, mdata, rule_map, parent=()):
-
+def add_child_into_metadata(schema, m_data, mdata, rule_map, parent=()):
+    """
+    Add metadata for nested(child) fields also if it's name is changed from original name.
+    """
     if schema and isinstance(schema, dict) and schema.get('properties'):
         for key in schema['properties'].keys():
+            # prepare key to find original-name of field in rule_map object
+            # Key is tuple of items found in breadcrumb.
             breadcrumb = parent + ('properties', key)
 
-            add_child_into_metadta(schema['properties'][key], metadata, mdata, rule_map, breadcrumb)
-            
+            # Iterate in recursive manner to go through each field of schema.
+            add_child_into_metadata(schema['properties'][key], m_data, mdata, rule_map, breadcrumb)
+
             if breadcrumb in rule_map:
-                mdata = metadata.write(mdata, breadcrumb, 'inclusion', 'available')
+                # Update field name as standard name in breadcrumb if it is found in rule_map.
+                mdata = m_data.write(mdata, breadcrumb, 'inclusion', 'available')
+
+                # Add `original-name` field in metadata which contain actual name of field.
                 mdata.get(breadcrumb).update({'original-name': rule_map[breadcrumb]})
-    
+
     if schema.get('anyOf'):
         for sc in schema.get('anyOf'):
-            add_child_into_metadta(sc, metadata, mdata, rule_map, parent)
+            add_child_into_metadata(sc, m_data, mdata, rule_map, parent)
 
     if schema and isinstance(schema, dict) and schema.get('items'):
         breadcrumb = parent + ('items',)
-        add_child_into_metadta(schema['items'], metadata, mdata, rule_map, breadcrumb)
+        add_child_into_metadata(schema['items'], m_data, mdata, rule_map, breadcrumb)
 
 def discover(rule_map):
     raw_schemas = load_schemas()
@@ -331,7 +341,7 @@ def discover(rule_map):
     for stream_name, stream_map in STREAM_SDK_OBJECTS.items():
         schema = raw_schemas[stream_name]['schema']
         refs = load_shared_schema_refs()
-        
+
         # Get resolved schema
         resolved_schema = singer.resolve_schema_references(schema, refs)
 
@@ -517,7 +527,7 @@ def sync_stream(stream_name, api_stream_name, rule_map):
 
     stream_metadata = metadata.to_map(Context.get_catalog_entry(stream_name)['metadata'])
 
-    # Fill api-name in rule_map object
+    # Fill rule_map object by original-name available in metadata
     rule_map.fill_rule_map_object_by_catalog(stream_name, stream_metadata)
 
     stream_field_whitelist = json.loads(Context.config.get('whitelist_map', '{}')).get(stream_name)
@@ -537,7 +547,7 @@ def sync_stream(stream_name, api_stream_name, rule_map):
         sub_stream_name = rule_map.apply_rule_set_on_stream_name(SUB_STREAMS.get(api_stream_name))
     else:
         sub_stream_name = SUB_STREAMS.get(api_stream_name)
-    
+
     #sub_stream_name = SUB_STREAMS.get(stream_name)
 
     # If there is a sub-stream and its selected, get its bookmark (or the start date if no bookmark)
@@ -941,7 +951,7 @@ def sync(rule_map):
             api_stream_name = catalog_entry.get('metadata')[0].get('metadata').get('api-name')
         else:
             api_stream_name = stream_name
-            
+
         # Sync records for stream
         if Context.is_selected(stream_name) and not Context.is_sub_stream(api_stream_name):
             sync_stream(stream_name, api_stream_name, rule_map)
@@ -966,7 +976,7 @@ def main():
         if args.catalog:
             Context.catalog = args.catalog.to_dict()
         else:
-            Context.catalog = discover()
+            Context.catalog = discover(rule_map)
 
         Context.config = args.config
         Context.state = args.state

@@ -341,10 +341,13 @@ def discover(rule_map):
         # Get updated schema by applying rule map
         standard_resolved_schema = rule_map.apply_ruleset_on_schema(resolved_schema, stream_name)
 
+        # Get standard name of stream
+        standard_stream_name = rule_map.apply_rule_set_on_stream_name(stream_name)
+
         # create and add catalog entry
         catalog_entry = {
-            'stream': stream_name,
-            'tap_stream_id': stream_name,
+            'stream': standard_stream_name,
+            'tap_stream_id': standard_stream_name,
             'schema': standard_resolved_schema,
             'metadata': get_discovery_metadata(schema,
                                                stream_map['key_properties'],

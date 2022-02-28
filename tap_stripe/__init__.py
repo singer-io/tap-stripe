@@ -327,8 +327,8 @@ def add_child_into_metadata(schema, m_data, mdata, rule_map, parent=()):
                 mdata.get(breadcrumb).update({'original-name': rule_map[breadcrumb]})
 
     if schema.get('anyOf'):
-        for schema_fields in schema.get('anyOf'):
-            add_child_into_metadata(schema_fields, m_data, mdata, rule_map, parent)
+        for sc in schema.get('anyOf'):
+            add_child_into_metadata(sc, m_data, mdata, rule_map, parent)
 
     if schema and isinstance(schema, dict) and schema.get('items'):
         breadcrumb = parent + ('items',)
@@ -546,7 +546,8 @@ def sync_stream(stream_name, api_stream_name, rule_map):
     if SUB_STREAMS.get(api_stream_name):
         sub_stream_name = rule_map.apply_rule_set_on_stream_name(SUB_STREAMS.get(api_stream_name))
     else:
-        sub_stream_name = SUB_STREAMS.get(api_stream_name)
+        sub_stream_name = SUB_STREAMS.get(stream_name)
+
 
     #sub_stream_name = SUB_STREAMS.get(stream_name)
 
@@ -633,7 +634,12 @@ def sync_stream(stream_name, api_stream_name, rule_map):
                 # sync sub streams if its selected and the parent object
                 # is greater than its bookmark
                 if should_sync_sub_stream and stream_obj_created > sub_stream_bookmark:
-                    sync_sub_stream(sub_stream_name, stream_obj)
+                    # Fill api-name in rule_map object
+                    rule_map.fill_rule_map_object_by_catalog(sub_stream_name, metadata.to_map(
+                                            Context.get_catalog_entry(sub_stream_name)['metadata']
+                                        ))
+                    
+                    sync_sub_stream(sub_stream_name, stream_obj, rule_map)
 
             # Update stream/sub-streams bookmarks as stop window
             if stop_window > stream_bookmark:
@@ -681,7 +687,7 @@ def get_object_list_iterator(object_list):
 # we are in a cycle.
 INITIAL_SUB_STREAM_OBJECT_LIST_LENGTH = 10
 
-def sync_sub_stream(sub_stream_name, parent_obj, updates=False):
+def sync_sub_stream(sub_stream_name, parent_obj, rule_map, updates=False):
     """
     Given a parent object, retrieve its values for the specified substream.
     """
@@ -770,8 +776,9 @@ def sync_sub_stream(sub_stream_name, parent_obj, updates=False):
             elif sub_stream_name == "payout_transactions":
                 # payout_transactions is a join table
                 obj_ad_dict = {"id": obj_ad_dict['id'], "payout_id": parent_obj['id']}
-
-            rec = transformer.transform(unwrap_data_objects(obj_ad_dict),
+            
+            rec = rule_map.apply_ruleset_on_api_response(unwrap_data_objects(obj_ad_dict), sub_stream_name)
+            rec = transformer.transform(rec,
                                         Context.get_catalog_entry(sub_stream_name)['schema'],
                                         metadata.to_map(
                                             Context.get_catalog_entry(sub_stream_name)['metadata']
@@ -822,7 +829,7 @@ def recursive_to_dict(some_obj):
     # Else just return
     return some_obj
 
-def sync_event_updates(stream_name):
+def sync_event_updates(stream_name, api_stream_name, rule_map):
     '''
     Get updates via events endpoint
 
@@ -864,12 +871,16 @@ def sync_event_updates(stream_name):
 
         for events_obj in response.auto_paging_iter():
             event_resource_obj = events_obj.data.object
-            sub_stream_name = SUB_STREAMS.get(stream_name)
+            
+            if SUB_STREAMS.get(stream_name):
+                sub_stream_name = rule_map.apply_rule_set_on_stream_name(SUB_STREAMS.get(api_stream_name))
+            else:
+                sub_stream_name = SUB_STREAMS.get(stream_name)
 
 
             # Check whether we should sync the event based on its created time
             if not should_sync_event(events_obj,
-                                     STREAM_TO_TYPE_FILTER[stream_name]['object'],
+                                     STREAM_TO_TYPE_FILTER[api_stream_name]['object'],
                                      updated_object_timestamps):
                 continue
 
@@ -894,6 +905,8 @@ def sync_event_updates(stream_name):
                 rec = unwrap_data_objects(rec)
                 rec = reduce_foreign_keys(rec, stream_name)
                 rec["updated"] = events_obj.created
+                rec = rule_map.apply_ruleset_on_api_response(rec, stream_name)
+
                 rec = transformer.transform(
                     rec,
                     Context.get_catalog_entry(stream_name)['schema'],
@@ -914,7 +927,8 @@ def sync_event_updates(stream_name):
                         if sub_stream_name and Context.is_selected(sub_stream_name):
                             if event_resource_obj:
                                 sync_sub_stream(sub_stream_name,
-                                                event_resource_obj,
+                                                event_resource_obj, 
+                                                rule_map,
                                                 updates=True)
             if events_obj.created > max_created:
                 max_created = events_obj.created
@@ -957,7 +971,7 @@ def sync(rule_map):
             sync_stream(stream_name, api_stream_name, rule_map)
             # This prevents us from retrieving 'events.events'
             if STREAM_TO_TYPE_FILTER.get(api_stream_name):
-                sync_event_updates(stream_name)
+                sync_event_updates(stream_name, api_stream_name, rule_map)
 
 @utils.handle_top_exception(LOGGER)
 def main():

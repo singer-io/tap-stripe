@@ -638,7 +638,7 @@ def sync_stream(stream_name, api_stream_name, rule_map):
                     rule_map.fill_rule_map_object_by_catalog(sub_stream_name, metadata.to_map(
                                             Context.get_catalog_entry(sub_stream_name)['metadata']
                                         ))
-      
+
                     sync_sub_stream(sub_stream_name, stream_obj, rule_map)
 
             # Update stream/sub-streams bookmarks as stop window

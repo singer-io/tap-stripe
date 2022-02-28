@@ -441,9 +441,9 @@ def get_bookmark_for_sub_stream(stream_name):
     sub_stream_name = stream_name
     stream_name = PARENT_STREAM_MAP[stream_name]
     stream_metadata = metadata.to_map(Context.get_catalog_entry(stream_name)['metadata'])
-    
+
     replication_key = metadata.get(stream_metadata, (), 'valid-replication-keys')[0]
-    
+
     bookmark_value = get_bookmark_for_stream(sub_stream_name, replication_key)
     return bookmark_value
 
@@ -720,7 +720,7 @@ def sync_sub_stream(sub_stream_name, bookmark_value):
     """
     stream_name = PARENT_STREAM_MAP[sub_stream_name]
     stream_metadata = metadata.to_map(Context.get_catalog_entry(stream_name)['metadata'])
-    
+
     replication_key = metadata.get(stream_metadata, (), 'valid-replication-keys')[0]
     # Invoice Items bookmarks on `date`, but queries on `created`
     filter_key = replication_key
@@ -754,7 +754,7 @@ def sync_sub_stream(sub_stream_name, bookmark_value):
                 stream_name,
                 STREAM_SDK_OBJECTS[stream_name].get('request_args')):
             write_substream_records(sub_stream_name, parent_obj)
-               
+
         if stop_window > stream_bookmark:
             stream_bookmark = stop_window
             # Write bookmark for the stream

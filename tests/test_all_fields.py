@@ -37,6 +37,7 @@ KNOWN_MISSING_FIELDS = {
     'invoices': set()
 }
 
+# `updated_by_event_type` field's value available in the records only if records are emitted by `event_updates`.
 FIELDS_TO_NOT_CHECK = {
     'customers': {
         # Below fields are deprecated or renamed.(https://stripe.com/docs/upgrades#2019-10-17, https://stripe.com/docs/upgrades#2019-12-03)
@@ -44,26 +45,32 @@ FIELDS_TO_NOT_CHECK = {
         'tax_info',
         'tax_info_verification',
         'cards',
-        'default_card'
+        'default_card',
+        'updated_by_event_type'
     },
     'subscriptions':{
         # Below fields are deprecated or renamed.(https://stripe.com/docs/upgrades#2019-10-17, https://stripe.com/docs/upgrades#2019-12-03, https://stripe.com/docs/upgrades#2020-08-27)
         'billing',
         'start',
         'tax_percent',
-        'invoice_customer_balance_settings'
+        'invoice_customer_balance_settings',
+        'updated_by_event_type'
     },
     'products':{
         # Below fields are available in the product record only if the value of the type field is `service`.
         # But, currently, during crud operation in all_fields test case, it creates product records of type `good`.
         'statement_descriptor',
-        'unit_label'  
+        'unit_label',
+        'updated_by_event_type'
     },
     'coupons':{
         # Field is not available in stripe documentation and also not returned by API response.(https://stripe.com/docs/api/coupons/object)
-        'percent_off_precise'
+        'percent_off_precise',
+        'updated_by_event_type'
     },
-    'invoice_items':set(),
+    'invoice_items':{
+        'updated_by_event_type'
+    },
     'payouts':{
 
         # Following fields are not mentioned in the documentation and also not returned by API (https://stripe.com/docs/api/payouts/object)
@@ -73,12 +80,14 @@ FIELDS_TO_NOT_CHECK = {
         'bank_account',
         'date',
         'amount_reversed',
-        'recipient'
+        'recipient',
+        'updated_by_event_type'
     },
     'charges': {
         # Following both fields `card` and `statement_description` are deprecated. (https://stripe.com/docs/upgrades#2015-02-18, https://stripe.com/docs/upgrades#2014-12-17)
         'card',
-        'statement_description'
+        'statement_description',
+        'updated_by_event_type'
     },
     'subscription_items':{
         # Field is not available in stripe documentation and also not returned by API response. (https://stripe.com/docs/api/subscription_items/object)
@@ -111,19 +120,24 @@ FIELDS_TO_NOT_CHECK = {
         'statement_description',
         'payment'
         'paid_out_of_band',
+        'updated_by_event_type'
     },
     'plans': {
         # Below fields are deprecated or renamed. (https://stripe.com/docs/upgrades#2018-02-05, https://stripe.com/docs/api/plans/object)
         'statement_descriptor',
         'statement_description',
         'name',
+        'updated_by_event_type',
         'tiers' # Field is not returned by API
     },
     'invoice_line_items': {
         # As per stripe documentation(https://stripe.com/docs/api/invoices/line_item#invoice_line_item_object-subscription_item),
         # 'subscription_item' is field that generated invoice item. It does not replicate in response if the line item is not an explicit result of a subscription.
         # So, due to uncertainty of this field, skipped it.
-        'subscription_item'
+        'subscription_item',
+        # As per stripe documentation(https://stripe.com/docs/api/invoices/line_item#invoice_line_item_object-invoice_item),
+        # 'invoice_item' is id of invoice item associated wih this line if any. # So, due to uncertainty of this field, skipped it.
+        'invoice_item'
     }
 }
 
@@ -394,6 +408,7 @@ class ALlFieldsTest(BaseTapTest):
                 # To avoid warning, skipping fields of FIELDS_TO_NOT_CHECK
                 schema_keys = schema_keys - FIELDS_TO_NOT_CHECK.get(stream, set())
                 actual_records_keys = actual_records_keys - FIELDS_TO_NOT_CHECK[stream]
+                expected_records_keys = expected_records_keys - FIELDS_TO_NOT_CHECK[stream]
 
                 # Append fields which are added by tap to expectation
                 adjusted_expected_keys = expected_records_keys.union(

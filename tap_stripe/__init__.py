@@ -327,8 +327,8 @@ def add_child_into_metadata(schema, m_data, mdata, rule_map, parent=()):
                 mdata.get(breadcrumb).update({'original-name': rule_map[breadcrumb]})
 
     if schema.get('anyOf'):
-        for sc in schema.get('anyOf'):
-            add_child_into_metadata(sc, m_data, mdata, rule_map, parent)
+        for schema_fields in schema.get('anyOf'):
+            add_child_into_metadata(schema_fields, m_data, mdata, rule_map, parent)
 
     if schema and isinstance(schema, dict) and schema.get('items'):
         breadcrumb = parent + ('items',)
@@ -638,7 +638,7 @@ def sync_stream(stream_name, api_stream_name, rule_map):
                     rule_map.fill_rule_map_object_by_catalog(sub_stream_name, metadata.to_map(
                                             Context.get_catalog_entry(sub_stream_name)['metadata']
                                         ))
-                    
+      
                     sync_sub_stream(sub_stream_name, stream_obj, rule_map)
 
             # Update stream/sub-streams bookmarks as stop window
@@ -776,7 +776,7 @@ def sync_sub_stream(sub_stream_name, parent_obj, rule_map, updates=False):
             elif sub_stream_name == "payout_transactions":
                 # payout_transactions is a join table
                 obj_ad_dict = {"id": obj_ad_dict['id'], "payout_id": parent_obj['id']}
-            
+
             rec = rule_map.apply_ruleset_on_api_response(unwrap_data_objects(obj_ad_dict), sub_stream_name)
             rec = transformer.transform(rec,
                                         Context.get_catalog_entry(sub_stream_name)['schema'],
@@ -871,7 +871,7 @@ def sync_event_updates(stream_name, api_stream_name, rule_map):
 
         for events_obj in response.auto_paging_iter():
             event_resource_obj = events_obj.data.object
-            
+
             if SUB_STREAMS.get(stream_name):
                 sub_stream_name = rule_map.apply_rule_set_on_stream_name(SUB_STREAMS.get(api_stream_name))
             else:
@@ -927,7 +927,7 @@ def sync_event_updates(stream_name, api_stream_name, rule_map):
                         if sub_stream_name and Context.is_selected(sub_stream_name):
                             if event_resource_obj:
                                 sync_sub_stream(sub_stream_name,
-                                                event_resource_obj, 
+                                                event_resource_obj,
                                                 rule_map,
                                                 updates=True)
             if events_obj.created > max_created:

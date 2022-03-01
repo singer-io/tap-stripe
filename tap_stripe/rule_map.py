@@ -176,9 +176,7 @@ class RuleMap:
         if isinstance(response, dict):
             for key, value in response.items():
                 if isinstance(value, list) and value:
-                    if parent == ():
-                        parent = parent  + ('properties', key)
-                    breadcrumb = parent + ('items',)
+                    breadcrumb = parent  + ('properties', key, 'items')
                     # Iterate through each item of list
                     for vl in value:
                         self.apply_ruleset_on_api_response(vl, stream_name, breadcrumb)

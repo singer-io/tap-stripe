@@ -57,10 +57,8 @@ class MinimumSelectionTest(BaseTapTest):
 
         # Run a sync job using orchestrator
         record_count_by_stream = self.run_and_verify_sync(conn_id)
-        synced_records = runner.get_records_from_target_output()
 
         actual_fields_by_stream = runner.examine_target_output_for_fields()
-        stream_primary_keys = self.expected_primary_keys()
 
         for stream in self.expected_streams().difference(untested_streams):
             with self.subTest(stream=stream):

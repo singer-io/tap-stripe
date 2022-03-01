@@ -310,6 +310,7 @@ class BaseTapTest(unittest.TestCase):
                                    'schema': batch['schema'],
                                    'key_names' : batch.get('key_names'),
                                    'table_version': batch.get('table_version')}
+            # add the records which are created in the created dictionary
             created[stream]['messages'] += [m for m in batch['messages']
                                                 if m['data'].get("updated") == m['data'].get(bookmark_key)]
 
@@ -318,7 +319,7 @@ class BaseTapTest(unittest.TestCase):
                                    'schema': batch['schema'],
                                    'key_names' : batch.get('key_names'),
                                    'table_version': batch.get('table_version')}
-
+            # add the records which are updated in the updated dictionary
             updated[stream]['messages'] += [m for m in batch['messages']
                                                 if m['data'].get("updated") != m['data'].get(bookmark_key)]
         return created, updated

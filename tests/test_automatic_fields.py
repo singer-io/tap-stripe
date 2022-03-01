@@ -80,15 +80,3 @@ class MinimumSelectionTest(BaseTapTest):
                     msg=("The fields sent to the target are not the automatic fields. Expected: {}, Actual: {}"
                          .format(actual, expected))
                 )
-                
-                # Only 1st half records belong to actual stream, next half records belong to events of that stream, and filtering the 
-                # streams isn't possible as it would require non-automatic field `updated_by_event_type`. So, skipping records of events
-                actual_record_message = synced_records.get(stream).get('messages')[:len(synced_records.get(stream).get('messages'))//2]
-
-                primary_keys_list = [tuple([message.get('data').get(expected_pk) for expected_pk in stream_primary_keys[stream]])
-                                        for message in actual_record_message
-                                        if message.get('action') == 'upsert']
-
-                # Verify we did not have duplicate any records
-                self.assertCountEqual(set(primary_keys_list), primary_keys_list,
-                                      msg=f"We have duplicate records for {stream}")

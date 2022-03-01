@@ -395,15 +395,21 @@ class ALlFieldsTest(BaseTapTest):
 
                 # collect actual values
                 actual_records = synced_records.get(stream)
-                # Only 1st half records belong to actual stream, next half records belong to events of that stream
-                # So, skipping records of events
-                actual_record_message = actual_records.get('messages')[:len(actual_records.get('messages'))//2]
-                actual_records_data = [message['data'] for message in actual_record_message]
+                # Get the actual stream records based on the newly added field `updated_by_event_type` 
+                # as the events endpoints is not the latest version and hence returns deprecated fields also.
+                actual_record_message = actual_records.get('messages')
+                actual_records_data = [message['data'] for message in actual_record_message
+                                       if not message.get('data').get('updated_by_event_type', None)]
+
                 actual_records_keys = set()
                 for message in actual_record_message:
-                    if message['action'] == 'upsert':
+                    if message['action'] == 'upsert' and not message.get('data').get('updated_by_event_type', None):
                         actual_records_keys.update(set(message['data'].keys()))
                 schema_keys = set(self.expected_schema_keys(stream)) # read in from schema files
+
+                # Get event based records based on the newly added field `updated_by_event_type`
+                events_records_data = [message['data'] for message in actual_record_message
+                                       if message.get('data').get('updated_by_event_type', None)]
 
                 # To avoid warning, skipping fields of FIELDS_TO_NOT_CHECK
                 schema_keys = schema_keys - FIELDS_TO_NOT_CHECK.get(stream, set())
@@ -427,7 +433,7 @@ class ALlFieldsTest(BaseTapTest):
                 )
                 if stream == 'invoice_items':
                     adjusted_actual_keys = adjusted_actual_keys.union({'subscription_item'})  # BUG_13666
-                    
+
                 self.assertSetEqual(adjusted_expected_keys, adjusted_actual_keys)
 
                 # verify the missing fields from KNOWN_MISSING_FIELDS are always missing (stability check)
@@ -440,12 +446,20 @@ class ALlFieldsTest(BaseTapTest):
                 actual_pks = [tuple(actual_record.get(pk) for pk in primary_keys) for actual_record in actual_records_data]
                 actual_pks_set = set(actual_pks)
                 # self.assertEqual(len(actual_pks_set), len(actual_pks))  # BUG_9720
+                # assert unique primary keys for actual records
                 self.assertLessEqual(len(actual_pks_set), len(actual_pks))
 
                 # Verify there are no duplicate pks in our expectations
                 expected_pks = [tuple(expected_record.get(pk) for pk in primary_keys) for expected_record in expected_records]
                 expected_pks_set = set(expected_pks)
                 self.assertEqual(len(expected_pks_set), len(expected_pks))
+
+                # Get event-based pks based on the newly added field `updated_by_event_type` and verify 
+                # there are no duplicate pks in our expectations
+                events_based_actual_pks = [tuple(event_record.get(pk) for pk in primary_keys) for event_record in events_records_data]
+                events_based_actual_pks_set = set(events_based_actual_pks)
+                # Verify unique primary keys for event-based records
+                self.assertLessEqual(len(events_based_actual_pks_set), len(events_based_actual_pks))
 
                 # Verify by pks, that we replicated the expected records
                 self.assertTrue(actual_pks_set.issuperset(expected_pks_set))

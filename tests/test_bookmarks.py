@@ -273,6 +273,9 @@ class BookmarkTest(BaseTapTest):
 
                 # Verify updated fields are replicated as expected
                 if stream == "payment_intents":
+                    # payment_intents stream does not generate any event on the update of the metadata field.
+                    # payment_intent can be confirmed by updating the payment_method field and it generates succeeds event.
+                    # So, for the payment_intents stream, we are verifying updates for the payment_method field.
                     for updated_record in updated_records[stream]:
                         updated_pk_value = updated_record.get('id')
                         sync_records_payment_method = [sync_record.get('payment_method')

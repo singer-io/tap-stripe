@@ -175,14 +175,14 @@ class RuleMap:
         temp_dict = {}
         if isinstance(response, dict):
             for key, value in response.items():
-                if isinstance(response, list) and value:
+                if isinstance(value, list) and value:
                     if parent == ():
                         parent = parent  + ('properties', key)
                     breadcrumb = parent + ('items',)
                     # Iterate through each item of list
                     for vl in value:
                         self.apply_ruleset_on_api_response(vl, stream_name, breadcrumb)
-                elif isinstance(response, dict):
+                elif isinstance(value, dict):
                     breadcrumb = parent  + ('properties', key)
                     self.apply_ruleset_on_api_response(value, stream_name, breadcrumb)
                 else:

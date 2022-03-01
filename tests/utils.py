@@ -245,6 +245,13 @@ def list_all_object(stream, max_limit: int = 100, get_invoice_lines: bool = Fals
         if dict_obj.get('data'):
             if not isinstance(dict_obj['data'], list):
                 return [dict_obj['data']]
+            
+            if stream == "payment_intents":
+                for obj in dict_obj['data']:
+                    obj['charges'] = obj['charges'].get('data', [])
+                    for charge in obj['charges']:
+                        if not isinstance(charge.get('refunds'), list):
+                            charge['refunds'] = []
             return dict_obj['data']
 
         if not isinstance(dict_obj, list):
@@ -270,6 +277,18 @@ def standard_create(stream):
             max_redemptions=1000000
         )
     elif stream == 'payment_intents':
+        # Sometime due to insufficient balance, stripe throws error while creating records for other streams like charges.
+        # Create payment intent to add balance in test data with `confirm` param as true. Without `confirm` param stripe does not add balance.
+        # Reference for failure: https://app.circleci.com/pipelines/github/singer-io/tap-stripe/1278/workflows/e1bc336d-a468-4b6d-b8a2-bc2dde0768f6/jobs/4239
+        client[stream].create(
+            amount=random.randint(100, 10000),
+            currency="usd",
+            customer="cus_LAXuu6qTrq8LSf",
+            confirm=True
+        )
+
+        # Creating record for payment_intents without `confirm` param. Because confirmed payment_intents can't be updated later on and
+        # we require to update record for event_updates test case.
         return client[stream].create(
             amount=random.randint(100, 10000),
             currency="usd",

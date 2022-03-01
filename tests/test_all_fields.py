@@ -156,9 +156,7 @@ KNOWN_FAILING_FIELDS = {
     'invoices': {
         'plans', # BUG_12478 | missing subfields
     },
-    'payment_intents':{
-      'charges' 
-    },
+    'payment_intents':set(),
     'plans': {
         'transform_usage' # BUG_13711 schema is wrong, should be an object not string
     },
@@ -248,6 +246,7 @@ class ALlFieldsTest(BaseTapTest):
         # Create data prior to first sync
         cls.streams_to_test = {
             "customers",
+            "payment_intents",
             "charges",
             "coupons",
             "invoice_items",

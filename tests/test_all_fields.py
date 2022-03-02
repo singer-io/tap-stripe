@@ -18,57 +18,120 @@ from utils import \
 #             Fields that are consistently missing during replication
 #             Original Ticket [https://stitchdata.atlassian.net/browse/SRCE-4736]
 KNOWN_MISSING_FIELDS = {
-    'customers':{
-        'tax_ids',
-    },
+    'customers':set(),
     'subscriptions':{
         'payment_settings',
         'default_tax_rates',
         'pending_update',
         'automatic_tax',
     },
-    'products':{
-        'skus',
-        'tax_code',
-    },
+    'products':set(),
     'invoice_items':{
         'price',
     },
-    'payouts':{
-        'application_fee',
-        'reversals',
-        'reversed',
-    },
+    'payouts':set(),
     'charges': set(),
+    'subscription_items': set(),
+    'plans': set(),
+    'invoice_line_items': set(),
+    'invoices': set()
+}
+
+FIELDS_TO_NOT_CHECK = {
+    'customers': {
+        # Below fields are deprecated or renamed.(https://stripe.com/docs/upgrades#2019-10-17, https://stripe.com/docs/upgrades#2019-12-03)
+        'account_balance',
+        'tax_info',
+        'tax_info_verification',
+        'cards',
+        'default_card'
+    },
+    'subscriptions':{
+        # Below fields are deprecated or renamed.(https://stripe.com/docs/upgrades#2019-10-17, https://stripe.com/docs/upgrades#2019-12-03, https://stripe.com/docs/upgrades#2020-08-27)
+        'billing',
+        'start',
+        'tax_percent',
+        'invoice_customer_balance_settings'
+    },
+    'products':{
+        # Below fields are available in the product record only if the value of the type field is `service`.
+        # But, currently, during crud operation in all_fields test case, it creates product records of type `good`.
+        'statement_descriptor',
+        'unit_label'  
+    },
+    'coupons':{
+        # Field is not available in stripe documentation and also not returned by API response.(https://stripe.com/docs/api/coupons/object)
+        'percent_off_precise'
+    },
+    'invoice_items':set(),
+    'payouts':{
+
+        # Following fields are not mentioned in the documentation and also not returned by API (https://stripe.com/docs/api/payouts/object)
+        'statement_description',
+        'transfer_group',
+        'source_transaction',
+        'bank_account',
+        'date',
+        'amount_reversed',
+        'recipient'
+    },
+    'charges': {
+        # Following both fields `card` and `statement_description` are deprecated. (https://stripe.com/docs/upgrades#2015-02-18, https://stripe.com/docs/upgrades#2014-12-17)
+        'card',
+        'statement_description'
+    },
     'subscription_items':{
-        'tax_rates',
-        'price',
-        'updated',
+        # Field is not available in stripe documentation and also not returned by API response. (https://stripe.com/docs/api/subscription_items/object)
+      'current_period_end',
+      'customer',
+      'trial_start',
+      'discount',
+      'start',
+      'tax_percent',
+      'livemode',
+      'application_fee_percent',
+      'status',
+      'trial_end',
+      'ended_at',
+      'current_period_start',
+      'canceled_at',
+      'cancel_at_period_end'
     },
     'invoices':{
-        'payment_settings',
-        'on_behalf_of',
-        'custom_fields',
-        'automatic_tax',
-        'quote',
+        # Below fields are deprecated or renamed.(https://stripe.com/docs/upgrades#2019-03-14, https://stripe.com/docs/upgrades#2019-10-17, https://stripe.com/docs/upgrades#2018-08-11
+        # https://stripe.com/docs/upgrades#2020-08-27)
+        'application_fee',
+        'billing',
+        'closed',
+        'date',
+        # This field is deprcated in the version 2020-08-27
+        'finalized_at',
+        'forgiven',
+        'tax_percent',
+        'statement_description',
+        'payment'
         'paid_out_of_band',
     },
-    'plans': set(),
-    'invoice_line_items': {
-        'tax_rates',
-        'unique_id',
-        'updated',
-        'price',
+    'plans': {
+        # Below fields are deprecated or renamed. (https://stripe.com/docs/upgrades#2018-02-05, https://stripe.com/docs/api/plans/object)
+        'statement_descriptor',
+        'statement_description',
+        'name',
+        'tiers' # Field is not returned by API
     },
+    'invoice_line_items': {
+        # As per stripe documentation(https://stripe.com/docs/api/invoices/line_item#invoice_line_item_object-subscription_item),
+        # 'subscription_item' is field that generated invoice item. It does not replicate in response if the line item is not an explicit result of a subscription.
+        # So, due to uncertainty of this field, skipped it.
+        'subscription_item'
+    }
 }
 
 KNOWN_FAILING_FIELDS = {
     'coupons': {
         'percent_off', # BUG_9720 | Decimal('67') != Decimal('66.6') (value is changing in duplicate records)
     },
-    'customers': {
-        'discount',  # BUG_12478 | missing subfields in coupon where coupon is subfield within discount
-    },
+    'customers': set(),
     'subscriptions': {
         # BUG_12478 | missing subfields in coupon where coupon is subfield within discount
         # BUG_12478 | missing subfields on discount ['checkout_session', 'id', 'invoice', 'invoice_item', 'promotion_code']
@@ -89,14 +152,12 @@ KNOWN_FAILING_FIELDS = {
         'plan',
     },
     'invoices': {
-        'discount', # BUG_12478 | missing subfields
         'plans', # BUG_12478 | missing subfields
-        'finalized_at', # BUG_13711 | schema missing datetime format
-        'created', # BUG_13711 | schema missing datetime format
     },
     'plans': {
         'transform_usage' # BUG_13711 schema is wrong, should be an object not string
     },
+    'invoice_line_items': set()
     # 'invoice_line_items': { # TODO This is a test issue that prevents us from consistently passing
     #     'unique_line_item_id',
     #     'invoice_item',
@@ -145,16 +206,19 @@ FIELDS_ADDED_BY_TAP = {
     },
     'payouts': {'updated'},
     'charges': {'updated'},
-    'subscription_items': {'updated'},
+    'subscription_items': set(), # `updated` is not added by the tap for child streams.
     'invoices': {'updated'},
     'plans': {'updated'},
     'invoice_line_items': {
-        'updated',
-        'invoice',
-        'subscription_item'
+        'invoice'
     },
 }
 
+# As for the `price` field added in the schema, the API doc doesn't mention any
+# `trial_period_days` in the field, hence skipping the assertion error for the same.
+KNOWN_NESTED_MISSING_FIELDS = {
+    'subscription_items': {'price': 'recurring.trial_period_days'}
+}
 
 class ALlFieldsTest(BaseTapTest):
     """Test tap sets a bookmark and respects it for the next sync of a stream"""
@@ -252,11 +316,28 @@ class ALlFieldsTest(BaseTapTest):
                 # run the test
                 self.all_fields_test(streams_to_test)
 
+    def find_nested_key(self, nested_key, actual_field_value, field):
+        '''
+        Find the nested key that is failing in the field and ignore the assertion error
+        gained from it, if any.
+        '''
+        for field_name, each_keys in nested_key.items():
+            # split the keys through `.`, for getting the nested keys
+            keys = each_keys.split('.')
+            temp_value = actual_field_value
+            if field == field_name:
+                for failing_key in keys:
+                    # if the failing key is not present in the actual key or not
+                    if not temp_value.get(failing_key, None):
+                        return False
+                    else:
+                        temp_value = temp_value.get(failing_key)
+                        if keys[-1] in temp_value:
+                            return True
 
     def all_fields_test(self, streams_to_test):
         """
         Verify that for each stream data is synced when all fields are selected.
-
         Verify the synced data matches our expectations based off of the applied schema
         and results from the test client utils.
         """
@@ -300,30 +381,38 @@ class ALlFieldsTest(BaseTapTest):
 
                 # collect actual values
                 actual_records = synced_records.get(stream)
-                actual_records_data = [message['data'] for message in actual_records.get('messages')]
+                # Only 1st half records belong to actual stream, next half records belong to events of that stream
+                # So, skipping records of events
+                actual_record_message = actual_records.get('messages')[:len(actual_records.get('messages'))//2]
+                actual_records_data = [message['data'] for message in actual_record_message]
                 actual_records_keys = set()
-                for message in actual_records['messages']:
+                for message in actual_record_message:
                     if message['action'] == 'upsert':
                         actual_records_keys.update(set(message['data'].keys()))
                 schema_keys = set(self.expected_schema_keys(stream)) # read in from schema files
 
+                # To avoid warning, skipping fields of FIELDS_TO_NOT_CHECK
+                schema_keys = schema_keys - FIELDS_TO_NOT_CHECK.get(stream, set())
+                actual_records_keys = actual_records_keys - FIELDS_TO_NOT_CHECK[stream]
 
-                # Log the fields that are included in the schema but not in the expectations.
-                # These are fields we should strive to get data for in our test data set
-                if schema_keys.difference(expected_records_keys):
-                    print("WARNING Stream[{}] Fields missing from expectations: [{}]".format(
-                        stream, schema_keys.difference(expected_records_keys)
-                    ))
-
-                # Verify schema covers all fields
+                # Append fields which are added by tap to expectation
                 adjusted_expected_keys = expected_records_keys.union(
                     FIELDS_ADDED_BY_TAP.get(stream, set())
                 )
+
+                # Log the fields that are included in the schema but not in the expectations.
+                # These are fields we should strive to get data for in our test data set
+                if schema_keys.difference(adjusted_expected_keys):
+                    print("WARNING Stream[{}] Fields missing from expectations: [{}]".format(
+                        stream, schema_keys.difference(adjusted_expected_keys)
+                    ))
+
                 adjusted_actual_keys = actual_records_keys.union(  # BUG_12478
                     KNOWN_MISSING_FIELDS.get(stream, set())
                 )
                 if stream == 'invoice_items':
                     adjusted_actual_keys = adjusted_actual_keys.union({'subscription_item'})  # BUG_13666
+                    
                 self.assertSetEqual(adjusted_expected_keys, adjusted_actual_keys)
 
                 # verify the missing fields from KNOWN_MISSING_FIELDS are always missing (stability check)
@@ -394,6 +483,11 @@ class ALlFieldsTest(BaseTapTest):
                                 expected_field_value = expected_record.get(field, "EXPECTED IS MISSING FIELD")
                                 actual_field_value = actual_record.get(field, "ACTUAL IS MISSING FIELD")
 
+                                # to fix the failure warning of `created` for `invoices` stream
+                                # BUG_13711 | the schema was missing datetime format and the tests were throwing a warning message.
+                                # Hence, a workaround to remove that warning message.
+                                if stream == 'invoices' and expected_field_value != "EXPECTED IS MISSING FIELD" and field == 'created':
+                                    expected_field_value = int(self.dt_to_ts(expected_field_value))
                                 try:
 
                                     self.assertEqual(expected_field_value, actual_field_value)
@@ -401,9 +495,13 @@ class ALlFieldsTest(BaseTapTest):
                                 except AssertionError as failure_1:
 
                                     print(f"WARNING {base_err_msg} failed exact comparison.\n"
-                                          f"AssertionError({failure_1})")
+                                        f"AssertionError({failure_1})")
 
-                                    if field in KNOWN_FAILING_FIELDS[stream]:
+                                    nested_key = KNOWN_NESTED_MISSING_FIELDS.get(stream, {})
+                                    if self.find_nested_key(nested_key, expected_field_value, field):
+                                        continue
+
+                                    if field in KNOWN_FAILING_FIELDS[stream] or field in FIELDS_TO_NOT_CHECK[stream]:
                                         continue # skip the following wokaround
 
                                     elif actual_field_value and field in FICKLE_FIELDS[stream]:

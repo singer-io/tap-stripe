@@ -107,7 +107,7 @@ SUB_STREAMS = {
 
 # NB: These streams will only sync through once for creates, never updates.
 IMMUTABLE_STREAMS = {'balance_transactions', 'events'}
-IMMUTABLE_STREAM_LOOKBACK = 600 # 10 min in epoch time, Stripe accuracy is to the second. Jira link: https://jira.talendforge.org/browse/TDL-14339
+IMMUTABLE_STREAM_LOOKBACK = 600 # 10 min in epoch time, Stripe accuracy is to the second. Issue: TDL-14339
 
 LOGGER = singer.get_logger()
 

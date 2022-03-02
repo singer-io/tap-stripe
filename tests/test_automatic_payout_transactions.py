@@ -3,6 +3,9 @@ from tap_tester import runner, connections
 from base import BaseTapTest
 
 def get_payouts():
+    """
+        Return all the payouts (with pagination), to determine the automatic and non-automatic payouts
+    """
     # list of all data to return
     data = []
     # api call of 1st page
@@ -31,6 +34,9 @@ class AutomaticPayoutTransactionTest(BaseTapTest):
 
     @classmethod
     def setUpClass(cls):
+        """
+            Create list of automatic and non-automatic payouts used for assertion
+        """
         # get all the payouts
         payouts = get_payouts()
 
@@ -81,7 +87,8 @@ class AutomaticPayoutTransactionTest(BaseTapTest):
             self.assertTrue(self.payouts_with_automatic_true is not None)
             self.assertTrue(self.payouts_with_automatic_false is not None)
 
-            # loop over all the payout ids from the payout transactions
+            # loop over all the payout ids from the payout transactions to verify
+            # that we collected "payout transactions" of automatic payouts only
             for id in payout_transaction_payout_ids:
                 # verify that we collect payout transaction record for payout containing "automatic": True
                 self.assertTrue(id in self.payouts_with_automatic_true)

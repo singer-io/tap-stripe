@@ -421,6 +421,9 @@ def get_bookmark_for_stream(stream_name, replication_key):
     return stream_bookmark
 
 def get_bookmark_for_sub_stream(stream_name):
+    """
+    Get the bookmark for the child-stream based on the parent's replication key.
+    """
     child_stream = stream_name
     # Get the parent for the stream
     parent_stream = PARENT_STREAM_MAP[child_stream]
@@ -895,6 +898,9 @@ def sync_event_updates(stream_name, bookmark_value):
     singer.write_state(Context.state)
 
 def sync():
+    """
+    The sync function called for the sync mode.
+    """
     # Write all schemas and init count to 0
     for catalog_entry in Context.catalog['streams']:
         stream_name = catalog_entry["tap_stream_id"]

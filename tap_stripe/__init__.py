@@ -242,23 +242,6 @@ class DependencyException(Exception):
     pass
 
 
-def validate_dependencies():
-    errs = []
-    msg_tmpl = ("Unable to extract {0} data. "
-                "To receive {0} data, you also need to select {1}.")
-
-    for catalog_entry in Context.catalog['streams']:
-        stream_id = catalog_entry['tap_stream_id']
-        sub_stream_id = SUB_STREAMS.get(stream_id)
-        if sub_stream_id:
-            if Context.is_selected(sub_stream_id) and not Context.is_selected(stream_id):
-                # throw error here
-                errs.append(msg_tmpl.format(sub_stream_id, stream_id))
-
-    if errs:
-        raise DependencyException(" ".join(errs))
-
-
 def get_abs_path(path):
     return os.path.join(os.path.dirname(os.path.realpath(__file__)), path)
 
@@ -438,13 +421,13 @@ def get_bookmark_for_stream(stream_name, replication_key):
     return stream_bookmark
 
 def get_bookmark_for_sub_stream(stream_name):
-    sub_stream_name = stream_name
-    stream_name = PARENT_STREAM_MAP[stream_name]
-    stream_metadata = metadata.to_map(Context.get_catalog_entry(stream_name)['metadata'])
-
-    replication_key = metadata.get(stream_metadata, (), 'valid-replication-keys')[0]
-
-    bookmark_value = get_bookmark_for_stream(sub_stream_name, replication_key)
+    child_stream = stream_name
+    # Get the parent for the stream
+    parent_stream = PARENT_STREAM_MAP[child_stream]
+    # Get the replication key
+    replication_key = STREAM_REPLICATION_KEY[parent_stream]
+    # Get the bookmark value of the child stream
+    bookmark_value = get_bookmark_for_stream(child_stream, replication_key)
     return bookmark_value
 
 def write_bookmark_for_stream(stream_name, replication_key, stream_bookmark):
@@ -714,28 +697,24 @@ def write_substream_records(sub_stream_name, parent_obj, updates=False):
                 Context.new_counts[sub_stream_name] += 1
 
 
-def sync_sub_stream(sub_stream_name, bookmark_value):
+def sync_sub_stream(child_stream, bookmark_value):
     """
     Get the parent records based on the bookmark and corresponding child stream records
     """
-    stream_name = PARENT_STREAM_MAP[sub_stream_name]
-    stream_metadata = metadata.to_map(Context.get_catalog_entry(stream_name)['metadata'])
+    # Get the parent stream of the stream
+    parent_stream = PARENT_STREAM_MAP[child_stream]
+    # Get the replication key for the stream
+    replication_key = STREAM_REPLICATION_KEY[parent_stream]
 
-    replication_key = metadata.get(stream_metadata, (), 'valid-replication-keys')[0]
-    # Invoice Items bookmarks on `date`, but queries on `created`
     filter_key = replication_key
 
-    # Get bookmark for the stream
-    stream_bookmark = bookmark_value
-
-    bookmark = stream_bookmark
     end_time = dt_to_epoch(utils.now())
 
     window_size = float(Context.config.get('date_window_size', DEFAULT_DATE_WINDOW_SIZE))
 
     if DEFAULT_DATE_WINDOW_SIZE != window_size:
         LOGGER.info('Using non-default date window size of %.2f',window_size)
-    start_window = bookmark
+    start_window = bookmark_value
 
     # NB: We observed records coming through newest->oldest and so
     # date-windowing was added and the tap only bookmarks after it has
@@ -746,19 +725,21 @@ def sync_sub_stream(sub_stream_name, bookmark_value):
         if stop_window > end_time:
             stop_window = end_time
 
+        # Get the parent records for the child-streams to loop on it and fetch the child records.
         for parent_obj in paginate(
-                STREAM_SDK_OBJECTS[stream_name]['sdk_object'],
+                STREAM_SDK_OBJECTS[parent_stream]['sdk_object'],
                 filter_key,
                 start_window,
                 stop_window,
-                stream_name,
-                STREAM_SDK_OBJECTS[stream_name].get('request_args')):
-            write_substream_records(sub_stream_name, parent_obj)
+                parent_stream,
+                STREAM_SDK_OBJECTS[parent_stream].get('request_args')):
+            write_substream_records(child_stream, parent_obj)
 
-        if stop_window > stream_bookmark:
-            stream_bookmark = stop_window
+        # Update sub-streams bookmarks as stop window
+        if stop_window > bookmark_value:
+            bookmark_value = stop_window
             # Write bookmark for the stream
-            write_bookmark_for_stream(sub_stream_name, replication_key, stream_bookmark)
+            write_bookmark_for_stream(child_stream, replication_key, bookmark_value)
         singer.write_state(Context.state)
 
         # update window for next iteration
@@ -930,19 +911,22 @@ def sync():
         stream_name = catalog_entry['tap_stream_id']
         # Sync records for stream
         if Context.is_selected(stream_name):
-            if not Context.is_sub_stream(stream_name):
+            if not Context.is_sub_stream(stream_name):  # Run the sync for parent-streams
                 sync_stream(stream_name)
                 # This prevents us from retrieving 'events.events'
                 if STREAM_TO_TYPE_FILTER.get(stream_name):
                     bookmark_value = get_bookmark_for_stream(stream_name + '_events', 'updates_created')
                     sync_event_updates(stream_name, bookmark_value)
-            else:
+
+            else:   # Run the sync for child-streams independently
                 bookmark_value = get_bookmark_for_sub_stream(stream_name)
                 sync_sub_stream(stream_name, bookmark_value)
+                # Get the child-stream's events bookmark if present
                 events_bookmark = singer.get_bookmark(Context.state, stream_name + '_events', 'updates_created')
+                # Use the child-stream's event bookmark if present, else use the original child-stream's bookmark
                 if events_bookmark:
                     bookmark_value = events_bookmark
-                sync_event_updates(stream_name, bookmark_value)
+                sync_event_updates(stream_name, bookmark_value) # Run the sync mode for fetching events for the child-streams independently
 
 @utils.handle_top_exception(LOGGER)
 def main():

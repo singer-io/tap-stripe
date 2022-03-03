@@ -147,6 +147,12 @@
         "boolean"
       ]
     },
+    "proration_details": {
+      "type": [
+        "null",
+        "object"
+      ]
+    },
     "period": {
       "type": [
         "null",

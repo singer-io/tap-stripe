@@ -403,6 +403,7 @@ class ALlFieldsTest(BaseTapTest):
 
                 actual_records_keys = set()
                 for message in actual_record_message:
+                    # Get the actual stream records which would have `updated_by_event_type` as None
                     if message['action'] == 'upsert' and not message.get('data').get('updated_by_event_type', None):
                         actual_records_keys.update(set(message['data'].keys()))
                 schema_keys = set(self.expected_schema_keys(stream)) # read in from schema files

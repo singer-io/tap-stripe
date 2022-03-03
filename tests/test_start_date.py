@@ -23,6 +23,7 @@ class StartDateTest(BaseTapTest):
     • verify all data from later start data has bookmark values >= start_date
     • verify that the minimum bookmark sent to the target for the later start_date sync
       is greater than or equal to the start date
+    • verify by primary key values, that all records in the 1st sync are included in the 2nd sync.
     """
 
     @staticmethod

@@ -31,6 +31,7 @@ class DiscoveryTest(BaseTapTest):
         • verify that primary, replication and foreign keys
           are given the inclusion of automatic (metadata and annotated schema).
         • verify that all other fields have inclusion of available (metadata and schema)
+        • verify there are no duplicate metadata entries
         """
         conn_id = connections.ensure_connection(self)
 

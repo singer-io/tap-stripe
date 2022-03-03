@@ -156,13 +156,3 @@ class PaginationTest(BaseTapTest):
                 # Verify we did not duplicate any records across pages
                 self.assertCountEqual(set(events_based_primary_keys_list), events_based_primary_keys_list,
                                       msg=f"We have duplicate records for {stream}")
-
-                # updated condition here because for some streams Data is being generated directly when create call for Parent stream is held
-                if stream != "events" and stream in streams_to_create:
-                    actual = actual_fields_by_stream.get(stream, set())
-                    expected = set(new_objects[stream][0].keys())
-                    # TODO uncomment when feature is added (https://stitchdata.atlassian.net/browse/SRCE-2466)
-                    # verify the target receives all possible fields for a given stream
-                    # self.assertEqual(
-                    #    actual, expected, msg="The fields sent to the target have an extra or missing field"
-                    # )

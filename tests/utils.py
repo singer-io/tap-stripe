@@ -469,7 +469,9 @@ def create_object(stream):
                 # proration_date= not set ^
                 tax_rates=[],  # TODO tax rates
             )
-
+        # To generate the data for the `disputes` stream, we need to provide wrong card numbers
+        #  in the `charges` API. Hence bifurcated this data creation into two. 
+        # Refer documentation: https://stripe.com/docs/testing#disputes
         if stream == 'charges' or stream == 'disputes':
             if stream == 'disputes':
                 card_number = str(random.choice(["4000000000001976", "4000000000002685", "4000000000000259"]))

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from tracemalloc import start
 import os
 import json
 import logging
@@ -107,7 +108,8 @@ SUB_STREAMS = {
 
 # NB: These streams will only sync through once for creates, never updates.
 IMMUTABLE_STREAMS = {'balance_transactions', 'events'}
-IMMUTABLE_STREAM_LOOKBACK = 600 # 10 min in epoch time, Stripe accuracy is to the second. Issue: TDL-14339
+BALANCE_TRANSACTIONS_STREAM_LOOKBACK = 600 # 10 min in epoch time, Stripe accuracy is to the second
+EVENTS_STREAM_LOOKBACK = 300 # 5 min in epoch time, Stripe accuracy is to the second
 
 LOGGER = singer.get_logger()
 
@@ -521,8 +523,15 @@ def sync_stream(stream_name):
             # TODO: This may be an issue for other streams' created_at
             # entries, but to keep the surface small, doing this only for
             # immutable streams at first to confirm the suspicion.
-            lookback_window = int(Context.config.get('lookback_window', IMMUTABLE_STREAM_LOOKBACK)) # added configurable lookback window
-            start_window -= lookback_window
+            if stream_name == 'events':
+                lookback_window = EVENTS_STREAM_LOOKBACK
+            else:
+                lookback_window = Context.config.get('lookback_window') # added configurable lookback window
+                if lookback_window and int(lookback_window): # set lookback window if lookback window is present in config and int convertible
+                    lookback_window = int(lookback_window)
+                else: # set default lookback
+                    lookback_window = BALANCE_TRANSACTIONS_STREAM_LOOKBACK
+                start_window -= lookback_window
 
         # NB: We observed records coming through newest->oldest and so
         # date-windowing was added and the tap only bookmarks after it has

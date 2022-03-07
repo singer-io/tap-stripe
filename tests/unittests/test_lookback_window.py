@@ -1,6 +1,6 @@
 import unittest
 from unittest import mock
-from tap_stripe import IMMUTABLE_STREAM_LOOKBACK, Context, sync_stream, datetime
+from tap_stripe import BALANCE_TRANSACTIONS_STREAM_LOOKBACK, Context, sync_stream, datetime
 
 class MockClass():
     '''The mock class for the Balance Transactions object.'''
@@ -34,7 +34,7 @@ class TestLookbackWindow(unittest.TestCase):
         Context.new_counts['balance_transactions'] = 1
         sync_stream("balance_transactions")
         # expected start_date should be the `start_date` - `lookback`(default lookback)
-        expected_start_window = start_date_before_lookback - IMMUTABLE_STREAM_LOOKBACK
+        expected_start_window = start_date_before_lookback - BALANCE_TRANSACTIONS_STREAM_LOOKBACK
         mock_epoch_to_dt.assert_called_with(expected_start_window)
 
     def test_config_provided_value_lookback(self, mock_get_bookmark_for_stream, mock_sync_substream, mock_dt_to_epoch, mock_epoch_to_dt, mock_get, mock_metadata_map, mock_get_catalog_entry, mock_paginate, mock_convert_dict_to_stripe_object, mock_reduce_foreign_keys):
@@ -45,4 +45,14 @@ class TestLookbackWindow(unittest.TestCase):
         sync_stream("balance_transactions")
         # expected start_date should be the `start_date` - `lookback`(lookback passed in the config)
         expected_start_window = start_date_before_lookback - config.get('lookback_window')
+        mock_epoch_to_dt.assert_called_with(expected_start_window)
+        
+    def test_empty_string_in_config_lookback(self, mock_get_bookmark_for_stream, mock_sync_substream, mock_dt_to_epoch, mock_epoch_to_dt, mock_get, mock_metadata_map, mock_get_catalog_entry, mock_paginate, mock_convert_dict_to_stripe_object, mock_reduce_foreign_keys):
+        '''Verify that the lookback window is correctly passed when empty string is passed in the config.'''
+        config = { "client_secret": "test_secret", "account_id": "test_account", "start_date": "test_start_date", "lookback_window": ''}
+        Context.config = config
+        Context.new_counts['balance_transactions'] = 1
+        sync_stream("balance_transactions")
+        # expected start_date should be the `start_date` - `lookback`(lookback passed in the config)
+        expected_start_window = start_date_before_lookback - BALANCE_TRANSACTIONS_STREAM_LOOKBACK
         mock_epoch_to_dt.assert_called_with(expected_start_window)

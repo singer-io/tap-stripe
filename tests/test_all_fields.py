@@ -36,6 +36,27 @@ KNOWN_MISSING_FIELDS = {
     'invoice_line_items': set(),
     'invoices': set()
 }
+# we have observed that the SDK object creation returns some new fields intermittently
+SCHEMA_MISSING_FIELDS = {
+    'customers': {
+        'test_clock'
+    },
+    'subscriptions':set(),
+    'products':set(),
+    'invoice_items':{
+        'test_clock',
+    },
+    'payouts':set(),
+    'charges': set(),
+    'subscription_items': set(),
+    'plans': set(),
+    'invoice_line_items': {
+        'test_clock',
+    },
+    'invoices': {
+        'test_clock',
+    }
+}
 
 # `updated_by_event_type` field's value available in the records only if records are emitted by `event_updates`.
 FIELDS_TO_NOT_CHECK = {
@@ -431,7 +452,8 @@ class ALlFieldsTest(BaseTapTest):
 
                 adjusted_actual_keys = actual_records_keys.union(  # BUG_12478
                     KNOWN_MISSING_FIELDS.get(stream, set())
-                )
+                ).union(KNOWN_MISSING_FIELDS.get(stream, set()))
+
                 if stream == 'invoice_items':
                     adjusted_actual_keys = adjusted_actual_keys.union({'subscription_item'})  # BUG_13666
 

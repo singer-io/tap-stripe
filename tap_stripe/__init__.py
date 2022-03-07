@@ -3,6 +3,8 @@ import os
 import json
 import logging
 import re
+import copy
+
 
 from datetime import datetime, timedelta
 import stripe
@@ -319,10 +321,9 @@ def add_child_into_metadata(schema, m_data, mdata, rule_map, parent=()):
             # Iterate in recursive manner to go through each field of schema.
             add_child_into_metadata(schema['properties'][key], m_data, mdata, rule_map, breadcrumb)
 
-            if breadcrumb in rule_map:
-                # Update field name as standard name in breadcrumb if it is found in rule_map.
-                mdata = m_data.write(mdata, breadcrumb, 'inclusion', 'available')
+            mdata = m_data.write(mdata, breadcrumb, 'inclusion', 'available')
 
+            if breadcrumb in rule_map:
                 # Add `original-name` field in metadata which contain actual name of field.
                 mdata.get(breadcrumb).update({'original-name': rule_map[breadcrumb]})
 
@@ -348,8 +349,10 @@ def discover(rule_map):
         # Define stream_name in GetStdFieldsFromApiFields
         rule_map.GetStdFieldsFromApiFields[stream_name] = {}
 
+        copied_schema = copy.deepcopy(resolved_schema)
+
         # Get updated schema by applying rule map
-        standard_resolved_schema = rule_map.apply_ruleset_on_schema(resolved_schema, stream_name)
+        standard_resolved_schema = rule_map.apply_ruleset_on_schema(resolved_schema, copied_schema, stream_name)
 
         # Get standard name of stream
         standard_stream_name = rule_map.apply_rule_set_on_stream_name(stream_name)
@@ -359,7 +362,7 @@ def discover(rule_map):
             'stream': standard_stream_name,
             'tap_stream_id': standard_stream_name,
             'schema': standard_resolved_schema,
-            'metadata': get_discovery_metadata(schema,
+            'metadata': get_discovery_metadata(standard_resolved_schema,
                                                stream_map['key_properties'],
                                                'INCREMENTAL',
                                                STREAM_REPLICATION_KEY.get(stream_name),

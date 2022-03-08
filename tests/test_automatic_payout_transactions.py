@@ -44,7 +44,7 @@ class AutomaticPayoutTransactionTest(BaseTapTest):
         cls.payouts_with_automatic_true = []
         cls.payouts_with_automatic_false = []
         for record in payouts:
-            if "automatic" in record and record.get("automatic"):
+            if record.get("automatic"):
                 cls.payouts_with_automatic_true.append(record.get("id"))
             else:
                 cls.payouts_with_automatic_false.append(record.get("id"))

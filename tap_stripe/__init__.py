@@ -349,6 +349,11 @@ def discover(rule_map):
         # Define stream_name in GetStdFieldsFromApiFields
         rule_map.GetStdFieldsFromApiFields[stream_name] = {}
 
+        # We face issue regarding ref. In some of the schema same ref is being used.
+        # When we change fields of one of the ref, changes reflect in all the places where the same ref is being used.
+        # Due to this, the `original-name` field name was missing in the metadata of the catalog.
+        # So, to prevent change in the actual schema, here we are creating a deep copy of schema and updating deep copy.
+        # We do not update the actual schema
         copied_schema = copy.deepcopy(resolved_schema)
 
         # Get updated schema by applying rule map

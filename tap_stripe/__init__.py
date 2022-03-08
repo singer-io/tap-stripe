@@ -894,7 +894,7 @@ def sync():
 def main():
     # Parse command line arguments
     args = utils.parse_args(REQUIRED_CONFIG_KEYS)
-    # set the config and state in prior to check te authentication in the discovery mode itself.
+    # set the config and state in prior to check the authentication in the discovery mode itself.
     Context.config = args.config
     Context.state = args.state
     configure_stripe_client()

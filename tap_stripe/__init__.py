@@ -531,7 +531,7 @@ def sync_stream(stream_name):
                     lookback_window = int(lookback_window)
                 else: # set default lookback
                     lookback_window = BALANCE_TRANSACTIONS_STREAM_LOOKBACK
-                start_window -= lookback_window
+            start_window -= lookback_window
 
         # NB: We observed records coming through newest->oldest and so
         # date-windowing was added and the tap only bookmarks after it has

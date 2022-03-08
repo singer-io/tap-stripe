@@ -42,7 +42,9 @@ SCHEMA_MISSING_FIELDS = {
     'customers': {
         'test_clock'
     },
-    'subscriptions':set(),
+    'subscriptions': {
+        'test_clock',
+    },
     'products':set(),
     'invoice_items':{
         'test_clock',
@@ -51,9 +53,7 @@ SCHEMA_MISSING_FIELDS = {
     'charges': set(),
     'subscription_items': set(),
     'plans': set(),
-    'invoice_line_items': {
-        'test_clock',
-    },
+    'invoice_line_items': set(),
     'invoices': {
         'test_clock',
     }

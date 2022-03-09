@@ -67,17 +67,17 @@ STREAM_REPLICATION_KEY = {
 }
 
 STREAM_TO_TYPE_FILTER = {
-    'charges': {'type': 'charge.*', 'object': 'charge'},
-    'customers': {'type': 'customer.*', 'object': 'customer'},
-    'plans': {'type': 'plan.*', 'object': 'plan'},
-    'invoices': {'type': 'invoice.*', 'object': 'invoice'},
-    'invoice_items': {'type': 'invoiceitem.*', 'object': 'invoiceitem'},
-    'coupons': {'type': 'coupon.*', 'object': 'coupon'},
-    'subscriptions': {'type': 'customer.subscription.*', 'object': 'subscription'},
-    'payouts': {'type': 'payout.*', 'object': 'transfer'},
-    'transfers': {'type': 'transfer.*', 'object': 'transfer'},
-    'disputes': {'type': 'charge.dispute.*', 'object': 'dispute'},
-    'products': {'type': 'product.*', 'object': 'product'},
+    'charges': {'type': 'charge.*', 'object': ['charge']},
+    'customers': {'type': 'customer.*', 'object': ['customer']},
+    'plans': {'type': 'plan.*', 'object': ['plan']},
+    'invoices': {'type': 'invoice.*', 'object': ['invoice']},
+    'invoice_items': {'type': 'invoiceitem.*', 'object': ['invoiceitem']},
+    'coupons': {'type': 'coupon.*', 'object': ['coupon']},
+    'subscriptions': {'type': 'customer.subscription.*', 'object': ['subscription']},
+    'payouts': {'type': 'payout.*', 'object': ['transfer', 'payout']},
+    'transfers': {'type': 'transfer.*', 'object': ['transfer']},
+    'disputes': {'type': 'charge.dispute.*', 'object': ['dispute']},
+    'products': {'type': 'product.*', 'object': ['product']},
     # Cannot find evidence of these streams having events associated:
     # subscription_items - appears on subscriptions events
     # balance_transactions - seems to be immutable
@@ -661,7 +661,7 @@ def should_sync_event(events_obj, object_type, id_to_created_map):
     event_created = events_obj.created
 
     # The event's object had no id so throw it out!
-    if not event_resource_id or event_resource_dict.get('object') != object_type:
+    if not event_resource_id or event_resource_dict.get('object') not in object_type:
         return False
 
     # If the event is the most recent one we've seen, we should sync it

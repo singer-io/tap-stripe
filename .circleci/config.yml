@@ -97,7 +97,7 @@ jobs:
             source /usr/local/share/virtualenvs/tap-stripe/bin/activate
             source /usr/local/share/virtualenvs/tap-tester/bin/activate
             source /usr/local/share/virtualenvs/dev_env.sh
-            pip install 'stripe==2.42.0'
+            pip install 'stripe==2.64.0'
             run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_<< parameters.file >>.py
       - slack/notify-on-failure:
           only_for_branches: master
@@ -220,7 +220,7 @@ workflows:
             - tier-1-tap-user
           requires:
             - 'Testing bookmarks'
-build_daily:
+  build_daily:
     <<: *commit_jobs
     triggers:
       - schedule:

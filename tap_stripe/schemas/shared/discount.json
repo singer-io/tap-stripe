@@ -106,7 +106,7 @@
         "percent_off": {
           "type": [
             "null",
-            "integer"
+            "number"
           ]
         },
         "created": {
@@ -138,6 +138,36 @@
       ]
     },
     "subscription": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "checkout_session": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "id": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "invoice": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "invoice_item": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "promotion_code": {
       "type": [
         "null",
         "string"

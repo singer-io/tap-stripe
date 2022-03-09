@@ -343,7 +343,7 @@ class ALlFieldsTest(BaseTapTest):
                 )
                 adjusted_actual_keys = actual_records_keys.union(  # BUG_12478
                     KNOWN_MISSING_FIELDS.get(stream, set())
-                )
+                ).union(SCHEMA_MISSING_FIELDS.get(stream, set()))
                 if stream == 'invoice_items':
                     adjusted_actual_keys = adjusted_actual_keys.union({'subscription_item'})  # BUG_13666
                 self.assertSetEqual(adjusted_expected_keys, adjusted_actual_keys)

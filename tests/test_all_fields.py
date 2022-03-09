@@ -37,7 +37,7 @@ KNOWN_MISSING_FIELDS = {
     'invoices': set()
 }
 
-# we have observed that the SDK object creation returns some new fields intermittently
+# we have observed that the SDK object creation returns some new fields intermittently, which are not present in the schema
 SCHEMA_MISSING_FIELDS = {
     'customers': {
         'test_clock'

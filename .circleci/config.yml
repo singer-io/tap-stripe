@@ -75,9 +75,9 @@ jobs:
             nosetests --with-coverage --cover-erase --cover-package=tap_stripe --cover-html-dir=htmlcov tests/unittests
             coverage html
       - store_test_results:
-        path: test_output/report.xml
+          path: test_output/report.xml
       - store_artifacts:
-        path: htmlcov
+          path: htmlcov
   run_integration_test:
     parameters:
       file:

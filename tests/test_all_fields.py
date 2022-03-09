@@ -497,6 +497,8 @@ class ALlFieldsTest(BaseTapTest):
                                     print(f"WARNING {base_err_msg} failed exact comparison.\n"
                                         f"AssertionError({failure_1})")
 
+                                    # In order to not throw a warning in case of failure for nested fields, created a new map which would not give 
+                                    # unnecessary warning in case of fields which are not present in the API doc, but returned via the events API.
                                     nested_key = KNOWN_NESTED_MISSING_FIELDS.get(stream, {})
                                     if self.find_nested_key(nested_key, expected_field_value, field):
                                         continue

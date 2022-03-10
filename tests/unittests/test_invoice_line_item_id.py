@@ -135,7 +135,7 @@ class InvoiceLineItemId(unittest.TestCase):
         # verify the data is not changed as the function was not called with updates and not unique_id is present
         self.assertEqual(expected_record, args[0])
 
-    def test_invoiceitem(self, mocked_new_counts, mocked_updated_counts, mocked_get_catalog_entry, mocked_transform):
+    def test_invoiceitem_with_invoice_item(self, mocked_new_counts, mocked_updated_counts, mocked_get_catalog_entry, mocked_transform):
         """
             Test case to verify 'unique_id' is used as 'id' value when invoice line item type is 'invoiceitem'
         """
@@ -169,6 +169,43 @@ class InvoiceLineItemId(unittest.TestCase):
         # get args for transform function
         args, kwargs = mocked_transform.call_args
         # verify the unique_id's value is used as 'id'
+        self.assertEqual(expected_record, args[0])
+
+    def test_invoiceitem_without_invoice_item(self, mocked_new_counts, mocked_updated_counts, mocked_get_catalog_entry, mocked_transform):
+        """
+            Test case to verify 'unique_id' is used as 'id' and 'invoice_item' field
+            contains 'id' value when invoice line item type is 'invoiceitem'
+        """
+        # mock transform
+        mocked_transform.side_effect = transform
+        # create line items dummy data
+        lines = [
+            MockLines({
+                "id": "ii_testinvoiceitem",
+                "object": "line_item",
+                "invoice_item": None,
+                "subscription": "sub_testsubscription",
+                "type": "invoiceitem",
+                "unique_id": "il_testlineitem"
+            })
+        ]
+
+        # function call with updates
+        tap_stripe.sync_sub_stream("invoice_line_items", MockInvoice(lines), True)
+
+        # expected data
+        expected_record = {
+            "id": "il_testlineitem",
+            "object": "line_item",
+            "invoice_item": "ii_testinvoiceitem",
+            "subscription": "sub_testsubscription",
+            "type": "invoiceitem",
+            "unique_id": "il_testlineitem",
+            "invoice": "inv_testinvoice"
+        }
+        # get args for transform function
+        args, kwargs = mocked_transform.call_args
+        # verify the unique_id's value is used as 'id' and id's value is used as 'invoice_item' value
         self.assertEqual(expected_record, args[0])
 
     def test_subscription_without_subscription(self, mocked_new_counts, mocked_updated_counts, mocked_get_catalog_entry, mocked_transform):

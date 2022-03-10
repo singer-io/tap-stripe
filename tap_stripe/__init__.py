@@ -708,10 +708,15 @@ def sync_sub_stream(sub_stream_name, parent_obj, updates=False):
                     unique_id = obj_ad_dict.get("unique_id")
                     # if type is invoiceitem, update 'id' field with 'unique_id'
                     if obj_ad_dict.get("type") == "invoiceitem":
+                        # get invoice_item id
+                        invoice_item_id = obj_ad_dict.get("id")
                         obj_ad_dict["id"] = unique_id
+                        # update 'invoice_item' with 'id' if not present
+                        if not obj_ad_dict.get("invoice_item"):
+                            obj_ad_dict["invoice_item"] = invoice_item_id
                     # if type is subscription, update 'id' field with 'unique_id'
                     if obj_ad_dict.get("type") == "subscription":
-                        # get subscription_id
+                        # get subscription id
                         subscription_id = obj_ad_dict.get("id")
                         obj_ad_dict["id"] = unique_id
                         # update 'subscription' with 'id' if not present

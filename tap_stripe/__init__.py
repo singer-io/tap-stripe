@@ -702,6 +702,22 @@ def sync_sub_stream(sub_stream_name, parent_obj, updates=False):
             obj_ad_dict = sub_stream_obj.to_dict_recursive()
 
             if sub_stream_name == "invoice_line_items":
+                # we will get "unique_id" for default API versions older than "2019-12-03"
+                if updates and obj_ad_dict.get("unique_id"):
+                    # get unique_id
+                    unique_id = obj_ad_dict.get("unique_id")
+                    # if type is invoiceitem, update 'id' field with 'unique_id'
+                    if obj_ad_dict.get("type") == "invoiceitem":
+                        obj_ad_dict["id"] = unique_id
+                    # if type is subscription, update 'id' field with 'unique_id'
+                    if obj_ad_dict.get("type") == "subscription":
+                        # get subscription_id
+                        subscription_id = obj_ad_dict.get("id")
+                        obj_ad_dict["id"] = unique_id
+                        # update 'subscription' with 'id' if not present
+                        if not obj_ad_dict.get("subscription"):
+                            obj_ad_dict["subscription"] = subscription_id
+
                 # Synthetic addition of a key to the record we sync
                 obj_ad_dict["invoice"] = parent_obj.id
             elif sub_stream_name == "payout_transactions":

@@ -11,6 +11,12 @@
         "string"
       ]
     },
+    "updated_by_event_type": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
     "amount_decimal": {
       "type": [
         "null",

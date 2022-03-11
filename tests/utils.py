@@ -2,6 +2,7 @@ import logging
 import random
 import json
 import backoff
+import random
 from datetime import datetime as dt
 from datetime import time, timedelta
 from time import sleep
@@ -385,10 +386,7 @@ def create_object(stream):
         global metadata_value
         metadata_value = {"test_value": "senorita_alice_{}@stitchdata.com".format(NOW)}
 
-        if stream in {"disputes", "transfers"}:
-            return None
-
-        elif stream in {'products', 'coupons', 'plans', 'payouts', 'payment_intents'}:
+        if stream in {'products', 'coupons', 'plans', 'payouts', 'payment_intents'}:
             return standard_create(stream)
 
         elif stream == 'customers':
@@ -497,13 +495,19 @@ def create_object(stream):
                 # proration_date= not set ^
                 tax_rates=[],  # TODO tax rates
             )
-
-        if stream == 'charges':
+        # To generate the data for the `disputes` stream, we need to provide wrong card numbers
+        #  in the `charges` API. Hence bifurcated this data creation into two. 
+        # Refer documentation: https://stripe.com/docs/testing#disputes
+        if stream == 'charges' or stream == 'disputes':
+            if stream == 'disputes':
+                card_number = str(random.choice(["4000000000001976", "4000000000002685", "4000000000000259"]))
+            else:
+                card_number = "4242424242424242"
             # Create a Source, attach to new customer, then charge them.
             src = stripe_client.Source.create(
                 type='card',
                 card={
-                    "number": "4242424242424242",
+                    "number": card_number,
                     "exp_month": 2,
                     "exp_year": dt.today().year + 2,
                     "cvc": "666",
@@ -518,7 +522,7 @@ def create_object(stream):
                 metadata=metadata_value,
             )
             add_to_hidden('customers', cust['id'])
-            return client[stream].create(
+            return client['charges'].create(
                 amount=50,
                 currency="usd",
                 customer=cust['id'],
@@ -537,6 +541,14 @@ def create_object(stream):
                 # on_behalf_of=,  # CONNECT only
                 # transfer_data=,  # CONNECT only
                 # transfer_group=,  # CONNECT only
+            )
+
+        if stream == 'transfers':
+            return client[stream].create(
+                amount=1,
+                currency="usd",
+                destination="acct_1DOR67LsKC35uacf",
+                transfer_group="ORDER_95"
             )
 
     return None

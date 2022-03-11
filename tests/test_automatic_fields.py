@@ -42,8 +42,6 @@ class MinimumSelectionTest(BaseTapTest):
             "subscriptions", # this will create a new plan and payment method
          }
         untested_streams = {
-            "disputes",
-            "transfers",
             "payout_transactions"
         }
         new_objects = {

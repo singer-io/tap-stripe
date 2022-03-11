@@ -38,6 +38,29 @@ KNOWN_MISSING_FIELDS = {
     'payment_intents': set()
 }
 
+# we have observed that the SDK object creation returns some new fields intermittently, which are not present in the schema
+SCHEMA_MISSING_FIELDS = {
+    'customers': {
+        'test_clock'
+    },
+    'subscriptions': {
+        'test_clock',
+    },
+    'products':set(),
+    'invoice_items':{
+        'test_clock',
+    },
+    'payouts':set(),
+    'charges': set(),
+    'subscription_items': set(),
+    'plans': set(),
+    'invoice_line_items': set(),
+    'invoices': {
+        'test_clock',
+    }
+}
+
+# `updated_by_event_type` field's value available in the records only if records are emitted by `event_updates`.
 FIELDS_TO_NOT_CHECK = {
     'customers': {
         # Below fields are deprecated or renamed.(https://stripe.com/docs/upgrades#2019-10-17, https://stripe.com/docs/upgrades#2019-12-03)
@@ -45,26 +68,32 @@ FIELDS_TO_NOT_CHECK = {
         'tax_info',
         'tax_info_verification',
         'cards',
-        'default_card'
+        'default_card',
+        'updated_by_event_type'
     },
     'subscriptions':{
         # Below fields are deprecated or renamed.(https://stripe.com/docs/upgrades#2019-10-17, https://stripe.com/docs/upgrades#2019-12-03, https://stripe.com/docs/upgrades#2020-08-27)
         'billing',
         'start',
         'tax_percent',
-        'invoice_customer_balance_settings'
+        'invoice_customer_balance_settings',
+        'updated_by_event_type'
     },
     'products':{
         # Below fields are available in the product record only if the value of the type field is `service`.
         # But, currently, during crud operation in all_fields test case, it creates product records of type `good`.
         'statement_descriptor',
-        'unit_label'  
+        'unit_label',
+        'updated_by_event_type'
     },
     'coupons':{
         # Field is not available in stripe documentation and also not returned by API response.(https://stripe.com/docs/api/coupons/object)
-        'percent_off_precise'
+        'percent_off_precise',
+        'updated_by_event_type'
     },
-    'invoice_items':set(),
+    'invoice_items':{
+        'updated_by_event_type'
+    },
     'payouts':{
 
         # Following fields are not mentioned in the documentation and also not returned by API (https://stripe.com/docs/api/payouts/object)
@@ -74,12 +103,14 @@ FIELDS_TO_NOT_CHECK = {
         'bank_account',
         'date',
         'amount_reversed',
-        'recipient'
+        'recipient',
+        'updated_by_event_type'
     },
     'charges': {
         # Following both fields `card` and `statement_description` are deprecated. (https://stripe.com/docs/upgrades#2015-02-18, https://stripe.com/docs/upgrades#2014-12-17)
         'card',
-        'statement_description'
+        'statement_description',
+        'updated_by_event_type'
     },
     'subscription_items':{
         # Field is not available in stripe documentation and also not returned by API response. (https://stripe.com/docs/api/subscription_items/object)
@@ -112,19 +143,24 @@ FIELDS_TO_NOT_CHECK = {
         'statement_description',
         'payment'
         'paid_out_of_band',
+        'updated_by_event_type'
     },
     'plans': {
         # Below fields are deprecated or renamed. (https://stripe.com/docs/upgrades#2018-02-05, https://stripe.com/docs/api/plans/object)
         'statement_descriptor',
         'statement_description',
         'name',
+        'updated_by_event_type',
         'tiers' # Field is not returned by API
     },
     'invoice_line_items': {
         # As per stripe documentation(https://stripe.com/docs/api/invoices/line_item#invoice_line_item_object-subscription_item),
         # 'subscription_item' is field that generated invoice item. It does not replicate in response if the line item is not an explicit result of a subscription.
         # So, due to uncertainty of this field, skipped it.
-        'subscription_item'
+        'subscription_item',
+        # As per stripe documentation(https://stripe.com/docs/api/invoices/line_item#invoice_line_item_object-invoice_item),
+        # 'invoice_item' is id of invoice item associated wih this line if any. # So, due to uncertainty of this field, skipped it.
+        'invoice_item'
     },
     'payment_intents': set()
 }
@@ -387,19 +423,27 @@ class ALlFieldsTest(BaseTapTest):
 
                 # collect actual values
                 actual_records = synced_records.get(stream)
-                # Only 1st half records belong to actual stream, next half records belong to events of that stream
-                # So, skipping records of events
-                actual_record_message = actual_records.get('messages')[:len(actual_records.get('messages'))//2]
-                actual_records_data = [message['data'] for message in actual_record_message]
+                # Get the actual stream records based on the newly added field `updated_by_event_type` 
+                # as the events endpoints is not the latest version and hence returns deprecated fields also.
+                actual_record_message = actual_records.get('messages')
+                actual_records_data = [message['data'] for message in actual_record_message
+                                       if not message.get('data').get('updated_by_event_type', None)]
+
                 actual_records_keys = set()
                 for message in actual_record_message:
-                    if message['action'] == 'upsert':
+                    # Get the actual stream records which would have `updated_by_event_type` as None
+                    if message['action'] == 'upsert' and not message.get('data').get('updated_by_event_type', None):
                         actual_records_keys.update(set(message['data'].keys()))
                 schema_keys = set(self.expected_schema_keys(stream)) # read in from schema files
+
+                # Get event based records based on the newly added field `updated_by_event_type`
+                events_records_data = [message['data'] for message in actual_record_message
+                                       if message.get('data').get('updated_by_event_type', None)]
 
                 # To avoid warning, skipping fields of FIELDS_TO_NOT_CHECK
                 schema_keys = schema_keys - FIELDS_TO_NOT_CHECK.get(stream, set())
                 actual_records_keys = actual_records_keys - FIELDS_TO_NOT_CHECK[stream]
+                expected_records_keys = expected_records_keys - FIELDS_TO_NOT_CHECK[stream]
 
                 # Append fields which are added by tap to expectation
                 adjusted_expected_keys = expected_records_keys.union(
@@ -415,10 +459,11 @@ class ALlFieldsTest(BaseTapTest):
 
                 adjusted_actual_keys = actual_records_keys.union(  # BUG_12478
                     KNOWN_MISSING_FIELDS.get(stream, set())
-                )
+                ).union(SCHEMA_MISSING_FIELDS.get(stream, set()))
+
                 if stream == 'invoice_items':
                     adjusted_actual_keys = adjusted_actual_keys.union({'subscription_item'})  # BUG_13666
-                    
+
                 self.assertSetEqual(adjusted_expected_keys, adjusted_actual_keys)
 
                 # verify the missing fields from KNOWN_MISSING_FIELDS are always missing (stability check)
@@ -431,12 +476,20 @@ class ALlFieldsTest(BaseTapTest):
                 actual_pks = [tuple(actual_record.get(pk) for pk in primary_keys) for actual_record in actual_records_data]
                 actual_pks_set = set(actual_pks)
                 # self.assertEqual(len(actual_pks_set), len(actual_pks))  # BUG_9720
+                # assert unique primary keys for actual records
                 self.assertLessEqual(len(actual_pks_set), len(actual_pks))
 
                 # Verify there are no duplicate pks in our expectations
                 expected_pks = [tuple(expected_record.get(pk) for pk in primary_keys) for expected_record in expected_records]
                 expected_pks_set = set(expected_pks)
                 self.assertEqual(len(expected_pks_set), len(expected_pks))
+
+                # Get event-based pks based on the newly added field `updated_by_event_type` and verify 
+                # there are no duplicate pks in our expectations
+                events_based_actual_pks = [tuple(event_record.get(pk) for pk in primary_keys) for event_record in events_records_data]
+                events_based_actual_pks_set = set(events_based_actual_pks)
+                # Verify unique primary keys for event-based records
+                self.assertLessEqual(len(events_based_actual_pks_set), len(events_based_actual_pks))
 
                 # Verify by pks, that we replicated the expected records
                 self.assertTrue(actual_pks_set.issuperset(expected_pks_set))

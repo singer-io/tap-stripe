@@ -184,5 +184,13 @@ class EventUpdatesTest(BaseTapTest):
                             message['data'].keys(),
                             "updated_by_event_type field is missing in event_updates records")
 
+                # Verify that the `updated_by_event_type` field is available in all records emitted by event_updates
+                for message in second_sync_updated.get(stream, {}).get("messages", []):
+                    if message['action'] == 'upsert':
+                        self.assertIn(
+                            'updated_by_event_type',
+                            message['data'].keys(),
+                            "updated_by_event_type field is missing in event_updates records")
+
                 if stream in new_objects:
                     delete_object(stream, new_objects[stream]["id"])

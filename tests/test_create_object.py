@@ -38,6 +38,7 @@ class CreateObjectTest(BaseTapTest):
             "invoices", # this will create an invoice_item
             "payouts",
             "plans",
+            "payment_intents",
             "products",
             "subscription_items",
             "subscriptions", # this will create a new plan and payment method

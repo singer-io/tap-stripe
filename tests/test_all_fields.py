@@ -34,7 +34,8 @@ KNOWN_MISSING_FIELDS = {
     'subscription_items': set(),
     'plans': set(),
     'invoice_line_items': set(),
-    'invoices': set()
+    'invoices': set(),
+    'payment_intents': set()
 }
 
 # we have observed that the SDK object creation returns some new fields intermittently, which are not present in the schema
@@ -160,7 +161,8 @@ FIELDS_TO_NOT_CHECK = {
         # As per stripe documentation(https://stripe.com/docs/api/invoices/line_item#invoice_line_item_object-invoice_item),
         # 'invoice_item' is id of invoice item associated wih this line if any. # So, due to uncertainty of this field, skipped it.
         'invoice_item'
-    }
+    },
+    'payment_intents': set()
 }
 
 KNOWN_FAILING_FIELDS = {
@@ -190,6 +192,7 @@ KNOWN_FAILING_FIELDS = {
     'invoices': {
         'plans', # BUG_12478 | missing subfields
     },
+    'payment_intents':set(),
     'plans': {
         'transform_usage' # BUG_13711 schema is wrong, should be an object not string
     },
@@ -213,6 +216,7 @@ FICKLE_FIELDS = {
     'subscriptions': set(),
     'products': set(),
     'invoice_items': set(),
+    'payment_intents': set(),
     'payouts': {
         'object', # expect 'transfer', get 'payout'
     },
@@ -245,6 +249,7 @@ FIELDS_ADDED_BY_TAP = {
     'subscription_items': set(), # `updated` is not added by the tap for child streams.
     'invoices': {'updated'},
     'plans': {'updated'},
+    'payment_intents': {'updated'},
     'invoice_line_items': {
         'invoice'
     },
@@ -277,6 +282,7 @@ class ALlFieldsTest(BaseTapTest):
         # Create data prior to first sync
         cls.streams_to_test = {
             "customers",
+            "payment_intents",
             "charges",
             "coupons",
             "invoice_items",

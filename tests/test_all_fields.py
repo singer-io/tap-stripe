@@ -185,17 +185,13 @@ KNOWN_FAILING_FIELDS = {
     'charges': set(),
     'subscription_items': {
         # BUG_12478 | missing subfields on plan ['statement_description', 'statement_descriptor', 'name']
-        # BUG_13711 | https://jira.talendforge.org/browse/TDL-13711
-        #             Schema wrong for subfield 'transform_usage', should be object not string
         'plan',
     },
     'invoices': {
         'plans', # BUG_12478 | missing subfields
     },
+    'plans': set(),
     'payment_intents':set(),
-    'plans': {
-        'transform_usage' # BUG_13711 schema is wrong, should be an object not string
-    },
     'invoice_line_items': set()
     # 'invoice_line_items': { # TODO This is a test issue that prevents us from consistently passing
     #     'unique_line_item_id',
@@ -542,11 +538,6 @@ class ALlFieldsTest(BaseTapTest):
                                 expected_field_value = expected_record.get(field, "EXPECTED IS MISSING FIELD")
                                 actual_field_value = actual_record.get(field, "ACTUAL IS MISSING FIELD")
 
-                                # to fix the failure warning of `created` for `invoices` stream
-                                # BUG_13711 | the schema was missing datetime format and the tests were throwing a warning message.
-                                # Hence, a workaround to remove that warning message.
-                                if stream == 'invoices' and expected_field_value != "EXPECTED IS MISSING FIELD" and field == 'created':
-                                    expected_field_value = int(self.dt_to_ts(expected_field_value))
                                 try:
 
                                     self.assertEqual(expected_field_value, actual_field_value)

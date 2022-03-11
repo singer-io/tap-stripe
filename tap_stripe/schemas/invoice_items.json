@@ -10,6 +10,12 @@
         "integer"
       ]
     },
+    "updated_by_event_type": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
     "metadata": {
       "type": [
         "null",

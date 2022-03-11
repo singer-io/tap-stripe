@@ -51,8 +51,9 @@
     "created": {
       "type": [
         "null",
-        "integer"
-      ]
+        "string"
+      ],
+      "format": "date-time"
     },
     "status_transitions": {
       "type": [
@@ -498,8 +499,9 @@
     "finalized_at": {
       "type": [
         "null",
-        "integer"
-      ]
+        "string"
+      ],
+      "format": "date-time"
     },
     "pre_payment_credit_notes_amount": {
       "type": [

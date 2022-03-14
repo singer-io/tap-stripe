@@ -26,6 +26,8 @@ def get_payouts():
 class AutomaticPayoutTransactionTest(BaseTapTest):
     """
         Test case to verify that we only collect payout_transactions for payouts containing "automatic" field as "True"
+        Prerequisite:
+            Run 'test_all_fields' before running this test case.
     """
 
     @staticmethod

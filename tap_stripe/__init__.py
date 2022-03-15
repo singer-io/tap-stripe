@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 import stripe
 import stripe.error
 from stripe.stripe_object import StripeObject
+from stripe.api_resources import ListObject
 from stripe.util import convert_to_stripe_object
 import singer
 from singer import utils, Transformer, metrics
@@ -392,6 +393,12 @@ def reduce_foreign_keys(rec, stream_name):
                     rec['lines'][k] = [li.to_dict_recursive() for li in val]
     return rec
 
+def new_list(self, **params):
+    response = self.request('get', self['url'], params)
+    LOGGER.debug(f'request id : {response.last_response.request_id}')
+    return response
+
+ListObject.list = new_list
 
 def paginate(sdk_obj, filter_key, start_date, end_date, stream_name, request_args=None, limit=100):
     yield from sdk_obj.list(

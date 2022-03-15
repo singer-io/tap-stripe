@@ -393,10 +393,18 @@ def reduce_foreign_keys(rec, stream_name):
                     rec['lines'][k] = [li.to_dict_recursive() for li in val]
     return rec
 
-def new_list(self, **params):
-    response = self.request('get', self['url'], params)
-    LOGGER.debug(f'request id : {response.last_response.request_id}')
-    return response
+def new_list(self, api_key=None, stripe_version=None, stripe_account=None, **params):
+    stripe_object = self._request(
+            "get",
+            self.get("url"),
+            api_key=api_key,
+            stripe_version=stripe_version,
+            stripe_account=stripe_account,
+            **params
+        )
+    stripe_object._retrieve_params = params
+    LOGGER.debug(f'request id : {stripe_object.last_response.request_id}')
+    return stripe_object
 
 ListObject.list = new_list
 

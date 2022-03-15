@@ -16,7 +16,9 @@ class MockList(dict):
     def __init__(self, url):
         self['url'] = url
     
-    def request(self, method, url, params):
+    def _request(
+        self, method_, url_, api_key=None, idempotency_key=None, stripe_version=None, stripe_account=None, **params
+    ):
         '''Mock the request() method of the LisObject class '''
         return get_request_id()
 
@@ -29,8 +31,7 @@ def get_request_id():
 class TestDebugLogger(unittest.TestCase):
     
     @mock.patch('tap_stripe.LOGGER.debug')
-    @mock.patch('tap_stripe.stripe.ListObject.request')
-    def test_debug_logger(self, mock_request, mock_debug):
+    def test_debug_logger(self, mock_debug):
         '''Test that the debug is called with proper request id.'''
         list_object = MockList('url')
         new_list(list_object)

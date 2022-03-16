@@ -254,7 +254,8 @@ FIELDS_ADDED_BY_TAP = {
 # As for the `price` field added in the schema, the API doc doesn't mention any
 # `trial_period_days` in the field, hence skipping the assertion error for the same.
 KNOWN_NESTED_MISSING_FIELDS = {
-    'subscription_items': {'price': 'recurring.trial_period_days'}
+    'subscription_items': {'price': 'recurring.trial_period_days'},
+    'charges': {'payment_method_details': 'card.mandate'}
 }
 
 class ALlFieldsTest(BaseTapTest):

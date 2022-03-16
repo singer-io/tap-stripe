@@ -11,6 +11,12 @@
       ],
       "properties": {}
     },
+    "updated_by_event_type": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
     "preferred_locales": {
       "type": [
         "null",

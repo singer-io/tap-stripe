@@ -18,6 +18,12 @@
       ],
       "format": "date-time"
     },
+    "updated_by_event_type": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
     "schedule": {
       "type": [
         "null",
@@ -348,7 +354,7 @@
         "transform_usage": {
           "type": [
             "null",
-            "string"
+            "object"
           ]
         },
         "interval_count": {

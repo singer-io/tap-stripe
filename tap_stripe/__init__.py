@@ -407,7 +407,7 @@ def new_list(self, api_key=None, stripe_version=None, stripe_account=None, **par
     LOGGER.debug(f'request id : {stripe_object.last_response.request_id}')
     return stripe_object
 
-# To log the request_id, we replaced the list() function of the ListObject 
+# To log the request_id, we replaced the list() function of the ListObject
 # class and captured the response and logged the request_id
 ListObject.list = new_list
 

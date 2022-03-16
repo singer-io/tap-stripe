@@ -103,7 +103,7 @@
     "transform_usage": {
       "type": [
         "null",
-        "string"
+        "object"
       ]
     },
     "name": {

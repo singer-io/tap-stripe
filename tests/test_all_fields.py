@@ -34,7 +34,8 @@ KNOWN_MISSING_FIELDS = {
     'subscription_items': set(),
     'plans': set(),
     'invoice_line_items': set(),
-    'invoices': set()
+    'invoices': set(),
+    'payment_intents': set()
 }
 
 # we have observed that the SDK object creation returns some new fields intermittently, which are not present in the schema
@@ -160,7 +161,8 @@ FIELDS_TO_NOT_CHECK = {
         # As per stripe documentation(https://stripe.com/docs/api/invoices/line_item#invoice_line_item_object-invoice_item),
         # 'invoice_item' is id of invoice item associated wih this line if any. # So, due to uncertainty of this field, skipped it.
         'invoice_item'
-    }
+    },
+    'payment_intents': set()
 }
 
 KNOWN_FAILING_FIELDS = {
@@ -183,16 +185,13 @@ KNOWN_FAILING_FIELDS = {
     'charges': set(),
     'subscription_items': {
         # BUG_12478 | missing subfields on plan ['statement_description', 'statement_descriptor', 'name']
-        # BUG_13711 | https://jira.talendforge.org/browse/TDL-13711
-        #             Schema wrong for subfield 'transform_usage', should be object not string
         'plan',
     },
     'invoices': {
         'plans', # BUG_12478 | missing subfields
     },
-    'plans': {
-        'transform_usage' # BUG_13711 schema is wrong, should be an object not string
-    },
+    'plans': set(),
+    'payment_intents':set(),
     'invoice_line_items': set()
     # 'invoice_line_items': { # TODO This is a test issue that prevents us from consistently passing
     #     'unique_line_item_id',
@@ -213,6 +212,7 @@ FICKLE_FIELDS = {
     'subscriptions': set(),
     'products': set(),
     'invoice_items': set(),
+    'payment_intents': set(),
     'payouts': {
         'object', # expect 'transfer', get 'payout'
     },
@@ -245,6 +245,7 @@ FIELDS_ADDED_BY_TAP = {
     'subscription_items': set(), # `updated` is not added by the tap for child streams.
     'invoices': {'updated'},
     'plans': {'updated'},
+    'payment_intents': {'updated'},
     'invoice_line_items': {
         'invoice'
     },
@@ -253,7 +254,10 @@ FIELDS_ADDED_BY_TAP = {
 # As for the `price` field added in the schema, the API doc doesn't mention any
 # `trial_period_days` in the field, hence skipping the assertion error for the same.
 KNOWN_NESTED_MISSING_FIELDS = {
-    'subscription_items': {'price': 'recurring.trial_period_days'}
+    'subscription_items': {'price': 'recurring.trial_period_days'},
+    'charges': {'payment_method_details': 'card.mandate'},
+    'payment_intents': {'charges': 'payment_method_details.card.mandate',
+                        'payment_method_options': 'card.mandate_options'}
 }
 
 class ALlFieldsTest(BaseTapTest):
@@ -277,6 +281,7 @@ class ALlFieldsTest(BaseTapTest):
         # Create data prior to first sync
         cls.streams_to_test = {
             "customers",
+            "payment_intents",
             "charges",
             "coupons",
             "invoice_items",
@@ -536,11 +541,6 @@ class ALlFieldsTest(BaseTapTest):
                                 expected_field_value = expected_record.get(field, "EXPECTED IS MISSING FIELD")
                                 actual_field_value = actual_record.get(field, "ACTUAL IS MISSING FIELD")
 
-                                # to fix the failure warning of `created` for `invoices` stream
-                                # BUG_13711 | the schema was missing datetime format and the tests were throwing a warning message.
-                                # Hence, a workaround to remove that warning message.
-                                if stream == 'invoices' and expected_field_value != "EXPECTED IS MISSING FIELD" and field == 'created':
-                                    expected_field_value = int(self.dt_to_ts(expected_field_value))
                                 try:
 
                                     self.assertEqual(expected_field_value, actual_field_value)
@@ -551,8 +551,22 @@ class ALlFieldsTest(BaseTapTest):
                                         f"AssertionError({failure_1})")
 
                                     nested_key = KNOWN_NESTED_MISSING_FIELDS.get(stream, {})
-                                    if self.find_nested_key(nested_key, expected_field_value, field):
-                                        continue
+                                    # Check whether expected_field_value is list or not.
+                                    # If expected_field_value is list then loop through each item of list
+                                    if type(expected_field_value) == list:
+                                        is_fickle = True
+                                        for each_expected_field_value in expected_field_value:
+                                            if self.find_nested_key(nested_key, each_expected_field_value, field):
+                                                continue
+                                            else:
+                                                is_fickle = False
+                                                break
+
+                                        if is_fickle:
+                                            continue    
+                                    else:
+                                        if self.find_nested_key(nested_key, expected_field_value, field):
+                                            continue
 
                                     if field in KNOWN_FAILING_FIELDS[stream] or field in FIELDS_TO_NOT_CHECK[stream]:
                                         continue # skip the following wokaround

@@ -395,7 +395,7 @@ def reduce_foreign_keys(rec, stream_name):
 
 def new_list(self, api_key=None, stripe_version=None, stripe_account=None, **params):
     '''The new list function to overwrite the list() in the ListObject class.'''
-    stripe_object = self._request(  # pylint: disable=invalid-name
+    stripe_object = self._request(  # pylint: disable=protected-access
             "get",
             self.get("url"),
             api_key=api_key,
@@ -403,7 +403,7 @@ def new_list(self, api_key=None, stripe_version=None, stripe_account=None, **par
             stripe_account=stripe_account,
             **params
         )
-    stripe_object._retrieve_params = params # pylint: disable=invalid-name
+    stripe_object._retrieve_params = params # pylint: disable=protected-access
     LOGGER.debug(f'request id : {stripe_object.last_response.request_id}')
     return stripe_object
 

@@ -255,7 +255,8 @@ FIELDS_ADDED_BY_TAP = {
 # `trial_period_days` in the field, hence skipping the assertion error for the same.
 KNOWN_NESTED_MISSING_FIELDS = {
     'subscription_items': {'price': 'recurring.trial_period_days'},
-    'charges': {'payment_method_details': 'card.mandate'}
+    'charges': {'payment_method_details': 'card.mandate'},
+    'payment_intents': {'charges': 'payment_method_details.card.mandate'}
 }
 
 class ALlFieldsTest(BaseTapTest):

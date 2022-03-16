@@ -394,6 +394,7 @@ def reduce_foreign_keys(rec, stream_name):
     return rec
 
 def new_list(self, api_key=None, stripe_version=None, stripe_account=None, **params):
+    '''The new list function to overwrite the list() in the ListObject class.'''
     stripe_object = self._request(
             "get",
             self.get("url"),
@@ -406,6 +407,8 @@ def new_list(self, api_key=None, stripe_version=None, stripe_account=None, **par
     LOGGER.debug(f'request id : {stripe_object.last_response.request_id}')
     return stripe_object
 
+# To log the request_id, we replaced the list() function of the ListObject 
+# class and captured the response and logged the request_id
 ListObject.list = new_list
 
 def paginate(sdk_obj, filter_key, start_date, end_date, stream_name, request_args=None, limit=100):

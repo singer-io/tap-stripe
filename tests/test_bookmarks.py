@@ -43,6 +43,7 @@ class BookmarkTest(BaseTapTest):
             "invoices",
             "payouts",
             "plans",
+            "payment_intents",
             "products",
             "subscription_items",
             "subscriptions",
@@ -275,13 +276,24 @@ class BookmarkTest(BaseTapTest):
                     self.assertIn(expected_pk_value, sync_pk_values)
 
                 # Verify updated fields are replicated as expected
-                for updated_record in updated_records[stream]:
-                    expected_updated_key = 'metadata'
-                    expected_updated_value_substring = 'bob'
-                    updated_pk_value = updated_record.get('id')
-                    sync_records_metadata = [sync_record.get('metadata')
-                                             for sync_record in second_sync_data
-                                             if sync_record.get('id') == updated_pk_value]
-                    self.assertTrue(len(sync_records_metadata) == 1)
-                    self.assertIn(expected_updated_value_substring,
-                                  sync_records_metadata[0].get('test_value'))
+                if stream == "payment_intents":
+                    # payment_intents stream does not generate any event on the update of the metadata field.
+                    # payment_intent can be confirmed by updating the payment_method field and it generates succeeds event.
+                    # So, for the payment_intents stream, we are verifying updates for the payment_method field.
+                    for updated_record in updated_records[stream]:
+                        updated_pk_value = updated_record.get('id')
+                        sync_records_payment_method = [sync_record.get('payment_method')
+                                                for sync_record in second_sync_data
+                                                if sync_record.get('id') == updated_pk_value]
+                        self.assertIsNotNone(sync_records_payment_method[0])
+                else:
+                    for updated_record in updated_records[stream]:
+                        expected_updated_key = 'metadata'
+                        expected_updated_value_substring = 'bob'
+                        updated_pk_value = updated_record.get('id')
+                        sync_records_metadata = [sync_record.get('metadata')
+                                                for sync_record in second_sync_data
+                                                if sync_record.get('id') == updated_pk_value]
+                        self.assertTrue(len(sync_records_metadata) == 1)
+                        self.assertIn(expected_updated_value_substring,
+                                    sync_records_metadata[0].get('test_value'))

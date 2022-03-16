@@ -66,7 +66,7 @@ class RuleMap:
             for key in schema['properties'].keys():
                 breadcrumb = parent + ('properties', key)
 
-                self.apply_ruleset_on_schema(schema['properties'][key], schema_copy['properties'].get(key), stream_name, breadcrumb)
+                self.apply_ruleset_on_schema(schema.get('properties', {}).get(key, {}), schema_copy.get('properties', {}).get(key, {}), stream_name, breadcrumb)
 
                 # Skip keys available in STANDARD_KEYS
                 if key not in STANDARD_KEYS:

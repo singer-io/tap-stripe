@@ -18,6 +18,12 @@
       ],
       "format": "date-time"
     },
+    "updated_by_event_type": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
     "customer_tax_exempt": {
       "type": [
         "null",
@@ -45,8 +51,9 @@
     "created": {
       "type": [
         "null",
-        "integer"
-      ]
+        "string"
+      ],
+      "format": "date-time"
     },
     "status_transitions": {
       "type": [
@@ -492,8 +499,9 @@
     "finalized_at": {
       "type": [
         "null",
-        "integer"
-      ]
+        "string"
+      ],
+      "format": "date-time"
     },
     "pre_payment_credit_notes_amount": {
       "type": [

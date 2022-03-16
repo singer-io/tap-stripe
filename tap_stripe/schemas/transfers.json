@@ -7,6 +7,12 @@
       ],
       "properties": {}
     },
+    "updated_by_event_type": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
     "reversals": {
       "type": [
         "null",

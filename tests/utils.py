@@ -2,6 +2,7 @@ import logging
 import random
 import json
 import backoff
+import random
 from datetime import datetime as dt
 from datetime import time, timedelta
 from time import sleep
@@ -31,6 +32,7 @@ client = {
     'payout_transactions' : None, # not a native stream to Stripe
     'payouts': stripe_client.Payout,
     'plans': stripe_client.Plan,
+    'payment_intents': stripe_client.PaymentIntent,
     'products': stripe_client.Product,
     'subscription_items': stripe_client.SubscriptionItem,
     'subscriptions': stripe_client.Subscription,
@@ -239,12 +241,18 @@ def list_all_object(stream, max_limit: int = 100, get_invoice_lines: bool = Fals
                 return [dict_obj]
             return dict_obj
 
-
         stripe_obj = client[stream].list(limit=max_limit, created={"gte": midnight})
         dict_obj = stripe_obj_to_dict(stripe_obj)
         if dict_obj.get('data'):
             if not isinstance(dict_obj['data'], list):
                 return [dict_obj['data']]
+            
+            if stream == "payment_intents":
+                for obj in dict_obj['data']:
+                    obj['charges'] = obj['charges'].get('data', [])
+                    for charge in obj['charges']:
+                        if not isinstance(charge.get('refunds'), list):
+                            charge['refunds'] = []
             return dict_obj['data']
 
         if not isinstance(dict_obj, list):
@@ -268,6 +276,25 @@ def standard_create(stream):
             name='Coupon Name',
             percent_off=66.6,
             max_redemptions=1000000
+        )
+    elif stream == 'payment_intents':
+        # Sometime due to insufficient balance, stripe throws error while creating records for other streams like charges.
+        # Create payment intent to add balance in test data with `confirm` param as true. Without `confirm` param stripe does not add balance.
+        # Reference for failure: https://app.circleci.com/pipelines/github/singer-io/tap-stripe/1278/workflows/e1bc336d-a468-4b6d-b8a2-bc2dde0768f6/jobs/4239
+        client[stream].create(
+            amount=random.randint(100, 10000),
+            currency="usd",
+            customer="cus_LAXuu6qTrq8LSf",
+            confirm=True
+        )
+
+        # Creating record for payment_intents without `confirm` param. Because confirmed payment_intents can't be updated later on and
+        # we require to update record for event_updates test case.
+        return client[stream].create(
+            amount=random.randint(100, 10000),
+            currency="usd",
+            customer="cus_LAXuu6qTrq8LSf",
+            statement_descriptor="stitchdata"
         )
     elif stream == 'customers':
         return client[stream].create(
@@ -359,10 +386,7 @@ def create_object(stream):
         global metadata_value
         metadata_value = {"test_value": "senorita_alice_{}@stitchdata.com".format(NOW)}
 
-        if stream in {"disputes", "transfers"}:
-            return None
-
-        elif stream in {'products', 'coupons', 'plans', 'payouts'}:
+        if stream in {'products', 'coupons', 'plans', 'payouts', 'payment_intents'}:
             return standard_create(stream)
 
         elif stream == 'customers':
@@ -471,13 +495,19 @@ def create_object(stream):
                 # proration_date= not set ^
                 tax_rates=[],  # TODO tax rates
             )
-
-        if stream == 'charges':
+        # To generate the data for the `disputes` stream, we need to provide wrong card numbers
+        #  in the `charges` API. Hence bifurcated this data creation into two. 
+        # Refer documentation: https://stripe.com/docs/testing#disputes
+        if stream == 'charges' or stream == 'disputes':
+            if stream == 'disputes':
+                card_number = str(random.choice(["4000000000001976", "4000000000002685", "4000000000000259"]))
+            else:
+                card_number = "4242424242424242"
             # Create a Source, attach to new customer, then charge them.
             src = stripe_client.Source.create(
                 type='card',
                 card={
-                    "number": "4242424242424242",
+                    "number": card_number,
                     "exp_month": 2,
                     "exp_year": dt.today().year + 2,
                     "cvc": "666",
@@ -492,7 +522,7 @@ def create_object(stream):
                 metadata=metadata_value,
             )
             add_to_hidden('customers', cust['id'])
-            return client[stream].create(
+            return client['charges'].create(
                 amount=50,
                 currency="usd",
                 customer=cust['id'],
@@ -511,6 +541,14 @@ def create_object(stream):
                 # on_behalf_of=,  # CONNECT only
                 # transfer_data=,  # CONNECT only
                 # transfer_group=,  # CONNECT only
+            )
+
+        if stream == 'transfers':
+            return client[stream].create(
+                amount=1,
+                currency="usd",
+                destination="acct_1DOR67LsKC35uacf",
+                transfer_group="ORDER_95"
             )
 
     return None
@@ -538,7 +576,13 @@ def update_object(stream, oid):
             #     return update_object("charges", bt['source'])
 
             return None
-
+        if stream == "payment_intents":
+            # payment_intents does not generate `updated` events on metadata update.
+            # Moreover, updating the payment_method will always require you to confirm the PaymentIntent. That's why here we are using confirm method.
+            # Reference: https://stripe.com/docs/api/payment_intents/update
+            return client[stream].confirm(
+                oid, payment_method="pm_card_visa",
+            )
         return client[stream].modify(
             oid, metadata={"test_value": "senor_bob_{}@stitchdata.com".format(NOW)},
         )

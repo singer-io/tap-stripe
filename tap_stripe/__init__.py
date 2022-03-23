@@ -12,6 +12,7 @@ from stripe.util import convert_to_stripe_object
 import singer
 from singer import utils, Transformer, metrics
 from singer import metadata
+import backoff
 
 REQUIRED_CONFIG_KEYS = [
     "start_date",
@@ -468,6 +469,23 @@ def convert_dict_to_stripe_object(record):
 
     return record
 
+
+def invoice_line_item_not_found_error(error):
+    """
+        This function checks whether the error contains 'does not have a line item' substring and 
+        return boolean values accordingly, to decide whether to backoff or not.
+    """
+    # retry if the error string contains 'does not have a line item'
+    if str(error).__contains__('does not have a line item'):
+        return False
+    return True
+
+
+@backoff.on_exception(backoff.expo,
+                        stripe.error.InvalidRequestError,
+                        giveup=invoice_line_item_not_found_error,
+                        max_tries=5,
+                        factor=2)
 # pylint: disable=too-many-locals
 # pylint: disable=too-many-statements
 def sync_stream(stream_name):

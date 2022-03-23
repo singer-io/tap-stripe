@@ -472,7 +472,7 @@ def convert_dict_to_stripe_object(record):
 
 def invoice_line_item_not_found_error(error):
     """
-        This function checks whether the error contains 'does not have a line item' substring and 
+        This function checks whether the error contains 'does not have a line item' substring and
         return boolean values accordingly, to decide whether to backoff or not.
     """
     # retry if the error string contains 'does not have a line item'

@@ -639,6 +639,11 @@ def get_object_list_iterator(object_list):
 # we are in a cycle.
 INITIAL_SUB_STREAM_OBJECT_LIST_LENGTH = 10
 
+@backoff.on_exception(backoff.expo,
+                        stripe.error.InvalidRequestError,
+                        giveup=invoice_line_item_not_found_error,
+                        max_tries=5,
+                        factor=2)
 def sync_sub_stream(sub_stream_name, parent_obj, updates=False):
     """
     Given a parent object, retrieve its values for the specified substream.

@@ -712,8 +712,6 @@ def sync_sub_stream(child_stream, bookmark_value):
     # Get the replication key for the stream
     replication_key = STREAM_REPLICATION_KEY[parent_stream]
 
-    filter_key = replication_key
-
     end_time = dt_to_epoch(utils.now())
 
     window_size = float(Context.config.get('date_window_size', DEFAULT_DATE_WINDOW_SIZE))
@@ -734,7 +732,7 @@ def sync_sub_stream(child_stream, bookmark_value):
         # Get the parent records for the child-streams to loop on it and fetch the child records.
         for parent_obj in paginate(
                 STREAM_SDK_OBJECTS[parent_stream]['sdk_object'],
-                filter_key,
+                replication_key,
                 start_window,
                 stop_window,
                 parent_stream,

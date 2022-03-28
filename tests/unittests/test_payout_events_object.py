@@ -36,7 +36,7 @@ class TestPayoutEventObject(unittest.TestCase):
         """
             Test cases to verify the Tap syncs payout events with 'object' type 'payout'
         """
-        # funcution call
+        # function call
         should_sync = should_sync_event(MockPayout({"id": "po_test123", "object": "payout"}), STREAM_TO_TYPE_FILTER.get("payouts").get("object"), {})
         # verify if the Tap will sync the payout events
         self.assertTrue(should_sync)

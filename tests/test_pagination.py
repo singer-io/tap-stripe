@@ -30,6 +30,7 @@ class PaginationTest(BaseTapTest):
 
         incremental_streams = {key for key, value in self.expected_replication_method().items()
                                if value == self.INCREMENTAL}
+        
         direct_streams = self.child_streams().union({
             # Data is generated automatically for 'balance_transactions' when 'charges' is created
             'balance_transactions',

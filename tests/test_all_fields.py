@@ -376,6 +376,19 @@ class ALlFieldsTest(BaseTapTest):
                         if keys[-1] in temp_value:
                             return True
 
+    def handle_list_data(self, expected_field_value, field, nested_key):
+        """
+        Find the nested key that is failing in the list and ignore the assertion error, if any.
+        """
+        is_fickle = True
+        for each_expected_field_value in expected_field_value:
+            if self.find_nested_key(nested_key, each_expected_field_value, field):
+                continue
+            else:
+                is_fickle = False
+                break
+        return is_fickle
+
     def all_fields_test(self, streams_to_test):
         """
         Verify that for each stream data is synced when all fields are selected.
@@ -554,15 +567,7 @@ class ALlFieldsTest(BaseTapTest):
                                     # Check whether expected_field_value is list or not.
                                     # If expected_field_value is list then loop through each item of list
                                     if type(expected_field_value) == list:
-                                        is_fickle = True
-                                        for each_expected_field_value in expected_field_value:
-                                            if self.find_nested_key(nested_key, each_expected_field_value, field):
-                                                continue
-                                            else:
-                                                is_fickle = False
-                                                break
-
-                                        if is_fickle:
+                                        if self.handle_list_data(expected_field_value, field, nested_key):
                                             continue    
                                     else:
                                         if self.find_nested_key(nested_key, expected_field_value, field):

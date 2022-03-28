@@ -30,9 +30,10 @@ class PaginationTest(BaseTapTest):
 
         incremental_streams = {key for key, value in self.expected_replication_method().items()
                                if value == self.INCREMENTAL}
-        # Skipping child streams for this test because we cannot determine if the child stream is
+        # We cannot determine if the child stream is
         # returning a page of data due to the duplicacy in the data due to normal parent records
-        # as well as event updates of the parents.
+        # as well as event updates of the parents. And hence the ticket: https://jira.talendforge.org/browse/TDL-10005
+        # is a blocker. Hence skipping the child streams from this test.
         direct_streams = self.child_streams().union({
             # Data is generated automatically for 'balance_transactions' when 'charges' is created
             'balance_transactions',

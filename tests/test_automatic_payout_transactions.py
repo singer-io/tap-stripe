@@ -11,8 +11,12 @@ def get_payouts():
     # api call of 1st page
     stripe_obj = client["payouts"].list(limit=100, created={"gte": midnight})
     dict_obj = stripe_obj_to_dict(stripe_obj)
-    # add data
-    data += dict_obj['data']
+
+    try:
+        # add data
+        data += dict_obj['data']
+    except KeyError:
+        raise Exception("No records for 'Payouts' were replicated, please run 'test_all_fields' before re-running.")
 
     # loop over rest of the pages and collect data
     while dict_obj.get("has_more"):

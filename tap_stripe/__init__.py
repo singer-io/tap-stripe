@@ -431,9 +431,9 @@ def get_bookmark_for_sub_stream(stream_name):
     # Get the parent for the stream
     parent_stream = PARENT_STREAM_MAP[child_stream]
     # Get the replication key
-    replication_key = STREAM_REPLICATION_KEY[parent_stream]
+    parent_replication_key = STREAM_REPLICATION_KEY[parent_stream]
     # Get the bookmark value of the child stream
-    bookmark_value = get_bookmark_for_stream(child_stream, replication_key)
+    bookmark_value = get_bookmark_for_stream(child_stream, parent_replication_key)
     return bookmark_value
 
 def write_bookmark_for_stream(stream_name, replication_key, stream_bookmark):
@@ -710,7 +710,7 @@ def sync_sub_stream(child_stream, bookmark_value):
     # Get the parent stream of the stream
     parent_stream = PARENT_STREAM_MAP[child_stream]
     # Get the replication key for the stream
-    replication_key = STREAM_REPLICATION_KEY[parent_stream]
+    parent_replication_key = STREAM_REPLICATION_KEY[parent_stream]
 
     end_time = dt_to_epoch(utils.now())
 
@@ -732,7 +732,7 @@ def sync_sub_stream(child_stream, bookmark_value):
         # Get the parent records for the child-streams to loop on it and fetch the child records.
         for parent_obj in paginate(
                 STREAM_SDK_OBJECTS[parent_stream]['sdk_object'],
-                replication_key,
+                parent_replication_key,
                 start_window,
                 stop_window,
                 parent_stream,
@@ -743,7 +743,7 @@ def sync_sub_stream(child_stream, bookmark_value):
         if stop_window > bookmark_value:
             bookmark_value = stop_window
             # Write bookmark for the stream
-            write_bookmark_for_stream(child_stream, replication_key, bookmark_value)
+            write_bookmark_for_stream(child_stream, parent_replication_key, bookmark_value)
         singer.write_state(Context.state)
 
         # update window for next iteration

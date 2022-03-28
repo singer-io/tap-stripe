@@ -394,7 +394,7 @@ def reduce_foreign_keys(rec, stream_name):
     return rec
 
 def new_request(self, method, url, params=None, headers=None):
-    '''The new request function to overwrite the request() in the APIRequestor class.'''
+    '''The new request function to overwrite the request() function of the APIRequestor class of SDK.'''
     rbody, rcode, rheaders, my_api_key = self.request_raw(
         method.lower(), url, params, headers, is_streaming=False
     )
@@ -403,7 +403,7 @@ def new_request(self, method, url, params=None, headers=None):
     return resp, my_api_key
 
 # To log the request_id, we replaced the request() function of the APIRequestor
-# class, captured the response and logged the request_id
+# class o SDK, captured the response and logged the request_id
 APIRequestor.request = new_request
 
 def paginate(sdk_obj, filter_key, start_date, end_date, stream_name, request_args=None, limit=100):

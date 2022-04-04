@@ -432,11 +432,11 @@ def get_bookmark_for_stream(stream_name, replication_key):
             int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
     return stream_bookmark
 
-def evaluate_start_time_based_on_lookback(stream_name, replication_key):
+def evaluate_start_time_based_on_lookback(stream_name, replication_key, lookback_window):
     bookmark = singer.get_bookmark(Context.state, stream_name, replication_key)
     start_date = int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
     if bookmark:
-        lookback_evaluated_time = dt_to_epoch(utils.now()) - EVENTS_STREAM_LOOKBACK
+        lookback_evaluated_time = dt_to_epoch(utils.now()) - lookback_window
         if bookmark > lookback_evaluated_time:
             return lookback_evaluated_time
         else:
@@ -536,17 +536,12 @@ def sync_stream(stream_name):
             # TODO: This may be an issue for other streams' created_at
             # entries, but to keep the surface small, doing this only for
             # immutable streams at first to confirm the suspicion.
-            # start_window -= IMMUTABLE_STREAM_LOOKBACK
-            start_window = evaluate_start_time_based_on_lookback(stream_name, replication_key)
-            if stream_name == 'events':
-                lookback_window = EVENTS_STREAM_LOOKBACK
-            else:
-                lookback_window = Context.config.get('lookback_window') # added configurable lookback window
-                if lookback_window and int(lookback_window): # set lookback window if lookback window is present in config and int convertible
-                    lookback_window = int(lookback_window)
-                else: # set default lookback
-                    lookback_window = BALANCE_TRANSACTIONS_STREAM_LOOKBACK
-            start_window -= lookback_window
+            lookback_window = Context.config.get('lookback_window') # added configurable lookback window
+            if lookback_window and int(lookback_window): # set lookback window if lookback window is present in config and int convertible
+                lookback_window = int(lookback_window)
+            else: # set default lookback
+                lookback_window = BALANCE_TRANSACTIONS_STREAM_LOOKBACK if stream_name == 'balance_transactions' else EVENTS_STREAM_LOOKBACK
+            start_window = evaluate_start_time_based_on_lookback(stream_name, replication_key, lookback_window)
 
         # NB: We observed records coming through newest->oldest and so
         # date-windowing was added and the tap only bookmarks after it has

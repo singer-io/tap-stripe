@@ -431,6 +431,17 @@ def get_bookmark_for_stream(stream_name, replication_key):
             int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
     return stream_bookmark
 
+def evaluate_start_time_based_on_lookback(stream_name, replication_key):
+    bookmark = singer.get_bookmark(Context.state, stream_name, replication_key)
+    start_date = int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
+    if bookmark:
+        lookback_evaluated_time = dt_to_epoch(utils.now()) - IMMUTABLE_STREAM_LOOKBACK
+        if bookmark > lookback_evaluated_time:
+            return lookback_evaluated_time
+        else:
+            return bookmark
+    return start_date
+
 def write_bookmark_for_stream(stream_name, replication_key, stream_bookmark):
     """
         Write bookmark for the streams using replication key and bookmark value
@@ -524,7 +535,8 @@ def sync_stream(stream_name):
             # TODO: This may be an issue for other streams' created_at
             # entries, but to keep the surface small, doing this only for
             # immutable streams at first to confirm the suspicion.
-            start_window -= IMMUTABLE_STREAM_LOOKBACK
+            # start_window -= IMMUTABLE_STREAM_LOOKBACK
+            start_window = evaluate_start_time_based_on_lookback(stream_name, replication_key)
 
         # NB: We observed records coming through newest->oldest and so
         # date-windowing was added and the tap only bookmarks after it has

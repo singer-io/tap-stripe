@@ -54,7 +54,7 @@ class LookbackWindow(BaseTapTest):
                         streams_to_select]
         self.select_all_streams_and_fields(conn_id, our_catalogs, select_all_fields=True)
 
-        bookmark = int(dt.today().timestamp()) - 10*60
+        bookmark = int(dt.today().timestamp()) - 0.2*24*60*60
         new_state = {'bookmarks': dict()}
         state = {'events': {'created': bookmark}, 'balance_transactions': {'created': bookmark + 60}}
         for stream in self.expected_sync_streams():
@@ -65,13 +65,19 @@ class LookbackWindow(BaseTapTest):
         now_time = int(dt.today().timestamp())
         sync_record_count = self.run_and_verify_sync(conn_id)
 
-        # Get the set of records from a first sync
+        # Get the set of records from the sync
         sync_records = runner.get_records_from_target_output()
 
         for stream in self.expected_sync_streams():
             sync_data = [record.get("data") for record
                                     in sync_records.get(stream, {}).get("messages", [])]
+            # check for the record if it is between evaluated start date and bookmark
+            is_between = False
             for record in sync_data:
                 date_value = record["updated"]
                 self.assertGreaterEqual(date_value, dt.strftime(dt.fromtimestamp(now_time - self.lookback_window), self.TS_COMPARISON_FORMAT),
                                         msg="A sync record has a replication-key that is less than the today - lookback.")
+                if dt.strftime(dt.fromtimestamp(now_time - self.lookback_window), self.TS_COMPARISON_FORMAT) <= date_value < dt.strftime(dt.fromtimestamp(new_state['bookmarks'][stream]['created']), self.TS_COMPARISON_FORMAT):
+                    is_between = True
+
+            self.assertTrue(is_between, msg='No record found between evaluated start time and bookmark')

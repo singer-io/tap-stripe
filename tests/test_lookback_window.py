@@ -27,7 +27,7 @@ class LookbackWindow(BaseTapTest):
     def get_properties(self):  # pylint: disable=arguments-differ
         return_value = {
             'start_date': dt.strftime(dt.today(), self.START_DATE_FORMAT),
-            'lookback_window': 1*24*60*60,
+            'lookback_window': 2*24*60*60,
             'account_id': os.getenv('TAP_STRIPE_ACCOUNT_ID'),
             'client_secret': os.getenv('TAP_STRIPE_CLIENT_SECRET')
         }
@@ -40,7 +40,7 @@ class LookbackWindow(BaseTapTest):
         }
 
     def test_run(self):
-        self.lookback_window = 1*24*60*60
+        self.lookback_window = 2*24*60*60
         # Instantiate connection with default start
         conn_id = connections.ensure_connection(self)
 
@@ -54,7 +54,7 @@ class LookbackWindow(BaseTapTest):
                         streams_to_select]
         self.select_all_streams_and_fields(conn_id, our_catalogs, select_all_fields=True)
 
-        bookmark = int(dt.today().timestamp()) - 0.2*24*60*60
+        bookmark = int(dt.today().timestamp()) - 1*24*60*60
         new_state = {'bookmarks': dict()}
         state = {'events': {'created': bookmark}, 'balance_transactions': {'created': bookmark + 60}}
         for stream in self.expected_sync_streams():

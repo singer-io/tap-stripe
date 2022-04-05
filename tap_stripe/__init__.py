@@ -542,6 +542,7 @@ def sync_stream(stream_name):
             else: # set default lookback
                 lookback_window = BALANCE_TRANSACTIONS_STREAM_LOOKBACK if stream_name == 'balance_transactions' else EVENTS_STREAM_LOOKBACK
             start_window = evaluate_start_time_based_on_lookback(stream_name, replication_key, lookback_window)
+            stream_bookmark = start_window
 
         # NB: We observed records coming through newest->oldest and so
         # date-windowing was added and the tap only bookmarks after it has

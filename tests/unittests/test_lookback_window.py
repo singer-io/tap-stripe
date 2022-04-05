@@ -3,14 +3,14 @@ from unittest import mock
 from tap_stripe import BALANCE_TRANSACTIONS_STREAM_LOOKBACK, EVENTS_STREAM_LOOKBACK, Context, sync_stream, datetime
 
 class MockClass():
-    '''The mock class for the Balance Transactions object.'''
+    '''The mock class for the Balance Transactions/events object.'''
     lines = "lines"
     def __init__(self):
         return None
 
     @classmethod
     def to_dict_recursive(cls):
-        '''The mocked to_dict_recursive method of the Balance Transactions class.'''
+        '''The mocked to_dict_recursive method of the Balance Transactions/Events class.'''
         return "Test Data"
 
 now_time = 1645046000 # epoch now time

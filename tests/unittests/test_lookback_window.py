@@ -53,7 +53,7 @@ class TestLookbackWindow(unittest.TestCase):
         Context.config = config
         Context.new_counts['balance_transactions'] = 1
         sync_stream("balance_transactions")
-        # expected start_date should be the now() - `lookback`(lookback passed in the config)
+        # expected start_date should be the now() - `lookback`(default lookback)
         expected_start_window = now_time - IMMUTABLE_STREAM_LOOKBACK
         mock_epoch_to_dt.assert_called_with(expected_start_window)
 
@@ -83,6 +83,6 @@ class TestLookbackWindow(unittest.TestCase):
         Context.config = config
         Context.new_counts['events'] = 1
         sync_stream("events")
-        # expected start_date should be the now() - `lookback`(lookback passed in the config)
+        # expected start_date should be the now() - `lookback`(default lookback)
         expected_start_window = now_time - IMMUTABLE_STREAM_LOOKBACK
         mock_epoch_to_dt.assert_called_with(expected_start_window)

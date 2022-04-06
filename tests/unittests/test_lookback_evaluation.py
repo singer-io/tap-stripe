@@ -1,6 +1,6 @@
 import unittest
 from unittest import mock
-from tap_stripe import BALANCE_TRANSACTIONS_STREAM_LOOKBACK, evaluate_start_time_based_on_lookback, EVENTS_STREAM_LOOKBACK, Context, utils
+from tap_stripe import IMMUTABLE_STREAM_LOOKBACK, evaluate_start_time_based_on_lookback, Context, utils
 
 class TestLookbackEvaluation(unittest.TestCase):
 
@@ -10,7 +10,7 @@ class TestLookbackEvaluation(unittest.TestCase):
         config = { "client_secret": "test_secret", "account_id": "test_account", "start_date": "2022-03-30T00:00:00"}
         Context.config = config
         Context.state = {}
-        start_window = evaluate_start_time_based_on_lookback(stream_name, replication_key, EVENTS_STREAM_LOOKBACK)
+        start_window = evaluate_start_time_based_on_lookback(stream_name, replication_key, IMMUTABLE_STREAM_LOOKBACK)
         self.assertEqual(start_window, utils.strptime_to_utc(Context.config['start_date']).timestamp())
 
     def test_lookback_evaluation_when_not_recent_bookmark_events(self):
@@ -20,7 +20,7 @@ class TestLookbackEvaluation(unittest.TestCase):
         config = { "client_secret": "test_secret", "account_id": "test_account", "start_date": "2022-03-30T00:00:00"}
         Context.config = config
         Context.state = state
-        start_window = evaluate_start_time_based_on_lookback(stream_name, replication_key, EVENTS_STREAM_LOOKBACK)
+        start_window = evaluate_start_time_based_on_lookback(stream_name, replication_key, IMMUTABLE_STREAM_LOOKBACK)
         self.assertEqual(start_window, Context.state['bookmarks'][stream_name][replication_key])
 
     @mock.patch("tap_stripe.dt_to_epoch")
@@ -33,8 +33,8 @@ class TestLookbackEvaluation(unittest.TestCase):
         config = { "client_secret": "test_secret", "account_id": "test_account", "start_date": "2022-03-30T00:00:00"}
         Context.config = config
         Context.state = state
-        start_window = evaluate_start_time_based_on_lookback(stream_name, replication_key, EVENTS_STREAM_LOOKBACK)
-        self.assertEqual(start_window, now_time - EVENTS_STREAM_LOOKBACK)
+        start_window = evaluate_start_time_based_on_lookback(stream_name, replication_key, IMMUTABLE_STREAM_LOOKBACK)
+        self.assertEqual(start_window, now_time - IMMUTABLE_STREAM_LOOKBACK)
 
     def test_lookback_evaluation_for_no_bookmark_balance_transactions(self):
         stream_name = "balance_transactions"
@@ -42,7 +42,7 @@ class TestLookbackEvaluation(unittest.TestCase):
         config = { "client_secret": "test_secret", "account_id": "test_account", "start_date": "2022-03-30T00:00:00"}
         Context.config = config
         Context.state = {}
-        start_window = evaluate_start_time_based_on_lookback(stream_name, replication_key, BALANCE_TRANSACTIONS_STREAM_LOOKBACK)
+        start_window = evaluate_start_time_based_on_lookback(stream_name, replication_key, IMMUTABLE_STREAM_LOOKBACK)
         self.assertEqual(start_window, utils.strptime_to_utc(Context.config['start_date']).timestamp())
 
     def test_lookback_evaluation_when_not_recent_bookmark_balance_transactions(self):
@@ -52,7 +52,7 @@ class TestLookbackEvaluation(unittest.TestCase):
         config = { "client_secret": "test_secret", "account_id": "test_account", "start_date": "2022-03-30T00:00:00"}
         Context.config = config
         Context.state = state
-        start_window = evaluate_start_time_based_on_lookback(stream_name, replication_key, BALANCE_TRANSACTIONS_STREAM_LOOKBACK)
+        start_window = evaluate_start_time_based_on_lookback(stream_name, replication_key, IMMUTABLE_STREAM_LOOKBACK)
         self.assertEqual(start_window, Context.state['bookmarks'][stream_name][replication_key])
 
     @mock.patch("tap_stripe.dt_to_epoch")
@@ -65,5 +65,5 @@ class TestLookbackEvaluation(unittest.TestCase):
         config = { "client_secret": "test_secret", "account_id": "test_account", "start_date": "2022-03-30T00:00:00"}
         Context.config = config
         Context.state = state
-        start_window = evaluate_start_time_based_on_lookback(stream_name, replication_key, BALANCE_TRANSACTIONS_STREAM_LOOKBACK)
-        self.assertEqual(start_window, now_time - BALANCE_TRANSACTIONS_STREAM_LOOKBACK)
+        start_window = evaluate_start_time_based_on_lookback(stream_name, replication_key, IMMUTABLE_STREAM_LOOKBACK)
+        self.assertEqual(start_window, now_time - IMMUTABLE_STREAM_LOOKBACK)

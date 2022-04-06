@@ -110,8 +110,7 @@ SUB_STREAMS = {
 
 # NB: These streams will only sync through once for creates, never updates.
 IMMUTABLE_STREAMS = {'balance_transactions', 'events'}
-BALANCE_TRANSACTIONS_STREAM_LOOKBACK = 600 # 10 min in epoch time, Stripe accuracy is to the second
-EVENTS_STREAM_LOOKBACK = 300 # 5 min in epoch time, Stripe accuracy is to the second
+IMMUTABLE_STREAM_LOOKBACK = 600 # 10 min in epoch time, Stripe accuracy is to the second
 
 LOGGER = singer.get_logger()
 
@@ -540,7 +539,7 @@ def sync_stream(stream_name):
             if lookback_window and int(lookback_window): # set lookback window if lookback window is present in config and int convertible
                 lookback_window = int(lookback_window)
             else: # set default lookback
-                lookback_window = BALANCE_TRANSACTIONS_STREAM_LOOKBACK if stream_name == 'balance_transactions' else EVENTS_STREAM_LOOKBACK
+                lookback_window = IMMUTABLE_STREAM_LOOKBACK # default lookback
             start_window = evaluate_start_time_based_on_lookback(stream_name, replication_key, lookback_window)
             stream_bookmark = start_window
 

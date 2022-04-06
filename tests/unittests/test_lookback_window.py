@@ -1,6 +1,6 @@
 import unittest
 from unittest import mock
-from tap_stripe import BALANCE_TRANSACTIONS_STREAM_LOOKBACK, EVENTS_STREAM_LOOKBACK, Context, sync_stream, datetime
+from tap_stripe import IMMUTABLE_STREAM_LOOKBACK, Context, sync_stream
 
 class MockClass():
     '''The mock class for the Balance Transactions/events object.'''
@@ -34,7 +34,7 @@ class TestLookbackWindow(unittest.TestCase):
         Context.new_counts['balance_transactions'] = 1
         sync_stream("balance_transactions")
         # expected start_date should be the now() - `lookback`(default lookback)
-        expected_start_window = now_time - BALANCE_TRANSACTIONS_STREAM_LOOKBACK
+        expected_start_window = now_time - IMMUTABLE_STREAM_LOOKBACK
         mock_epoch_to_dt.assert_called_with(expected_start_window)
 
     def test_config_provided_value_lookback(self, mock_get_bookmark_for_stream, mock_sync_substream, mock_dt_to_epoch, mock_epoch_to_dt, mock_get, mock_metadata_map, mock_get_catalog_entry, mock_paginate, mock_convert_dict_to_stripe_object, mock_reduce_foreign_keys):
@@ -54,7 +54,7 @@ class TestLookbackWindow(unittest.TestCase):
         Context.new_counts['balance_transactions'] = 1
         sync_stream("balance_transactions")
         # expected start_date should be the now() - `lookback`(lookback passed in the config)
-        expected_start_window = now_time - BALANCE_TRANSACTIONS_STREAM_LOOKBACK
+        expected_start_window = now_time - IMMUTABLE_STREAM_LOOKBACK
         mock_epoch_to_dt.assert_called_with(expected_start_window)
 
     def test_default_value_lookback_events(self, mock_get_bookmark_for_stream, mock_sync_substream, mock_dt_to_epoch, mock_epoch_to_dt, mock_get, mock_metadata_map, mock_get_catalog_entry, mock_paginate, mock_convert_dict_to_stripe_object, mock_reduce_foreign_keys):
@@ -64,7 +64,7 @@ class TestLookbackWindow(unittest.TestCase):
         Context.new_counts['events'] = 1
         sync_stream("events")
         # expected start_date should be the now() - `lookback`(default lookback)
-        expected_start_window = now_time - EVENTS_STREAM_LOOKBACK
+        expected_start_window = now_time - IMMUTABLE_STREAM_LOOKBACK
         mock_epoch_to_dt.assert_called_with(expected_start_window)
 
     def test_config_provided_value_lookback_events(self, mock_get_bookmark_for_stream, mock_sync_substream, mock_dt_to_epoch, mock_epoch_to_dt, mock_get, mock_metadata_map, mock_get_catalog_entry, mock_paginate, mock_convert_dict_to_stripe_object, mock_reduce_foreign_keys):
@@ -84,5 +84,5 @@ class TestLookbackWindow(unittest.TestCase):
         Context.new_counts['events'] = 1
         sync_stream("events")
         # expected start_date should be the now() - `lookback`(lookback passed in the config)
-        expected_start_window = now_time - EVENTS_STREAM_LOOKBACK
+        expected_start_window = now_time - IMMUTABLE_STREAM_LOOKBACK
         mock_epoch_to_dt.assert_called_with(expected_start_window)

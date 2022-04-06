@@ -28,7 +28,7 @@ class ConversionWindowBaseTest(BaseTapTest):
             'start_date':dt.strftime(dt.utcnow() - timedelta(seconds=600), self.START_DATE_FORMAT),
             'lookback_window': self.lookback_window,
             'account_id': os.getenv('TAP_STRIPE_ACCOUNT_ID'),
-            'client_scret': os.getenv('TAP_STRIPE_CLIENT_SECRET')
+            'client_secret': os.getenv('TAP_STRIPE_CLIENT_SECRET')
         }
         return return_value
 

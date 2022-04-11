@@ -440,11 +440,8 @@ def evaluate_start_time_based_on_lookback(stream_name, replication_key, lookback
     bookmark = singer.get_bookmark(Context.state, stream_name, replication_key)
     start_date = int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
     if bookmark:
-        lookback_evaluated_time = dt_to_epoch(utils.now()) - lookback_window
-        if bookmark > lookback_evaluated_time:
-            return lookback_evaluated_time
-        else:
-            return bookmark
+        lookback_evaluated_time = bookmark - lookback_window
+        return lookback_evaluated_time
     return start_date
 
 def write_bookmark_for_stream(stream_name, replication_key, stream_bookmark):

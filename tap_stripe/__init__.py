@@ -434,8 +434,7 @@ def get_bookmark_for_stream(stream_name, replication_key):
 def evaluate_start_time_based_on_lookback(stream_name, replication_key, lookback_window):
     '''
     For historical syncs take the start date as the starting point in a sync, even if it is more recent than
-    {today - lookback_window}. For incremental syncs, take the previous state as the starting point except when
-    it is more recent than {today - lookback_window}. In that case, the tap should start syncing from {today - lookback_window}
+    {today - lookback_window}. For incremental syncs, the tap should start syncing from {previous state - lookback_window}
     '''
     bookmark = singer.get_bookmark(Context.state, stream_name, replication_key)
     start_date = int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())

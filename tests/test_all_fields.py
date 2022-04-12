@@ -30,7 +30,9 @@ KNOWN_MISSING_FIELDS = {
         'price',
     },
     'payouts':set(),
-    'charges': set(),
+    'charges': {
+        'failure_balance_transaction'
+    },
     'subscription_items': set(),
     'plans': set(),
     'invoice_line_items': set(),
@@ -212,7 +214,9 @@ FICKLE_FIELDS = {
     'subscriptions': set(),
     'products': set(),
     'invoice_items': set(),
-    'payment_intents': set(),
+    'payment_intents': {
+        'last_payment_error'
+    },
     'payouts': {
         'object', # expect 'transfer', get 'payout'
     },

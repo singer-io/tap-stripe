@@ -30,7 +30,9 @@ KNOWN_MISSING_FIELDS = {
         'price',
     },
     'payouts':set(),
-    'charges': set(),
+    'charges': {
+        'failure_balance_transaction'
+    },
     'subscription_items': set(),
     'plans': set(),
     'invoice_line_items': set(),

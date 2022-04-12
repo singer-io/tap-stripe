@@ -132,7 +132,7 @@ def new_list(self, api_key=None, stripe_version=None, stripe_account=None, **par
         have deleted records.
     """
     try:
-        stripe_object = self._request(
+        stripe_object = self._request( # pylint: disable=protected-access
             "get",
             self.get("url"),
             api_key=api_key,
@@ -140,18 +140,18 @@ def new_list(self, api_key=None, stripe_version=None, stripe_account=None, **par
             stripe_account=stripe_account,
             **params
         )
-        stripe_object._retrieve_params = params
+        stripe_object._retrieve_params = params # pylint: disable=protected-access
         return stripe_object
-    except InvalidRequestError as e:
+    except InvalidRequestError as error:
         # see if we found 'No such invoice item' in the error message
-        if 'No such invoice item' in str(e):
+        if 'No such invoice item' in str(error):
             # warn the user, as we are skipping the deleted record
-            LOGGER.warn('{}. Currently, skipping this invoice line item call.'.format(str(e)))
+            LOGGER.warning('%s. Currently, skipping this invoice line item call.', str(error))
             # set 'self.data' to None to come out of the loop
             self.data = None
             return self
         # if error contains message other than 'No such invoice item', raise the same error
-        raise e
+        raise error
 
 # To handle deleted invoice line item call, we replaced the 'list()' function of the 'ListObject'
 # class of SDK to skip the deleted invoice line item call and continue syncing

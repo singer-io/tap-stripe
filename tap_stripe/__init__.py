@@ -38,6 +38,7 @@ STREAM_SDK_OBJECTS = {
     'payout_transactions': {'sdk_object': stripe.BalanceTransaction, 'key_properties': ['id']},
     'disputes': {'sdk_object': stripe.Dispute, 'key_properties': ['id']},
     'products': {'sdk_object': stripe.Product, 'key_properties': ['id']},
+    'refunds': {'sdk_object': stripe.Refund, 'key_properties': ['id']},
 }
 
 # I think this can be merged into the above structure
@@ -60,6 +61,7 @@ STREAM_REPLICATION_KEY = {
     #'invoice_line_items': 'date'
     'disputes': 'created',
     'products': 'created',
+    'refunds': 'created',
 }
 
 STREAM_TO_TYPE_FILTER = {
@@ -74,6 +76,7 @@ STREAM_TO_TYPE_FILTER = {
     'transfers': {'type': 'transfer.*', 'object': 'transfer'},
     'disputes': {'type': 'charge.dispute.*', 'object': 'dispute'},
     'products': {'type': 'product.*', 'object': 'product'},
+    'refunds': {'type': 'refund.*', 'object': 'refund'},
     # Cannot find evidence of these streams having events associated:
     # subscription_items - appears on subscriptions events
     # balance_transactions - seems to be immutable

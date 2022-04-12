@@ -212,7 +212,9 @@ FICKLE_FIELDS = {
     'subscriptions': set(),
     'products': set(),
     'invoice_items': set(),
-    'payment_intents': set(),
+    'payment_intents': {
+        'payment_method'
+    },
     'payouts': {
         'object', # expect 'transfer', get 'payout'
     },

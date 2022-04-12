@@ -537,8 +537,8 @@ def sync_stream(stream_name):
             # entries, but to keep the surface small, doing this only for
             # immutable streams at first to confirm the suspicion.
             lookback_window = Context.config.get('lookback_window') # added configurable lookback window
-            if lookback_window and int(lookback_window): # set lookback window if lookback window is present in config and int convertible
-                lookback_window = int(lookback_window)
+            if lookback_window and float(lookback_window): # set lookback window if lookback window is present in config and float convertible
+                lookback_window = float(lookback_window)
             else: # set default lookback
                 lookback_window = IMMUTABLE_STREAM_LOOKBACK # default lookback
             start_window = evaluate_start_time_based_on_lookback(stream_name, replication_key, lookback_window)

@@ -24,7 +24,7 @@ class TestLookbackEvaluation(unittest.TestCase):
 
 
     @mock.patch("tap_stripe.dt_to_epoch")
-    def test_lookback_evaluation_when_recent_bookmark_events(self, mock_now):
+    def test_lookback_evaluation_when_bookmark_present_events(self, mock_now):
         stream_name = "events"
         replication_key = "created"
         now_time = 1648739354
@@ -36,7 +36,7 @@ class TestLookbackEvaluation(unittest.TestCase):
         self.assertEqual(start_window, Context.state['bookmarks'][stream_name][replication_key] - IMMUTABLE_STREAM_LOOKBACK)
 
     @mock.patch("tap_stripe.dt_to_epoch")
-    def test_lookback_evaluation_when_recent_bookmark_balance_transactions(self, mock_now):
+    def test_lookback_evaluation_when_bookmark_present_balance_transactions(self, mock_now):
         stream_name = "balance_transactions"
         replication_key = "created"
         state = {'bookmarks': {'balance_transactions': {'created': 1648739554}}} # 2022-03-31T08:42:34

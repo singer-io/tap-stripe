@@ -536,11 +536,14 @@ def sync_stream(stream_name):
             # TODO: This may be an issue for other streams' created_at
             # entries, but to keep the surface small, doing this only for
             # immutable streams at first to confirm the suspicion.
-            lookback_window = Context.config.get('lookback_window') # added configurable lookback window
-            if lookback_window and int(lookback_window): # set lookback window if lookback window is present in config and int convertible
-                lookback_window = int(lookback_window)
-            else: # set default lookback
-                lookback_window = IMMUTABLE_STREAM_LOOKBACK # default lookback
+            try:
+                lookback_window = Context.config.get('lookback_window', IMMUTABLE_STREAM_LOOKBACK) # added configurable lookback window
+                if lookback_window and int(lookback_window) or lookback_window == 0:
+                    lookback_window = int(lookback_window)
+                else: 
+                    lookback_window = IMMUTABLE_STREAM_LOOKBACK # default lookback
+            except ValueError:
+                raise ValueError('Please provide a valid integer value for the lookback_window parameter.')
             start_window = evaluate_start_time_based_on_lookback(stream_name, replication_key, lookback_window)
             stream_bookmark = start_window
 

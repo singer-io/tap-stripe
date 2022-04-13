@@ -86,3 +86,45 @@ class TestLookbackWindow(unittest.TestCase):
         # expected start_date should be the bookmark time - `lookback`(default lookback)
         expected_start_window = bookmark_time - IMMUTABLE_STREAM_LOOKBACK
         mock_epoch_to_dt.assert_called_with(expected_start_window)
+
+    def test_invalid_value_string_in_config_lookback_events(self, mock_get_bookmark_for_stream, mock_sync_substream, mock_dt_to_epoch, mock_epoch_to_dt, mock_get, mock_metadata_map, mock_get_catalog_entry, mock_paginate, mock_convert_dict_to_stripe_object, mock_reduce_foreign_keys):
+        '''Verify that the lookback window is correctly passed when empty string is passed in the config.'''
+        config = {"client_secret": "test_secret", "account_id": "test_account", "start_date": "2022-02-17T00:00:00", "lookback_window": 'abc'}
+        Context.config = config
+        Context.new_counts['events'] = 1
+        # Check if the tap raises error
+        with self.assertRaises(ValueError) as e:
+            sync_stream("events")
+        #Check if the error message returned is proper
+        self.assertEqual(str(e.exception), "Please provide a valid integer value for the lookback_window parameter.")
+
+    def test_invalid_value_string_in_config_lookback_balance_transactions(self, mock_get_bookmark_for_stream, mock_sync_substream, mock_dt_to_epoch, mock_epoch_to_dt, mock_get, mock_metadata_map, mock_get_catalog_entry, mock_paginate, mock_convert_dict_to_stripe_object, mock_reduce_foreign_keys):
+        '''Verify that the lookback window is correctly passed when empty string is passed in the config.'''
+        config = {"client_secret": "test_secret", "account_id": "test_account", "start_date": "2022-02-17T00:00:00", "lookback_window": 'abc'}
+        Context.config = config
+        Context.new_counts['balance_transactions'] = 1
+        # Check if the tap raises error
+        with self.assertRaises(ValueError) as e:
+            sync_stream("balance_transactions")
+        #Check if the error message returned is proper
+        self.assertEqual(str(e.exception), "Please provide a valid integer value for the lookback_window parameter.")
+
+    def test_0_in_config_lookback_events(self, mock_get_bookmark_for_stream, mock_sync_substream, mock_dt_to_epoch, mock_epoch_to_dt, mock_get, mock_metadata_map, mock_get_catalog_entry, mock_paginate, mock_convert_dict_to_stripe_object, mock_reduce_foreign_keys):
+        '''Verify that the lookback window is correctly passed when empty string is passed in the config.'''
+        config = {"client_secret": "test_secret", "account_id": "test_account", "start_date": "2022-02-17T00:00:00", "lookback_window": 0}
+        Context.config = config
+        Context.new_counts['events'] = 1
+        sync_stream("events")
+        # expected start_date should be the bookmark time - `lookback`(default lookback)
+        expected_start_window = bookmark_time - config.get('lookback_window')
+        mock_epoch_to_dt.assert_called_with(expected_start_window)
+
+    def test_0_in_config_lookback_balance_transactions(self, mock_get_bookmark_for_stream, mock_sync_substream, mock_dt_to_epoch, mock_epoch_to_dt, mock_get, mock_metadata_map, mock_get_catalog_entry, mock_paginate, mock_convert_dict_to_stripe_object, mock_reduce_foreign_keys):
+        '''Verify that the lookback window is correctly passed when empty string is passed in the config.'''
+        config = {"client_secret": "test_secret", "account_id": "test_account", "start_date": "2022-02-17T00:00:00", "lookback_window": 0}
+        Context.config = config
+        Context.new_counts['balance_transactions'] = 1
+        sync_stream("balance_transactions")
+        # expected start_date should be the bookmark time - `lookback`(default lookback)
+        expected_start_window = bookmark_time - config.get('lookback_window')
+        mock_epoch_to_dt.assert_called_with(expected_start_window)

@@ -8,11 +8,12 @@ from datetime import datetime, timedelta
 import stripe
 import stripe.error
 from stripe.stripe_object import StripeObject
+from stripe.api_resources.list_object import ListObject
+from stripe.error import InvalidRequestError
 from stripe.util import convert_to_stripe_object
 import singer
 from singer import utils, Transformer, metrics
 from singer import metadata
-import backoff
 
 REQUIRED_CONFIG_KEYS = [
     "start_date",
@@ -116,6 +117,45 @@ IMMUTABLE_STREAM_LOOKBACK = 300 # 5 min in epoch time, Stripe accuracy is to the
 LOGGER = singer.get_logger()
 
 DEFAULT_DATE_WINDOW_SIZE = 30 #days
+
+def new_list(self, api_key=None, stripe_version=None, stripe_account=None, **params):
+    """
+        Reported 400 error for the deleted invoice_line_item as part of https://jira.talendforge.org/browse/TDL-16966.
+        The Stripe SDK is performing pagination API calls for invoice line items after 10 lines (we are getting the
+        first 10 default lines with each invoice). If there are more than 10 lines on any invoice, then the SDK will
+        collect those lines by passing the last line in the API call and for the '/events' API call, all the invoice
+        line items will be replicated whether they are deleted or not.
+        There is a corner case scenario where the 10th invoice line item is deleted and the API call will be:
+            https://api.stripe.com/v1/invoices/in_test123/lines?limit=100&starting_after=ii_invoiceLineItem10.
+        In this case, we will encounter 400 error code as this invoice line item 'ii_invoiceLineItem10' is deleted.
+        We skipped this kind of call as part of this function as this is the older event API call where we still
+        have deleted records.
+    """
+    try:
+        stripe_object = self._request( # pylint: disable=protected-access
+            "get",
+            self.get("url"),
+            api_key=api_key,
+            stripe_version=stripe_version,
+            stripe_account=stripe_account,
+            **params
+        )
+        stripe_object._retrieve_params = params # pylint: disable=protected-access
+        return stripe_object
+    except InvalidRequestError as error:
+        # see if we found 'No such invoice item' in the error message
+        if 'No such invoice item' in str(error):
+            # warn the user, as we are skipping the deleted record
+            LOGGER.warning('%s. Currently, skipping this invoice line item call.', str(error))
+            # set 'self.data' to None to come out of the loop
+            self.data = None
+            return self
+        # if error contains message other than 'No such invoice item', raise the same error
+        raise error
+
+# To handle deleted invoice line item call, we replaced the 'list()' function of the 'ListObject'
+# class of SDK to skip the deleted invoice line item call and continue syncing
+ListObject.list = new_list
 
 class Context():
     config = {}
@@ -469,23 +509,6 @@ def convert_dict_to_stripe_object(record):
 
     return record
 
-
-def invoice_line_item_not_found_error(error):
-    """
-        This function checks whether the error contains 'does not have a line item' substring and
-        return boolean values accordingly, to decide whether to backoff or not.
-    """
-    # retry if the error string contains 'does not have a line item'
-    if str(error).__contains__('does not have a line item'):
-        return False
-    return True
-
-
-@backoff.on_exception(backoff.expo,
-                        stripe.error.InvalidRequestError,
-                        giveup=invoice_line_item_not_found_error,
-                        max_tries=5,
-                        factor=2)
 # pylint: disable=too-many-locals
 # pylint: disable=too-many-statements
 def sync_stream(stream_name):
@@ -639,11 +662,6 @@ def get_object_list_iterator(object_list):
 # we are in a cycle.
 INITIAL_SUB_STREAM_OBJECT_LIST_LENGTH = 10
 
-@backoff.on_exception(backoff.expo,
-                        stripe.error.InvalidRequestError,
-                        giveup=invoice_line_item_not_found_error,
-                        max_tries=5,
-                        factor=2)
 def sync_sub_stream(sub_stream_name, parent_obj, updates=False):
     """
     Given a parent object, retrieve its values for the specified substream.

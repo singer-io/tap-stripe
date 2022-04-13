@@ -372,7 +372,7 @@ class BaseTapTest(unittest.TestCase):
                 'created', 'updated', 'start', 'end', 'start_date', 'end_date', 'paid_at',
                 'next_payment_attempt', 'finalized_at', 'current_period_start', 'current_period_end',
                 'billing_cycle_anchor', 'arrival_date', 'period_end', 'period_start', 'date',
-                'webhooks_delivered_at',
+                'webhooks_delivered_at', 'trial_end', 'trial_start', 'canceled_at'
             ]
             int_or_float_to_decimal_keys = [
                 'percent_off', 'percent_off_precise', 'height', 'length', 'weight', 'width'

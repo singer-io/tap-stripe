@@ -538,12 +538,12 @@ def sync_stream(stream_name):
             # immutable streams at first to confirm the suspicion.
             try:
                 lookback_window = Context.config.get('lookback_window', IMMUTABLE_STREAM_LOOKBACK) # added configurable lookback window
-                if lookback_window and int(lookback_window) or lookback_window == 0:
+                if lookback_window and int(lookback_window) or lookback_window in (0, '0'):
                     lookback_window = int(lookback_window)
-                else: 
+                else:
                     lookback_window = IMMUTABLE_STREAM_LOOKBACK # default lookback
             except ValueError:
-                raise ValueError('Please provide a valid integer value for the lookback_window parameter.')
+                raise ValueError('Please provide a valid integer value for the lookback_window parameter.') from None
             start_window = evaluate_start_time_based_on_lookback(stream_name, replication_key, lookback_window)
             stream_bookmark = start_window
 

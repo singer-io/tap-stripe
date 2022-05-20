@@ -145,81 +145,81 @@ workflows:
           file: discovery
           requires:
             - 'Testing all_fields'
-      # - run_integration_test:
-      #     name: 'Testing all_tests_run'
-      #     context:
-      #       - circleci-user
-      #       - tier-1-tap-user
-      #     file: all_tests_run
-      #     requires:
-      #       - 'Testing all_fields'
-      # - run_integration_test:
-      #     name: 'Testing start_date'
-      #     context:
-      #       - circleci-user
-      #       - tier-1-tap-user
-      #     file: start_date
-      #     requires:
-      #       - 'Testing all_fields'
-      # - run_integration_test:
-      #     name: 'Testing automatic_fields'
-      #     context:
-      #       - circleci-user
-      #       - tier-1-tap-user
-      #     file: automatic_fields
-      #     requires:
-      #       - 'Testing all_fields'
-      # - run_integration_test:
-      #     name: 'Testing pagination'
-      #     context:
-      #       - circleci-user
-      #       - tier-1-tap-user
-      #     file: pagination
-      #     requires:
-      #       - 'Testing all_fields'
-      # - run_integration_test:
-      #     name: 'Testing create_object'
-      #     context:
-      #       - circleci-user
-      #       - tier-1-tap-user
-      #     file: create_object
-      #     requires:
-      #       - 'Testing all_fields'
-      # - run_integration_test:
-      #     name: 'Testing event_updates'
-      #     context:
-      #       - circleci-user
-      #       - tier-1-tap-user
-      #     file: event_updates
-      #     requires:
-      #       - 'Testing discovery'
-      #       - 'Testing all_tests_run'
-      #       - 'Testing start_date'
-      #       - 'Testing automatic_fields'
-      #       - 'Testing pagination'
-      #       - 'Testing create_object'
-      # - run_integration_test:
-      #     name: 'Testing full_replication'
-      #     context:
-      #       - circleci-user
-      #       - tier-1-tap-user
-      #     file: full_replication
-      #     requires:
-      #       - 'Testing event_updates'
-      # - run_integration_test:
-      #     name: 'Testing bookmarks'
-      #     context:
-      #       - circleci-user
-      #       - tier-1-tap-user
-      #     file: bookmarks
-      #     requires:
-      #       - 'Testing full_replication'
-      # - build:
-      #     context:
-      #       - circleci-user
-      #       - tier-1-tap-user
-      #     requires:
-      #       - 'Testing bookmarks'
+      - run_integration_test:
+          name: 'Testing all_tests_run'
+          context:
+            - circleci-user
+            - tier-1-tap-user
+          file: all_tests_run
+          requires:
+            - 'Testing all_fields'
+      - run_integration_test:
+          name: 'Testing start_date'
+          context:
+            - circleci-user
+            - tier-1-tap-user
+          file: start_date
+          requires:
+            - 'Testing all_fields'
+      - run_integration_test:
+          name: 'Testing automatic_fields'
+          context:
+            - circleci-user
+            - tier-1-tap-user
+          file: automatic_fields
+          requires:
+            - 'Testing all_fields'
+      - run_integration_test:
+          name: 'Testing pagination'
+          context:
+            - circleci-user
+            - tier-1-tap-user
+          file: pagination
+          requires:
+            - 'Testing all_fields'
+      - run_integration_test:
+          name: 'Testing create_object'
+          context:
+            - circleci-user
+            - tier-1-tap-user
+          file: create_object
+          requires:
+            - 'Testing all_fields'
+      - run_integration_test:
+          name: 'Testing event_updates'
+          context:
+            - circleci-user
+            - tier-1-tap-user
+          file: event_updates
+          requires:
+            - 'Testing discovery'
+            - 'Testing all_tests_run'
+            - 'Testing start_date'
+            - 'Testing automatic_fields'
+            - 'Testing pagination'
+            - 'Testing create_object'
+      - run_integration_test:
+          name: 'Testing full_replication'
+          context:
+            - circleci-user
+            - tier-1-tap-user
+          file: full_replication
+          requires:
+            - 'Testing event_updates'
+      - run_integration_test:
+          name: 'Testing bookmarks'
+          context:
+            - circleci-user
+            - tier-1-tap-user
+          file: bookmarks
+          requires:
+            - 'Testing full_replication'
+      - build:
+          context:
+            - circleci-user
+            - tier-1-tap-user
+          requires:
+            - 'Testing bookmarks'
   build_daily:
     <<: *commit_jobs
     triggers:

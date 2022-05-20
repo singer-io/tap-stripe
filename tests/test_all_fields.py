@@ -193,11 +193,13 @@ KNOWN_FAILING_FIELDS = {
     },
     'payouts': set(),
     'charges': {
+        # missing subfield ['card.mandate']
         'payment_method_details'
     },
     'subscription_items': {
         # BUG_12478 | missing subfields on plan ['statement_description', 'statement_descriptor', 'name']
         'plan',
+        # missing subfield ['recurring.trial_period_days']
         'price'
     },
     'invoices': {
@@ -205,8 +207,11 @@ KNOWN_FAILING_FIELDS = {
     },
     'plans': set(),
     'payment_intents':{
+        # missing subfield ['payment_method_details.card.mandate']
         'charges',
+        # missing subfield ['card.mandate_options']
         'payment_method_options',
+        # missing subfield ['payment_method']
         'last_payment_error'
     },
     'invoice_line_items': set()
@@ -364,25 +369,6 @@ class ALlFieldsTest(BaseTapTest):
 
                 # run the test
                 self.all_fields_test(streams_to_test)
-
-    def find_nested_key(self, nested_key, actual_field_value, field):
-        '''
-        Find the nested key that is failing in the field and ignore the assertion error
-        gained from it, if any.
-        '''
-        for field_name, each_keys in nested_key.items():
-            # split the keys through `.`, for getting the nested keys
-            keys = each_keys.split('.')
-            temp_value = actual_field_value
-            if field == field_name:
-                for failing_key in keys:
-                    # if the failing key is not present in the actual key or not
-                    if not temp_value.get(failing_key, None):
-                        return False
-                    else:
-                        temp_value = temp_value.get(failing_key)
-                        if keys[-1] in temp_value:
-                            return True
 
     def all_fields_test(self, streams_to_test):
         """

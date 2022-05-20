@@ -65,7 +65,7 @@ SCHEMA_MISSING_FIELDS = {
         'test_clock',
         'application'
     },
-    'payment_intent': {
+    'payment_intents': {
         'amount_details'
     }
 }

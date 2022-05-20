@@ -45,18 +45,28 @@ SCHEMA_MISSING_FIELDS = {
     },
     'subscriptions': {
         'test_clock',
+        'description',
+        'application'
     },
-    'products':set(),
+    'products':{
+        'default_price'
+    },
     'invoice_items':{
         'test_clock',
     },
     'payouts':set(),
-    'charges': set(),
+    'charges': {
+        'failure_balance_transaction'
+    },
     'subscription_items': set(),
     'plans': set(),
     'invoice_line_items': set(),
     'invoices': {
         'test_clock',
+        'application'
+    },
+    'payment_intent': {
+        'amount_details'
     }
 }
 
@@ -163,28 +173,6 @@ FIELDS_TO_NOT_CHECK = {
         'invoice_item'
     },
     'payment_intents': set()
-}
-
-# we have observed that the SDK object creation returns some new fields intermittently
-SCHEMA_MISSING_FIELDS = {
-    'customers': {
-        'test_clock'
-    },
-    'subscriptions': {
-        'test_clock',
-    },
-    'products':set(),
-    'invoice_items':{
-        'test_clock',
-    },
-    'payouts':set(),
-    'charges': set(),
-    'subscription_items': set(),
-    'plans': set(),
-    'invoice_line_items': set(),
-    'invoices': {
-        'test_clock',
-    }
 }
 
 KNOWN_FAILING_FIELDS = {
@@ -398,19 +386,6 @@ class ALlFieldsTest(BaseTapTest):
                         if keys[-1] in temp_value:
                             return True
 
-    def handle_list_data(self, expected_field_value, field, nested_key):
-        """
-        Find the nested key that is failing in the list and ignore the assertion error, if any.
-        """
-        is_fickle = True
-        for each_expected_field_value in expected_field_value:
-            if self.find_nested_key(nested_key, each_expected_field_value, field):
-                continue
-            else:
-                is_fickle = False
-                break
-        return is_fickle
-
     def all_fields_test(self, streams_to_test):
         """
         Verify that for each stream data is synced when all fields are selected.
@@ -494,6 +469,7 @@ class ALlFieldsTest(BaseTapTest):
                 adjusted_actual_keys = actual_records_keys.union(  # BUG_12478
                     KNOWN_MISSING_FIELDS.get(stream, set())
                 ).union(SCHEMA_MISSING_FIELDS.get(stream, set()))
+
                 if stream == 'invoice_items':
                     adjusted_actual_keys = adjusted_actual_keys.union({'subscription_item'})  # BUG_13666
 
@@ -585,14 +561,8 @@ class ALlFieldsTest(BaseTapTest):
                                         f"AssertionError({failure_1})")
 
                                     nested_key = KNOWN_NESTED_MISSING_FIELDS.get(stream, {})
-                                    # Check whether expected_field_value is list or not.
-                                    # If expected_field_value is list then loop through each item of list
-                                    if type(expected_field_value) == list:
-                                        if self.handle_list_data(expected_field_value, field, nested_key):
-                                            continue
-                                    else:
-                                        if self.find_nested_key(nested_key, expected_field_value, field):
-                                            continue
+                                    if self.find_nested_key(nested_key, expected_field_value, field):
+                                        continue
 
                                     if field in KNOWN_FAILING_FIELDS[stream] or field in FIELDS_TO_NOT_CHECK[stream]:
                                         continue # skip the following wokaround

@@ -192,16 +192,23 @@ KNOWN_FAILING_FIELDS = {
         'plan', # BUG_12478 | missing subfields
     },
     'payouts': set(),
-    'charges': set(),
+    'charges': {
+        'payment_method_details'
+    },
     'subscription_items': {
         # BUG_12478 | missing subfields on plan ['statement_description', 'statement_descriptor', 'name']
         'plan',
+        'price'
     },
     'invoices': {
         'plans', # BUG_12478 | missing subfields
     },
     'plans': set(),
-    'payment_intents':set(),
+    'payment_intents':{
+        'charges',
+        'payment_method_options',
+        'last_payment_error'
+    },
     'invoice_line_items': set()
     # 'invoice_line_items': { # TODO This is a test issue that prevents us from consistently passing
     #     'unique_line_item_id',
@@ -259,16 +266,6 @@ FIELDS_ADDED_BY_TAP = {
     'invoice_line_items': {
         'invoice'
     },
-}
-
-# As for the `price` field added in the schema, the API doc doesn't mention any
-# `trial_period_days` in the field, hence skipping the assertion error for the same.
-KNOWN_NESTED_MISSING_FIELDS = {
-    'subscription_items': {'price': 'recurring.trial_period_days'},
-    'charges': {'payment_method_details': 'card.mandate'},
-    'payment_intents': {'charges': 'payment_method_details.card.mandate',
-                        'payment_method_options': 'card.mandate_options',
-                        'last_payment_error': 'payment_method'}
 }
 
 class ALlFieldsTest(BaseTapTest):
@@ -560,10 +557,6 @@ class ALlFieldsTest(BaseTapTest):
 
                                     print(f"WARNING {base_err_msg} failed exact comparison.\n"
                                         f"AssertionError({failure_1})")
-
-                                    nested_key = KNOWN_NESTED_MISSING_FIELDS.get(stream, {})
-                                    if self.find_nested_key(nested_key, expected_field_value, field):
-                                        continue
 
                                     if field in KNOWN_FAILING_FIELDS[stream] or field in FIELDS_TO_NOT_CHECK[stream]:
                                         continue # skip the following wokaround

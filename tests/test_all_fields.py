@@ -267,7 +267,8 @@ KNOWN_NESTED_MISSING_FIELDS = {
     'subscription_items': {'price': 'recurring.trial_period_days'},
     'charges': {'payment_method_details': 'card.mandate'},
     'payment_intents': {'charges': 'payment_method_details.card.mandate',
-                        'payment_method_options': 'card.mandate_options'}
+                        'payment_method_options': 'card.mandate_options',
+                        'last_payment_error': 'payment_method'}
 }
 
 class ALlFieldsTest(BaseTapTest):

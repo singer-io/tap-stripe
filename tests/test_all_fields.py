@@ -199,7 +199,11 @@ KNOWN_FAILING_FIELDS = {
         'plans', # BUG_12478 | missing subfields
     },
     'plans': set(),
-    'payment_intents':set(),
+    'payment_intents':{
+        'charges',
+        'payment_method_options',
+        'last_payment_error'
+    },
     'invoice_line_items': set()
     # 'invoice_line_items': { # TODO This is a test issue that prevents us from consistently passing
     #     'unique_line_item_id',

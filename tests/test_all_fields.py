@@ -232,6 +232,7 @@ FICKLE_FIELDS = {
     },
     'charges': {
         'status', # expect 'paid', get 'succeeded'
+        'receipt_url' # keeps changing with every request
     },
     'subscription_items': set(),
     'invoices': {

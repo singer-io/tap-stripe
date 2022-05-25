@@ -30,9 +30,7 @@ KNOWN_MISSING_FIELDS = {
         'price',
     },
     'payouts':set(),
-    'charges': {
-        'failure_balance_transaction'
-    },
+    'charges': set(),
     'subscription_items': set(),
     'plans': set(),
     'invoice_line_items': set(),
@@ -47,18 +45,28 @@ SCHEMA_MISSING_FIELDS = {
     },
     'subscriptions': {
         'test_clock',
+        'description',
+        'application'
     },
-    'products':set(),
+    'products':{
+        'default_price'
+    },
     'invoice_items':{
         'test_clock',
     },
     'payouts':set(),
-    'charges': set(),
+    'charges': {
+        'failure_balance_transaction'
+    },
     'subscription_items': set(),
     'plans': set(),
     'invoice_line_items': set(),
     'invoices': {
         'test_clock',
+        'application'
+    },
+    'payment_intents': {
+        'amount_details'
     }
 }
 
@@ -184,16 +192,28 @@ KNOWN_FAILING_FIELDS = {
         'plan', # BUG_12478 | missing subfields
     },
     'payouts': set(),
-    'charges': set(),
+    'charges': {
+        # missing subfield ['card.mandate']
+        'payment_method_details'
+    },
     'subscription_items': {
         # BUG_12478 | missing subfields on plan ['statement_description', 'statement_descriptor', 'name']
         'plan',
+        # missing subfield ['recurring.trial_period_days']
+        'price'
     },
     'invoices': {
         'plans', # BUG_12478 | missing subfields
     },
     'plans': set(),
-    'payment_intents':set(),
+    'payment_intents':{
+        # missing subfield ['payment_method_details.card.mandate']
+        'charges',
+        # missing subfield ['card.mandate_options']
+        'payment_method_options',
+        # missing subfield ['payment_method']
+        'last_payment_error'
+    },
     'invoice_line_items': set()
     # 'invoice_line_items': { # TODO This is a test issue that prevents us from consistently passing
     #     'unique_line_item_id',
@@ -214,9 +234,7 @@ FICKLE_FIELDS = {
     'subscriptions': set(),
     'products': set(),
     'invoice_items': set(),
-    'payment_intents': {
-        'last_payment_error'
-    },
+    'payment_intents': set(),
     'payouts': {
         'object', # expect 'transfer', get 'payout'
     },
@@ -253,15 +271,6 @@ FIELDS_ADDED_BY_TAP = {
     'invoice_line_items': {
         'invoice'
     },
-}
-
-# As for the `price` field added in the schema, the API doc doesn't mention any
-# `trial_period_days` in the field, hence skipping the assertion error for the same.
-KNOWN_NESTED_MISSING_FIELDS = {
-    'subscription_items': {'price': 'recurring.trial_period_days'},
-    'charges': {'payment_method_details': 'card.mandate'},
-    'payment_intents': {'charges': 'payment_method_details.card.mandate',
-                        'payment_method_options': 'card.mandate_options'}
 }
 
 class ALlFieldsTest(BaseTapTest):
@@ -360,38 +369,6 @@ class ALlFieldsTest(BaseTapTest):
 
                 # run the test
                 self.all_fields_test(streams_to_test)
-
-    def find_nested_key(self, nested_key, actual_field_value, field):
-        '''
-        Find the nested key that is failing in the field and ignore the assertion error
-        gained from it, if any.
-        '''
-        for field_name, each_keys in nested_key.items():
-            # split the keys through `.`, for getting the nested keys
-            keys = each_keys.split('.')
-            temp_value = actual_field_value
-            if field == field_name:
-                for failing_key in keys:
-                    # if the failing key is not present in the actual key or not
-                    if not temp_value.get(failing_key, None):
-                        return False
-                    else:
-                        temp_value = temp_value.get(failing_key)
-                        if keys[-1] in temp_value:
-                            return True
-
-    def handle_list_data(self, expected_field_value, field, nested_key):
-        """
-        Find the nested key that is failing in the list and ignore the assertion error, if any.
-        """
-        is_fickle = True
-        for each_expected_field_value in expected_field_value:
-            if self.find_nested_key(nested_key, each_expected_field_value, field):
-                continue
-            else:
-                is_fickle = False
-                break
-        return is_fickle
 
     def all_fields_test(self, streams_to_test):
         """
@@ -566,17 +543,6 @@ class ALlFieldsTest(BaseTapTest):
 
                                     print(f"WARNING {base_err_msg} failed exact comparison.\n"
                                         f"AssertionError({failure_1})")
-
-                                    nested_key = KNOWN_NESTED_MISSING_FIELDS.get(stream, {})
-
-                                    # Check whether expected_field_value is list or not.
-                                    # If expected_field_value is list then loop through each item of list
-                                    if type(expected_field_value) == list:
-                                        if self.handle_list_data(expected_field_value, field, nested_key):
-                                            continue
-                                    else:
-                                        if self.find_nested_key(nested_key, expected_field_value, field):
-                                            continue
 
                                     if field in KNOWN_FAILING_FIELDS[stream] or field in FIELDS_TO_NOT_CHECK[stream]:
                                         continue # skip the following wokaround

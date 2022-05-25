@@ -56,12 +56,6 @@ class ConversionWindowBaseTest(BaseTapTest):
         # set state to ensure conversion window is used
         today_datetime = int(dt.utcnow().timestamp())
         
-        initial_state = {
-            'currently_syncing': None,
-            'bookmarks': {stream: {'created': today_datetime}
-                          for stream in streams_to_test
-                          if stream == 'balance_transactions'}
-        }
         initial_state = {'currently_syncing': None, 'bookmarks': {'balance_transactions': {"created": today_datetime}}}
         menagerie.set_state(conn_id, initial_state)
 

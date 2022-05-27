@@ -1054,7 +1054,6 @@ def main():
         else:
             Context.catalog = discover()
 
-        validate_dependencies()
         try:
             sync()
         finally:

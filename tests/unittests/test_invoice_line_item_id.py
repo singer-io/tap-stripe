@@ -49,7 +49,7 @@ class InvoiceLineItemId(unittest.TestCase):
         ]
 
         # function call when 'updates=False'
-        tap_stripe.sync_sub_stream("invoice_line_items", MockInvoice(lines), False)
+        tap_stripe.write_substream_records("invoice_line_items", MockInvoice(lines), False)
 
         # expected data
         expected_record = {
@@ -84,7 +84,7 @@ class InvoiceLineItemId(unittest.TestCase):
         ]
 
         # function call
-        tap_stripe.sync_sub_stream("invoice_line_items", MockInvoice(lines), True)
+        tap_stripe.write_substream_records("invoice_line_items", MockInvoice(lines), True)
 
         # expected data
         expected_record = {
@@ -119,7 +119,7 @@ class InvoiceLineItemId(unittest.TestCase):
         ]
 
         # function call with 'updates=False'
-        tap_stripe.sync_sub_stream("invoice_line_items", MockInvoice(lines), False)
+        tap_stripe.write_substream_records("invoice_line_items", MockInvoice(lines), False)
 
         # expected data
         expected_record = {
@@ -154,7 +154,7 @@ class InvoiceLineItemId(unittest.TestCase):
         ]
 
         # function call with updates
-        tap_stripe.sync_sub_stream("invoice_line_items", MockInvoice(lines), True)
+        tap_stripe.write_substream_records("invoice_line_items", MockInvoice(lines), True)
 
         # expected data
         expected_record = {
@@ -191,7 +191,7 @@ class InvoiceLineItemId(unittest.TestCase):
         ]
 
         # function call with updates
-        tap_stripe.sync_sub_stream("invoice_line_items", MockInvoice(lines), True)
+        tap_stripe.write_substream_records("invoice_line_items", MockInvoice(lines), True)
 
         # expected data
         expected_record = {
@@ -228,7 +228,7 @@ class InvoiceLineItemId(unittest.TestCase):
         ]
 
         # function call with updates
-        tap_stripe.sync_sub_stream("invoice_line_items", MockInvoice(lines), True)
+        tap_stripe.write_substream_records("invoice_line_items", MockInvoice(lines), True)
 
         # expected data
         expected_record = {
@@ -265,7 +265,7 @@ class InvoiceLineItemId(unittest.TestCase):
         ]
 
         # function call with updates
-        tap_stripe.sync_sub_stream("invoice_line_items", MockInvoice(lines), True)
+        tap_stripe.write_substream_records("invoice_line_items", MockInvoice(lines), True)
 
         # expected data
         expected_record = {

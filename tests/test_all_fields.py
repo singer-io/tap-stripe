@@ -45,18 +45,28 @@ SCHEMA_MISSING_FIELDS = {
     },
     'subscriptions': {
         'test_clock',
+        'application',
+        'description'
     },
-    'products':set(),
+    'products': {
+        'default_price'
+    },
     'invoice_items':{
         'test_clock',
     },
     'payouts':set(),
-    'charges': set(),
+    'charges': {
+        'failure_balance_transaction'
+    },
     'subscription_items': set(),
     'plans': set(),
     'invoice_line_items': set(),
     'invoices': {
         'test_clock',
+        'application'
+    },
+    'payment_intents': {
+        'amount_details'
     }
 }
 
@@ -182,16 +192,28 @@ KNOWN_FAILING_FIELDS = {
         'plan', # BUG_12478 | missing subfields
     },
     'payouts': set(),
-    'charges': set(),
+    'charges': {
+        # missing subfield ['card.mandate']
+        'payment_method_details'
+    },
     'subscription_items': {
         # BUG_12478 | missing subfields on plan ['statement_description', 'statement_descriptor', 'name']
         'plan',
+        # missing subfields on price ['recurring.trial_period_days']
+        'price'
     },
     'invoices': {
         'plans', # BUG_12478 | missing subfields
     },
     'plans': set(),
-    'payment_intents':set(),
+    'payment_intents':{
+        # missing subfield ['payment_method_details.card.mandate']
+        'charges',
+        # missing subfield ['card.mandate_options']
+        'payment_method_options',
+        # missing subfield ['payment_method']
+        'last_payment_error'
+    },
     'invoice_line_items': set()
     # 'invoice_line_items': { # TODO This is a test issue that prevents us from consistently passing
     #     'unique_line_item_id',
@@ -218,6 +240,7 @@ FICKLE_FIELDS = {
     },
     'charges': {
         'status', # expect 'paid', get 'succeeded'
+        'receipt_url' # keeps changing with every request
     },
     'subscription_items': set(),
     'invoices': {
@@ -251,11 +274,6 @@ FIELDS_ADDED_BY_TAP = {
     },
 }
 
-# As for the `price` field added in the schema, the API doc doesn't mention any
-# `trial_period_days` in the field, hence skipping the assertion error for the same.
-KNOWN_NESTED_MISSING_FIELDS = {
-    'subscription_items': {'price': 'recurring.trial_period_days'}
-}
 
 class ALlFieldsTest(BaseTapTest):
     """Test tap sets a bookmark and respects it for the next sync of a stream"""
@@ -353,25 +371,6 @@ class ALlFieldsTest(BaseTapTest):
 
                 # run the test
                 self.all_fields_test(streams_to_test)
-
-    def find_nested_key(self, nested_key, actual_field_value, field):
-        '''
-        Find the nested key that is failing in the field and ignore the assertion error
-        gained from it, if any.
-        '''
-        for field_name, each_keys in nested_key.items():
-            # split the keys through `.`, for getting the nested keys
-            keys = each_keys.split('.')
-            temp_value = actual_field_value
-            if field == field_name:
-                for failing_key in keys:
-                    # if the failing key is not present in the actual key or not
-                    if not temp_value.get(failing_key, None):
-                        return False
-                    else:
-                        temp_value = temp_value.get(failing_key)
-                        if keys[-1] in temp_value:
-                            return True
 
     def all_fields_test(self, streams_to_test):
         """
@@ -546,10 +545,6 @@ class ALlFieldsTest(BaseTapTest):
 
                                     print(f"WARNING {base_err_msg} failed exact comparison.\n"
                                         f"AssertionError({failure_1})")
-
-                                    nested_key = KNOWN_NESTED_MISSING_FIELDS.get(stream, {})
-                                    if self.find_nested_key(nested_key, expected_field_value, field):
-                                        continue
 
                                     if field in KNOWN_FAILING_FIELDS[stream] or field in FIELDS_TO_NOT_CHECK[stream]:
                                         continue # skip the following wokaround

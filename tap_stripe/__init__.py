@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 import stripe
 import stripe.error
 from stripe.stripe_object import StripeObject
+from stripe.api_requestor import APIRequestor
 from stripe.util import convert_to_stripe_object
 import singer
 from singer import utils, Transformer, metrics
@@ -401,6 +402,18 @@ def reduce_foreign_keys(rec, stream_name):
                     rec['lines'][k] = [li.to_dict_recursive() for li in val]
     return rec
 
+def new_request(self, method, url, params=None, headers=None):
+    '''The new request function to overwrite the request() function of the APIRequestor class of SDK.'''
+    rbody, rcode, rheaders, my_api_key = self.request_raw(
+        method.lower(), url, params, headers, is_streaming=False
+    )
+    resp = self.interpret_response(rbody, rcode, rheaders)
+    LOGGER.debug(f'request id : {resp.request_id}')
+    return resp, my_api_key
+
+# To log the request_id, we replaced the request() function of the APIRequestor
+# class o SDK, captured the response and logged the request_id
+APIRequestor.request = new_request
 
 def paginate(sdk_obj, filter_key, start_date, end_date, stream_name, request_args=None, limit=100):
     yield from sdk_obj.list(
@@ -907,6 +920,10 @@ def sync():
 def main():
     # Parse command line arguments
     args = utils.parse_args(REQUIRED_CONFIG_KEYS)
+    # set the config and state in prior to check the authentication in the discovery mode itself.
+    Context.config = args.config
+    Context.state = args.state
+    configure_stripe_client()
 
     # If discover flag was passed, run discovery mode and dump output to stdout
     if args.discover:
@@ -920,9 +937,6 @@ def main():
         else:
             Context.catalog = discover()
 
-        Context.config = args.config
-        Context.state = args.state
-        configure_stripe_client()
         validate_dependencies()
         try:
             sync()

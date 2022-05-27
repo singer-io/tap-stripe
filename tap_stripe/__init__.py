@@ -911,6 +911,10 @@ def sync():
 def main():
     # Parse command line arguments
     args = utils.parse_args(REQUIRED_CONFIG_KEYS)
+    # set the config and state in prior to check the authentication in the discovery mode itself.
+    Context.config = args.config
+    Context.state = args.state
+    configure_stripe_client()
 
     # If discover flag was passed, run discovery mode and dump output to stdout
     if args.discover:
@@ -924,9 +928,6 @@ def main():
         else:
             Context.catalog = discover()
 
-        Context.config = args.config
-        Context.state = args.state
-        configure_stripe_client()
         validate_dependencies()
         try:
             sync()

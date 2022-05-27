@@ -23,7 +23,8 @@ Create a config file containing the stripe credentials, e.g.:
 {
   "client_secret": "sk_live_xxxxxxxxxxxxxxxxxxxxxxxx",
   "account_id": "acct_xxxxxxxxxxxxxxxx",
-  "start_date": "2017-01-01T00:00:00Z"
+  "start_date": "2017-01-01T00:00:00Z",
+  "request_timeout": 300
 }
 ```
 

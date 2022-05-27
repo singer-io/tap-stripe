@@ -117,6 +117,8 @@ LOGGER = singer.get_logger()
 
 DEFAULT_DATE_WINDOW_SIZE = 30 #days
 
+# default request timeout
+REQUEST_TIMEOUT = 300 # 5 minutes
 class Context():
     config = {}
     state = {}
@@ -186,11 +188,18 @@ def configure_stripe_client():
     stripe.api_key = Context.config.get('client_secret')
     # Override the Stripe API Version for consistent access
     stripe.api_version = '2020-08-27'
-    # Allow ourselves to retry retriable network errors 5 times
+    # Allow ourselves to retry retryable network errors 15 times
     # https://github.com/stripe/stripe-python/tree/a9a8d754b73ad47bdece6ac4b4850822fa19db4e#configuring-automatic-retries
     stripe.max_network_retries = 15
-    # Configure client with a default timeout of 80 seconds
-    client = stripe.http_client.RequestsClient()
+
+    request_timeout = Context.config.get('request_timeout')
+    # if request_timeout is other than 0, "0" or "" then use request_timeout
+    if request_timeout and float(request_timeout):
+        request_timeout = float(request_timeout)
+    else: # If value is 0, "0" or "" then set default to 300 seconds.
+        request_timeout = REQUEST_TIMEOUT
+    # configure the clint with the request_timeout
+    client = stripe.http_client.RequestsClient(timeout=request_timeout)
     apply_request_timer_to_client(client)
     stripe.default_http_client = client
     # Set stripe logging to INFO level

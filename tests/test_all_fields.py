@@ -45,10 +45,10 @@ SCHEMA_MISSING_FIELDS = {
     },
     'subscriptions': {
         'test_clock',
-        'application',
-        'description'
+        'description',
+        'application'
     },
-    'products': {
+    'products':{
         'default_price'
     },
     'invoice_items':{
@@ -173,28 +173,6 @@ FIELDS_TO_NOT_CHECK = {
         'invoice_item'
     },
     'payment_intents': set()
-}
-
-# we have observed that the SDK object creation returns some new fields intermittently
-SCHEMA_MISSING_FIELDS = {
-    'customers': {
-        'test_clock'
-    },
-    'subscriptions': {
-        'test_clock',
-    },
-    'products':set(),
-    'invoice_items':{
-        'test_clock',
-    },
-    'payouts':set(),
-    'charges': set(),
-    'subscription_items': set(),
-    'plans': set(),
-    'invoice_line_items': set(),
-    'invoices': {
-        'test_clock',
-    }
 }
 
 KNOWN_FAILING_FIELDS = {
@@ -476,6 +454,7 @@ class ALlFieldsTest(BaseTapTest):
                 adjusted_actual_keys = actual_records_keys.union(  # BUG_12478
                     KNOWN_MISSING_FIELDS.get(stream, set())
                 ).union(SCHEMA_MISSING_FIELDS.get(stream, set()))
+
                 if stream == 'invoice_items':
                     adjusted_actual_keys = adjusted_actual_keys.union({'subscription_item'})  # BUG_13666
 

@@ -48,7 +48,7 @@ SCHEMA_MISSING_FIELDS = {
         'description',
         'application'
     },
-    'products':{
+    'products': {
         'default_price'
     },
     'invoice_items':{

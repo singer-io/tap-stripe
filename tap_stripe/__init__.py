@@ -769,6 +769,42 @@ def sync_sub_stream(sub_stream_name, parent_obj, updates=False):
             obj_ad_dict = sub_stream_obj.to_dict_recursive()
 
             if sub_stream_name == "invoice_line_items":
+                # we will get "unique_id" for default API versions older than "2019-12-03"
+                # ie. for API version older than "2019-12-03", the value in the field
+                # "unique_id" is moved to "id" field in the newer API version
+                # For example:
+                #   OLDER API VERSION
+                #     {
+                #         "id": "ii_testinvoiceitem",
+                #         "object": "line_item",
+                #         "invoice_item": "ii_testinvoiceitem",
+                #         "subscription": "sub_testsubscription",
+                #         "type": "invoiceitem",
+                #         "unique_id": "il_testlineitem"
+                #     }
+
+                #   NEWER API VERSION
+                #     {
+                #         "id": "il_testlineitem",
+                #         "object": "line_item",
+                #         "invoice_item": "ii_testinvoiceitem",
+                #         "subscription": "sub_testsubscription",
+                #         "type": "invoiceitem",
+                #     }
+                if updates and obj_ad_dict.get("unique_id"):
+                    # get "unique_id"
+                    object_unique_id = obj_ad_dict.get("unique_id")
+                    # get "id"
+                    object_id = obj_ad_dict.get("id")
+                    # update "id" field with "unique_id" value
+                    obj_ad_dict["id"] = object_unique_id
+                    # if type is invoiceitem, update 'invoice_item' field with 'id' if not present
+                    if obj_ad_dict.get("type") == "invoiceitem" and not obj_ad_dict.get("invoice_item"):
+                        obj_ad_dict["invoice_item"] = object_id
+                    # if type is subscription, update 'subscription' field with 'id' if not present
+                    elif obj_ad_dict.get("type") == "subscription" and not obj_ad_dict.get("subscription"):
+                        obj_ad_dict["subscription"] = object_id
+
                 # Synthetic addition of a key to the record we sync
                 obj_ad_dict["invoice"] = parent_obj.id
             elif sub_stream_name == "payout_transactions":

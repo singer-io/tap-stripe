@@ -10,6 +10,7 @@ import stripe.error
 from stripe.stripe_object import StripeObject
 from stripe.api_resources.list_object import ListObject
 from stripe.error import InvalidRequestError
+from stripe.api_requestor import APIRequestor
 from stripe.util import convert_to_stripe_object
 import singer
 from singer import utils, Transformer, metrics
@@ -117,6 +118,9 @@ IMMUTABLE_STREAM_LOOKBACK = 300 # 5 min in epoch time, Stripe accuracy is to the
 LOGGER = singer.get_logger()
 
 DEFAULT_DATE_WINDOW_SIZE = 30 #days
+
+# default request timeout
+REQUEST_TIMEOUT = 300 # 5 minutes
 
 def new_list(self, api_key=None, stripe_version=None, stripe_account=None, **params):
     """
@@ -226,11 +230,18 @@ def configure_stripe_client():
     stripe.api_key = Context.config.get('client_secret')
     # Override the Stripe API Version for consistent access
     stripe.api_version = '2020-08-27'
-    # Allow ourselves to retry retriable network errors 5 times
+    # Allow ourselves to retry retryable network errors 15 times
     # https://github.com/stripe/stripe-python/tree/a9a8d754b73ad47bdece6ac4b4850822fa19db4e#configuring-automatic-retries
     stripe.max_network_retries = 15
-    # Configure client with a default timeout of 80 seconds
-    client = stripe.http_client.RequestsClient()
+
+    request_timeout = Context.config.get('request_timeout')
+    # if request_timeout is other than 0, "0" or "" then use request_timeout
+    if request_timeout and float(request_timeout):
+        request_timeout = float(request_timeout)
+    else: # If value is 0, "0" or "" then set default to 300 seconds.
+        request_timeout = REQUEST_TIMEOUT
+    # configure the clint with the request_timeout
+    client = stripe.http_client.RequestsClient(timeout=request_timeout)
     apply_request_timer_to_client(client)
     stripe.default_http_client = client
     # Set stripe logging to INFO level
@@ -433,6 +444,18 @@ def reduce_foreign_keys(rec, stream_name):
                     rec['lines'][k] = [li.to_dict_recursive() for li in val]
     return rec
 
+def new_request(self, method, url, params=None, headers=None):
+    '''The new request function to overwrite the request() function of the APIRequestor class of SDK.'''
+    rbody, rcode, rheaders, my_api_key = self.request_raw(
+        method.lower(), url, params, headers, is_streaming=False
+    )
+    resp = self.interpret_response(rbody, rcode, rheaders)
+    LOGGER.debug(f'request id : {resp.request_id}')
+    return resp, my_api_key
+
+# To log the request_id, we replaced the request() function of the APIRequestor
+# class o SDK, captured the response and logged the request_id
+APIRequestor.request = new_request
 
 def paginate(sdk_obj, filter_key, start_date, end_date, stream_name, request_args=None, limit=100):
     yield from sdk_obj.list(
@@ -939,6 +962,10 @@ def sync():
 def main():
     # Parse command line arguments
     args = utils.parse_args(REQUIRED_CONFIG_KEYS)
+    # set the config and state in prior to check the authentication in the discovery mode itself.
+    Context.config = args.config
+    Context.state = args.state
+    configure_stripe_client()
 
     # If discover flag was passed, run discovery mode and dump output to stdout
     if args.discover:
@@ -952,9 +979,6 @@ def main():
         else:
             Context.catalog = discover()
 
-        Context.config = args.config
-        Context.state = args.state
-        configure_stripe_client()
         validate_dependencies()
         try:
             sync()

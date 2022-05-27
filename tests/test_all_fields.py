@@ -274,7 +274,6 @@ FIELDS_ADDED_BY_TAP = {
     },
 }
 
-
 class ALlFieldsTest(BaseTapTest):
     """Test tap sets a bookmark and respects it for the next sync of a stream"""
 

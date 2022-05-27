@@ -56,7 +56,7 @@ SCHEMA_MISSING_FIELDS = {
     },
     'payouts':set(),
     'charges': {
-        'failure_balance_transaction',
+        'failure_balance_transaction'
     },
     'subscription_items': set(),
     'plans': set(),
@@ -199,15 +199,13 @@ KNOWN_FAILING_FIELDS = {
     'subscription_items': {
         # BUG_12478 | missing subfields on plan ['statement_description', 'statement_descriptor', 'name']
         'plan',
-        # missing subfield ['recurring.trial_period_days']
+        # missing subfields on price ['recurring.trial_period_days']
         'price'
     },
     'invoices': {
         'plans', # BUG_12478 | missing subfields
     },
     'plans': set(),
-    'payment_intents':set(),
-    'invoice_line_items': set(),
     'payment_intents':{
         # missing subfield ['payment_method_details.card.mandate']
         'charges',
@@ -216,6 +214,7 @@ KNOWN_FAILING_FIELDS = {
         # missing subfield ['payment_method']
         'last_payment_error'
     },
+    'invoice_line_items': set()
     # 'invoice_line_items': { # TODO This is a test issue that prevents us from consistently passing
     #     'unique_line_item_id',
     #     'invoice_item',

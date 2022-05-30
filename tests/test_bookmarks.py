@@ -70,12 +70,12 @@ class BookmarkTest(BaseTapTest):
         For EACH stream that is incrementally replicated there are multiple rows of data with
             different values for the replication key
         """
-        untested_streams = self.child_streams().union({
+        untested_streams = {
             'transfers',
             'payout_transactions',  # BUG see create test
             'balance_transactions',  # join stream, can't be updated
             'disputes',
-        })
+        }
         cannot_update_streams = {
             'invoice_line_items',  # updates not available via api
         }
@@ -209,7 +209,7 @@ class BookmarkTest(BaseTapTest):
                         second_sync_record_count.get(stream, 0),
                         msg="first sync didn't have more records, bookmark usage not verified")
 
-                    if stream in self.streams_to_create:
+                    if stream in self.streams_to_create.difference(cannot_update_streams):
                         for replication_key in replication_keys:
                             updates_replication_key = "updates_created"
                             updates_stream = stream + "_events"
@@ -226,11 +226,15 @@ class BookmarkTest(BaseTapTest):
                             first_sync_bookmark = dt.fromtimestamp(
                                 first_sync_state.get('bookmarks').get(updates_stream).get(updates_replication_key)
                             )
-                            for record in second_sync_data:
-                                date_value = record["updated"]
-                                self.assertGreaterEqual(date_value,
-                                                        dt.strftime(first_sync_bookmark, self.TS_COMPARISON_FORMAT),
-                                                        msg="A 2nd sync record has a replication-key that is less than or equal to the 1st sync bookmark.")
+                            # This assertion would fail for the child streams as it is replicated based on the parent i.e. it would fetch the parents based on
+                            # the bookmark and retrieve all the child records for th parent.
+                            # Hence skipping this assertion for child streams.
+                            if stream not in self.child_streams().union({'payout_transactions'}):
+                                for record in second_sync_data:
+                                    date_value = record["updated"]
+                                    self.assertGreaterEqual(date_value,
+                                                            dt.strftime(first_sync_bookmark, self.TS_COMPARISON_FORMAT),
+                                                            msg="A 2nd sync record has a replication-key that is less than or equal to the 1st sync bookmark.")
 
                 elif stream in self.expected_full_table_streams():
                     raise Exception("Expectations changed, but this test was not updated to reflect them.")

@@ -199,7 +199,7 @@ KNOWN_FAILING_FIELDS = {
     'subscription_items': {
         # BUG_12478 | missing subfields on plan ['statement_description', 'statement_descriptor', 'name']
         'plan',
-        # missing subfield ['recurring.trial_period_days']
+        # missing subfields on price ['recurring.trial_period_days']
         'price'
     },
     'invoices': {
@@ -240,6 +240,7 @@ FICKLE_FIELDS = {
     },
     'charges': {
         'status', # expect 'paid', get 'succeeded'
+        'receipt_url' # keeps changing with every request
     },
     'subscription_items': set(),
     'invoices': {
@@ -272,7 +273,6 @@ FIELDS_ADDED_BY_TAP = {
         'invoice'
     },
 }
-
 
 class ALlFieldsTest(BaseTapTest):
     """Test tap sets a bookmark and respects it for the next sync of a stream"""
@@ -370,7 +370,6 @@ class ALlFieldsTest(BaseTapTest):
 
                 # run the test
                 self.all_fields_test(streams_to_test)
-
 
     def all_fields_test(self, streams_to_test):
         """

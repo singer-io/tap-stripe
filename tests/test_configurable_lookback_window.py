@@ -25,7 +25,7 @@ class ConversionWindowBaseTest(BaseTapTest):
     def get_properties(self):
         """Configurable properties, with a switch to override the 'start_date' property"""
         return_value = {
-            'start_date':dt.strftime(dt.utcnow() - timedelta(seconds=600), self.START_DATE_FORMAT),
+            'start_date':dt.strftime(dt.utcnow(), self.START_DATE_FORMAT),
             'lookback_window': self.lookback_window,
             'account_id': os.getenv('TAP_STRIPE_ACCOUNT_ID'),
             'client_secret': os.getenv('TAP_STRIPE_CLIENT_SECRET')

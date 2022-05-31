@@ -439,7 +439,7 @@ def new_request(self, method, url, params=None, headers=None):
         method.lower(), url, params, headers, is_streaming=False
     )
     resp = self.interpret_response(rbody, rcode, rheaders)
-    LOGGER.debug(f'request id : {resp.request_id}')
+    LOGGER.debug('request id : %s', resp.request_id)
     return resp, my_api_key
 
 # To log the request_id, we replaced the request() function of the APIRequestor

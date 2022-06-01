@@ -17,7 +17,7 @@ class ConversionWindowBaseTest(BaseTapTest):
     Verify connection can be created, and tap can discover and sync with a lookback window
     when passed in config else takes default value.
     """
-    lookback_window = ''
+    lookback_window = '600' # default value
 
     def name(self):
         return f"tt_stripe_lookback_window_{self.lookback_window}"
@@ -65,11 +65,7 @@ class ConversionWindowBaseTest(BaseTapTest):
         # Verify the tap and target do not throw a critical error
         exit_status = menagerie.get_exit_status(conn_id, sync_job_name)
         menagerie.verify_sync_exit_status(self, exit_status, sync_job_name)
-        
-class LookbackWindowTestDefault(ConversionWindowBaseTest):
 
-    def test_run(self):
-        self.run_test()
 
 class LookbackWindowTestConfig(ConversionWindowBaseTest):
 

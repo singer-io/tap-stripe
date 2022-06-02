@@ -30,4 +30,4 @@ class TestDebugLogger(unittest.TestCase):
         '''Test that the debug is called with proper request id.'''
         mock_request = MockRequest('url')
         new_request(mock_request, 'GET', 'dummy_url')
-        mock_debug.assert_called_with('request id : dummy_request_id')
+        mock_debug.assert_called_with('request id : %s', 'dummy_request_id')

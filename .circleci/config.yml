@@ -215,6 +215,14 @@ workflows:
           requires:
             - 'Testing full_replication'
       - run_integration_test:
+          name: 'Testing configurable_lookback_window'
+          context:
+            - circleci-user
+            - tier-1-tap-user
+          file: configurable_lookback_window
+          requires:
+            - 'Testing all_fields'
+      - run_integration_test:
           name: 'Testing automatic_payout_transactions'
           context:
             - circleci-user

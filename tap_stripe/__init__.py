@@ -119,7 +119,7 @@ PARENT_STREAM_MAP = {
 
 # NB: These streams will only sync through once for creates, never updates.
 IMMUTABLE_STREAMS = {'balance_transactions', 'events'}
-IMMUTABLE_STREAM_LOOKBACK = 300 # 5 min in epoch time, Stripe accuracy is to the second
+IMMUTABLE_STREAM_LOOKBACK = 600 # 10 min in epoch time, Stripe accuracy is to the second
 
 LOGGER = singer.get_logger()
 
@@ -439,7 +439,7 @@ def new_request(self, method, url, params=None, headers=None):
         method.lower(), url, params, headers, is_streaming=False
     )
     resp = self.interpret_response(rbody, rcode, rheaders)
-    LOGGER.debug(f'request id : {resp.request_id}')
+    LOGGER.debug('request id : %s', resp.request_id)
     return resp, my_api_key
 
 # To log the request_id, we replaced the request() function of the APIRequestor
@@ -484,6 +484,17 @@ def get_bookmark_for_stream(stream_name, replication_key):
             int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
     return stream_bookmark
 
+def evaluate_start_time_based_on_lookback(stream_name, replication_key, lookback_window):
+    '''
+    For historical syncs take the start date as the starting point in a sync, even if it is more recent than
+    {today - lookback_window}. For incremental syncs, the tap should start syncing from {previous state - lookback_window}
+    '''
+    bookmark = singer.get_bookmark(Context.state, stream_name, replication_key)
+    start_date = int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
+    if bookmark:
+        lookback_evaluated_time = bookmark - lookback_window
+        return lookback_evaluated_time
+    return start_date
 def get_bookmark_for_sub_stream(stream_name):
     """
     Get the bookmark for the child-stream based on the parent's replication key.
@@ -573,7 +584,16 @@ def sync_stream(stream_name):
             # TODO: This may be an issue for other streams' created_at
             # entries, but to keep the surface small, doing this only for
             # immutable streams at first to confirm the suspicion.
-            start_window -= IMMUTABLE_STREAM_LOOKBACK
+            try:
+                lookback_window = Context.config.get('lookback_window', IMMUTABLE_STREAM_LOOKBACK) # added configurable lookback window
+                if lookback_window and int(lookback_window) or lookback_window in (0, '0'):
+                    lookback_window = int(lookback_window)
+                else:
+                    lookback_window = IMMUTABLE_STREAM_LOOKBACK # default lookback
+            except ValueError:
+                raise ValueError('Please provide a valid integer value for the lookback_window parameter.') from None
+            start_window = evaluate_start_time_based_on_lookback(stream_name, replication_key, lookback_window)
+            stream_bookmark = start_window
 
         # NB: We observed records coming through newest->oldest and so
         # date-windowing was added and the tap only bookmarks after it has

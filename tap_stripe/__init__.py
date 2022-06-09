@@ -85,6 +85,9 @@ STREAM_TO_TYPE_FILTER = {
     'transfers': {'type': 'transfer.*', 'object': ['transfer']},
     'disputes': {'type': 'charge.dispute.*', 'object': ['dispute']},
     'products': {'type': 'product.*', 'object': ['product']},
+    'invoice_line_items': {'type': 'invoice.*', 'object': ['invoice']},
+    'subscription_items': {'type': 'customer.subscription.*', 'object': ['subscription']},
+    'payout_transactions': {'type': 'payout.*', 'object': ['transfer', 'payout']},
     # Cannot find evidence of these streams having events associated:
     # subscription_items - appears on subscriptions events
     # balance_transactions - seems to be immutable
@@ -495,6 +498,7 @@ def evaluate_start_time_based_on_lookback(stream_name, replication_key, lookback
         lookback_evaluated_time = bookmark - lookback_window
         return lookback_evaluated_time
     return start_date
+
 def get_bookmark_for_sub_stream(stream_name):
     """
     Get the bookmark for the child-stream based on the parent's replication key.
@@ -557,14 +561,37 @@ def sync_stream(stream_name):
     stream_field_whitelist = json.loads(Context.config.get('whitelist_map', '{}')).get(stream_name)
 
     extraction_time = singer.utils.now()
-    replication_key = metadata.get(stream_metadata, (), 'valid-replication-keys')[0]
+    should_sync_parent_stream = True
+
+    if Context.is_sub_stream(stream_name):
+        replication_key = STREAM_REPLICATION_KEY.get(PARENT_STREAM_MAP.get(stream_name))
+        sub_stream_name = stream_name
+        stream_name = PARENT_STREAM_MAP.get(stream_name)
+        should_sync_parent_stream = is_parent_selected(sub_stream_name)
+    else:
+        replication_key = metadata.get(stream_metadata, (), 'valid-replication-keys')[0]
+
     # Invoice Items bookmarks on `date`, but queries on `created`
     filter_key = 'created' if stream_name == 'invoice_items' else replication_key
 
+    sub_stream_name = SUB_STREAMS.get(stream_name)
+
     # Get bookmark for the stream
     stream_bookmark = get_bookmark_for_stream(stream_name, replication_key)
-
     bookmark = stream_bookmark
+
+    # If there is a sub-stream and its selected, get its bookmark (or the start date if no bookmark)
+    should_sync_sub_stream = sub_stream_name and Context.is_selected(sub_stream_name)
+
+    if should_sync_sub_stream and should_sync_parent_stream:
+        sub_stream_bookmark = get_bookmark_for_sub_stream(sub_stream_name)
+
+        # if there is a sub stream, set bookmark to sub stream's bookmark
+        # since we know it must be earlier than the stream's bookmark
+        if sub_stream_bookmark != stream_bookmark:
+            bookmark = min(stream_bookmark, sub_stream_bookmark)
+    else:
+        bookmark = stream_bookmark
 
     with Transformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
         end_time = dt_to_epoch(utils.now())
@@ -621,7 +648,7 @@ def sync_stream(stream_name):
                 rec['updated'] = stream_obj_created
 
                 # sync stream if object is greater than or equal to the bookmark
-                if stream_obj_created >= stream_bookmark:
+                if stream_obj_created >= stream_bookmark and should_sync_parent_stream:
                     rec = transformer.transform(rec,
                                                 Context.get_catalog_entry(stream_name)['schema'],
                                                 stream_metadata)
@@ -638,11 +665,26 @@ def sync_stream(stream_name):
 
                     Context.new_counts[stream_name] += 1
 
+                # sync sub streams if its selected and the parent object
+                # is greater than its bookmark
+                if should_sync_sub_stream and stream_obj_created > sub_stream_bookmark:
+                    sync_sub_stream(sub_stream_name, stream_obj)
+
             # Update stream/sub-streams bookmarks as stop window
             if stop_window > stream_bookmark:
                 stream_bookmark = stop_window
-                # Write bookmark for the stream
-                write_bookmark_for_stream(stream_name, replication_key, stream_bookmark)
+                singer.write_bookmark(Context.state,
+                                      stream_name,
+                                      replication_key,
+                                      stream_bookmark)
+
+            # the sub stream bookmarks on its parent
+            if should_sync_sub_stream and stop_window > sub_stream_bookmark:
+                sub_stream_bookmark = stop_window
+                singer.write_bookmark(Context.state,
+                                      sub_stream_name,
+                                      replication_key,
+                                      sub_stream_bookmark)
 
             singer.write_state(Context.state)
 
@@ -677,10 +719,18 @@ def get_object_list_iterator(object_list):
 # we are in a cycle.
 INITIAL_SUB_STREAM_OBJECT_LIST_LENGTH = 10
 
-def write_substream_records(sub_stream_name, parent_obj, updates=False):
+def is_parent_selected(sub_stream_name):
+    """
+    Given a child stream, check if the parent is selected.
+    """
+    parent_stream = PARENT_STREAM_MAP.get(sub_stream_name)
+    return Context.is_selected(parent_stream)
+
+def sync_sub_stream(sub_stream_name, parent_obj, updates=False):
     """
     Given a parent object, retrieve its values for the specified substream.
     """
+    # LOGGER.info(f'>>>>> {sub_stream_name}')
     extraction_time = singer.utils.now()
 
     if sub_stream_name == "invoice_line_items":
@@ -820,52 +870,6 @@ def write_substream_records(sub_stream_name, parent_obj, updates=False):
                 Context.new_counts[sub_stream_name] += 1
 
 
-def sync_sub_stream(child_stream, bookmark_value):
-    """
-    Get the parent records based on the bookmark and corresponding child stream records
-    """
-    # Get the parent stream of the stream
-    parent_stream = PARENT_STREAM_MAP[child_stream]
-    # Get the replication key for the stream
-    parent_replication_key = STREAM_REPLICATION_KEY[parent_stream]
-
-    end_time = dt_to_epoch(utils.now())
-
-    window_size = float(Context.config.get('date_window_size', DEFAULT_DATE_WINDOW_SIZE))
-
-    if DEFAULT_DATE_WINDOW_SIZE != window_size:
-        LOGGER.info('Using non-default date window size of %.2f',window_size)
-    start_window = bookmark_value
-
-    # NB: We observed records coming through newest->oldest and so
-    # date-windowing was added and the tap only bookmarks after it has
-    # gotten through a date window
-    while start_window < end_time:
-        stop_window = dt_to_epoch(epoch_to_dt(start_window) + timedelta(days=window_size))
-        # cut off the last window at the end time
-        if stop_window > end_time:
-            stop_window = end_time
-
-        # Get the parent records for the child-streams to loop on it and fetch the child records.
-        for parent_obj in paginate(
-                STREAM_SDK_OBJECTS[parent_stream]['sdk_object'],
-                parent_replication_key,
-                start_window,
-                stop_window,
-                parent_stream,
-                STREAM_SDK_OBJECTS[parent_stream].get('request_args')):
-            write_substream_records(child_stream, parent_obj)
-
-        # Update sub-streams bookmarks as stop window
-        if stop_window > bookmark_value:
-            bookmark_value = stop_window
-            # Write bookmark for the stream
-            write_bookmark_for_stream(child_stream, parent_replication_key, bookmark_value)
-        singer.write_state(Context.state)
-
-        # update window for next iteration
-        start_window = stop_window
-
 def should_sync_event(events_obj, object_type, id_to_created_map):
     """Checks to ensure the event's underlying object has an id and that the id_to_created_map
     contains an entry for that id. Returns true the first time an id should be added to the map
@@ -910,11 +914,6 @@ def sync_event_updates(stream_name, bookmark_value):
 
     date_window_size = 60 * 60 * 24 # Seconds in a day
 
-    sub_stream_name = None
-    if stream_name in PARENT_STREAM_MAP.keys():
-        sub_stream_name = stream_name
-        stream_name = PARENT_STREAM_MAP[stream_name]
-
     max_created = bookmark_value
     date_window_start = max_created
     date_window_end = max_created + date_window_size
@@ -923,6 +922,14 @@ def sync_event_updates(stream_name, bookmark_value):
 
     # Create a map to hold relate event object ids to timestamps
     updated_object_timestamps = {}
+    
+    should_sync_parent = True
+    sub_stream_name = SUB_STREAMS.get(stream_name)
+
+    if Context.is_sub_stream(stream_name):
+        sub_stream_name = stream_name
+        should_sync_parent = is_parent_selected(stream_name)
+        stream_name = PARENT_STREAM_MAP.get(sub_stream_name)
 
     while not stop_paging:
         extraction_time = singer.utils.now()
@@ -980,19 +987,19 @@ def sync_event_updates(stream_name, bookmark_value):
 
                 if events_obj.created >= bookmark_value:
                     if rec.get('id') is not None:
-                        if sub_stream_name is None:
+                        if should_sync_parent:
                             singer.write_record(stream_name,
                                                 rec,
                                                 time_extracted=extraction_time)
                             Context.updated_counts[stream_name] += 1
 
-                        # Delete events should be synced but not their subobjects
-                        if events_obj.get('type', '').endswith('.deleted'):
-                            continue
+                            # Delete events should be synced but not their subobjects
+                            if events_obj.get('type', '').endswith('.deleted'):
+                                continue
 
-                        if sub_stream_name:
+                        if sub_stream_name and Context.is_selected(sub_stream_name):
                             if event_resource_obj:
-                                write_substream_records(sub_stream_name,
+                                sync_sub_stream(sub_stream_name,
                                                 event_resource_obj,
                                                 updates=True)
             if events_obj.created > max_created:
@@ -1002,13 +1009,13 @@ def sync_event_updates(stream_name, bookmark_value):
         # cannot bookmark until the entire page is processed
         date_window_start = date_window_end
         date_window_end = date_window_end + date_window_size
-        if sub_stream_name is None:
+        if sub_stream_name is None or should_sync_parent:
             singer.write_bookmark(Context.state,
                                 stream_name + '_events',
                                 'updates_created',
                                 max_created)
             singer.write_state(Context.state)
-        else:
+        if sub_stream_name and Context.is_selected(sub_stream_name):
             singer.write_bookmark(Context.state,
                                 sub_stream_name + '_events',
                                 'updates_created',
@@ -1036,22 +1043,17 @@ def sync():
         stream_name = catalog_entry['tap_stream_id']
         # Sync records for stream
         if Context.is_selected(stream_name):
-            if not Context.is_sub_stream(stream_name):  # Run the sync for parent-streams
+            if Context.is_selected(stream_name) and not Context.is_sub_stream(stream_name) or not is_parent_selected(stream_name):  # Run the sync for parent-streams
                 sync_stream(stream_name)
                 # This prevents us from retrieving 'events.events'
                 if STREAM_TO_TYPE_FILTER.get(stream_name):
                     bookmark_value = get_bookmark_for_stream(stream_name + '_events', 'updates_created')
+                    if Context.is_sub_stream(stream_name) and is_parent_selected(stream_name):
+                        parent_stream = PARENT_STREAM_MAP.get(stream_name)
+                        parent_bookmark = get_bookmark_for_stream(parent_stream + '_events', 'updates_created')
+                        bookmark_value = min(bookmark_value, parent_bookmark)
+                        # substream_bookmark = singer.get_bookmark(Context.state, stream_name + '_events', 'updates_created')
                     sync_event_updates(stream_name, bookmark_value)
-
-            else:   # Run the sync for child-streams independently
-                bookmark_value = get_bookmark_for_sub_stream(stream_name)
-                sync_sub_stream(stream_name, bookmark_value)
-                # Get the child-stream's events bookmark if present
-                events_bookmark = singer.get_bookmark(Context.state, stream_name + '_events', 'updates_created')
-                # Use the child-stream's event bookmark if present, else use the original child-stream's bookmark
-                if events_bookmark:
-                    bookmark_value = events_bookmark
-                sync_event_updates(stream_name, bookmark_value) # Run the sync mode for fetching events for the child-streams independently
 
 @utils.handle_top_exception(LOGGER)
 def main():

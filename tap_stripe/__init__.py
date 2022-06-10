@@ -571,7 +571,7 @@ def sync_stream(stream_name, is_sub_stream=False):
         # As this function expecting stream name as parent name hence changing values
         sub_stream_name = stream_name
         stream_name = PARENT_STREAM_MAP.get(stream_name)
-        replication_key = STREAM_REPLICATION_KEY.get(stream_name)        
+        replication_key = STREAM_REPLICATION_KEY.get(stream_name)
     else:
         # replication_key = metadata.get(stream_metadata, (), 'valid-replication-keys')[0]
         replication_key = STREAM_REPLICATION_KEY.get(stream_name)
@@ -909,23 +909,23 @@ def sync_event_updates(stream_name, is_sub_stream):
     LOGGER.info("Started syncing event based updates")
 
     date_window_size = 60 * 60 * 24 # Seconds in a day
-    
+
     if is_sub_stream:
         sub_stream_name = stream_name
         stream_name = PARENT_STREAM_MAP.get(sub_stream_name)
-        
+
     sub_stream_name = SUB_STREAMS.get(stream_name)
 
     parent_bookmark_value = singer.get_bookmark(Context.state,
                                          stream_name + '_events',
                                          'updates_created') or \
                      int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
-                     
+
     sub_stream_bookmark_value = parent_bookmark_value = singer.get_bookmark(Context.state,
                                          sub_stream_name + '_events',
                                          'updates_created') or \
                      int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
-                     
+
     if is_sub_stream:
         bookmark_value = sub_stream_bookmark_value
     elif sub_stream_name and Context.is_selected(sub_stream_name):

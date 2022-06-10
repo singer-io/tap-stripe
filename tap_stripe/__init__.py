@@ -929,7 +929,7 @@ def sync_event_updates(stream_name, is_sub_stream):
     if is_sub_stream:
         bookmark_value = sub_stream_bookmark_value
     elif sub_stream_name and Context.is_selected(sub_stream_name):
-        bookmark_value = min(parent_bookmark_value,sub_stream_bookmark_value)
+        bookmark_value = min(parent_bookmark_value, sub_stream_bookmark_value)
     else:
         bookmark_value = parent_bookmark_value
 
@@ -1038,6 +1038,7 @@ def sync():
     """
     The sync function called for the sync mode.
     """
+    LOGGER.info("in sync")
     # Write all schemas and init count to 0
     for catalog_entry in Context.catalog['streams']:
         stream_name = catalog_entry["tap_stream_id"]

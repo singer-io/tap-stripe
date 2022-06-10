@@ -1038,7 +1038,6 @@ def sync():
     """
     The sync function called for the sync mode.
     """
-    LOGGER.info("in sync")
     # Write all schemas and init count to 0
     for catalog_entry in Context.catalog['streams']:
         stream_name = catalog_entry["tap_stream_id"]

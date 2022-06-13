@@ -58,5 +58,5 @@ class TestParentChildBookmarking(unittest.TestCase):
         events_ts = 1645716195
         Context.state = {"bookmarks": {"invoice_line_items_events": {"updates_created": events_ts}, "invoice_line_items": {"date": invoice_line_items_ts}}}
         sync()
-        # Verify that the sync_event_updates function is called with the is_subStream parameter True
+        # Verify that the sync_event_updates function is called with the is_sub_stream parameter True
         mock_sync_event_updates.assert_called_with('invoice_line_items', [True])

@@ -559,6 +559,9 @@ def convert_dict_to_stripe_object(record):
 def sync_stream(stream_name, is_sub_stream=False):
     """
     Sync each stream, looking for newly created records. Updates are captured by events stream.
+
+    :param is_sub_stream - Check whether the funciton is called via the parent stream(only parent/both ar selected)
+                            or when called through only child stream i.e. when parent is not selected.
     """
     LOGGER.info("Started syncing stream %s", stream_name)
 
@@ -586,9 +589,11 @@ def sync_stream(stream_name, is_sub_stream=False):
     # If there is a sub-stream and its selected, get its bookmark (or the start date if no bookmark)
     should_sync_sub_stream = sub_stream_name and Context.is_selected(sub_stream_name)
 
+    # Get the bookmark of the sub_stream if it is selected
     if should_sync_sub_stream:
         sub_stream_bookmark = get_bookmark_for_sub_stream(sub_stream_name)
 
+        # If both the parent and child streams are selected, get the minimum bookmark value
         if not is_sub_stream:
             bookmark = min(stream_bookmark, sub_stream_bookmark)
     else:
@@ -648,7 +653,7 @@ def sync_stream(stream_name, is_sub_stream=False):
                 stream_obj_created = rec[replication_key]
                 rec['updated'] = stream_obj_created
 
-                # sync stream if object is greater than or equal to the bookmark
+                # sync stream if object is greater than or equal to the bookmark and if only parent is selected
                 if stream_obj_created >= stream_bookmark and not is_sub_stream:
                     rec = transformer.transform(rec,
                                                 Context.get_catalog_entry(stream_name)['schema'],
@@ -666,17 +671,16 @@ def sync_stream(stream_name, is_sub_stream=False):
 
                     Context.new_counts[stream_name] += 1
 
-                # sync sub streams if its selected and the parent object
-                # is greater than its bookmark
+                # sync sub streams if it is selected and the parent object is greater than its bookmark
                 if should_sync_sub_stream and stream_obj_created > sub_stream_bookmark:
                     sync_sub_stream(sub_stream_name, stream_obj)
 
-            # Update stream/sub-streams bookmarks as stop window
+            # Update stream bookmark as stop window when parent stream is selected
             if not is_sub_stream and stop_window > stream_bookmark:
                 stream_bookmark = stop_window
                 write_bookmark_for_stream(stream_name, replication_key, stream_bookmark)
 
-            # the sub stream bookmarks on its parent
+            # Update sub-stream bookmark as stop window when child stream is selected
             if should_sync_sub_stream and stop_window > sub_stream_bookmark:
                 sub_stream_bookmark = stop_window
                 write_bookmark_for_stream(sub_stream_name, replication_key, sub_stream_bookmark)
@@ -909,30 +913,33 @@ def sync_event_updates(stream_name, is_sub_stream):
     date_window_size = 60 * 60 * 24 # Seconds in a day
 
     if is_sub_stream:
-        # We need to change the parent, when only child is selected, hence need to change
-        # stream_name to its parent.
+        # Need to update the stream_name to its parent's stream name as for child we need to fetch the parents first
         sub_stream_name = stream_name
         stream_name = PARENT_STREAM_MAP.get(sub_stream_name)
 
     sub_stream_name = SUB_STREAMS.get(stream_name)
 
     parent_bookmark_value = singer.get_bookmark(Context.state,
-                                         stream_name + '_events',
-                                         'updates_created') or \
-                     int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
+                                                stream_name + '_events',
+                                                'updates_created') or \
+                            int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
 
     # Get the bookmark value of the sub_stream if its selected and present
     if sub_stream_name:
-        sub_stream_bookmark_value = parent_bookmark_value = singer.get_bookmark(Context.state,
-                                            sub_stream_name + '_events',
-                                            'updates_created') or \
-                        int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
+        sub_stream_bookmark_value = singer.get_bookmark(Context.state,
+                                                        sub_stream_name + '_events',
+                                                        'updates_created') or \
+                            int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
 
+    # If only child stream is selected, update bookmark to sub-stream bookmark value
     if is_sub_stream:
         bookmark_value = sub_stream_bookmark_value
+
     elif sub_stream_name and Context.is_selected(sub_stream_name):
         # Get the minimum bookmark value from parent and child streams if both are selected.
         bookmark_value = min(parent_bookmark_value, sub_stream_bookmark_value)
+
+    # Update the bookmark to parent bpokmark value, if child is not selected
     else:
         bookmark_value = parent_bookmark_value
 
@@ -1001,6 +1008,7 @@ def sync_event_updates(stream_name, is_sub_stream):
 
                 if events_obj.created >= bookmark_value:
                     if rec.get('id') is not None:
+                        # Write parent records only when the parent is selected
                         if not is_sub_stream:
                             singer.write_record(stream_name,
                                                 rec,
@@ -1011,6 +1019,7 @@ def sync_event_updates(stream_name, is_sub_stream):
                         if events_obj.get('type', '').endswith('.deleted'):
                             continue
 
+                        # Write child stream records only when the child stream is selected
                         if sub_stream_name and Context.is_selected(sub_stream_name):
                             if event_resource_obj:
                                 sync_sub_stream(sub_stream_name,
@@ -1023,12 +1032,14 @@ def sync_event_updates(stream_name, is_sub_stream):
         # cannot bookmark until the entire page is processed
         date_window_start = date_window_end
         date_window_end = date_window_end + date_window_size
+        # Write the parent bookmark value only when the parent is selected
         if not is_sub_stream:
             singer.write_bookmark(Context.state,
                                 stream_name + '_events',
                                 'updates_created',
                                 max_created)
             singer.write_state(Context.state)
+        # Write the child bookmark value only when the child is selected
         if sub_stream_name and Context.is_selected(sub_stream_name):
             singer.write_bookmark(Context.state,
                                 sub_stream_name + '_events',
@@ -1055,9 +1066,9 @@ def sync():
     # Loop over streams in catalog
     for catalog_entry in Context.catalog['streams']:
         stream_name = catalog_entry['tap_stream_id']
-        # Sync records for stream
         if Context.is_selected(stream_name):
-            if not Context.is_sub_stream(stream_name) or not is_parent_selected(stream_name):  # Run the sync for parent-streams
+            # Run the sync for only parent streams/only child streams/both parent-child streams
+            if not Context.is_sub_stream(stream_name) or not is_parent_selected(stream_name):
                 sync_stream(stream_name, Context.is_sub_stream(stream_name))
                 # This prevents us from retrieving immutable stream events.
                 if STREAM_TO_TYPE_FILTER.get(stream_name):

@@ -145,7 +145,7 @@ class TestParentChildBookmarking(unittest.TestCase):
 
     @mock.patch('tap_stripe.metadata.to_map')
     @mock.patch('tap_stripe.Context.get_catalog_entry')
-    def test_is_parent_selected_when_parent_is_selected(self, mock_get_catalog_entry, mock_to_map):
+    def test_is_parent_selected_when_child_is_selected(self, mock_get_catalog_entry, mock_to_map):
         """
             Verify that the is_parent_selected() returns True when the parent stream is also selected.
         """

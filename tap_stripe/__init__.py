@@ -553,7 +553,7 @@ def sync_stream(stream_name, is_sub_stream=False):
     """
     Sync each stream, looking for newly created records. Updates are captured by events stream.
 
-    :param 
+    :param
     stream_name - Name of the stream
     is_sub_stream - Check whether the function is called via the parent stream(only parent/both ar selected)
                             or when called through only child stream i.e. when parent is not selected.

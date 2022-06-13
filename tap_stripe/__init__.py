@@ -85,13 +85,12 @@ STREAM_TO_TYPE_FILTER = {
     'transfers': {'type': 'transfer.*', 'object': ['transfer']},
     'disputes': {'type': 'charge.dispute.*', 'object': ['dispute']},
     'products': {'type': 'product.*', 'object': ['product']},
-    'invoice_line_items': {'type': 'invoice.*', 'object': ['invoice']},
-    'subscription_items': {'type': 'customer.subscription.*', 'object': ['subscription']},
+    'invoice_line_items': {'type': 'invoice.*', 'object': ['invoice_line_item']},
+    'subscription_items': {'type': 'customer.subscription.*', 'object': ['subscription_item']},
     'payout_transactions': {'type': 'payout.*', 'object': ['transfer', 'payout']},
     # Cannot find evidence of these streams having events associated:
     # subscription_items - appears on subscriptions events
     # balance_transactions - seems to be immutable
-    # payouts - these are called transfers with an event type of payout.*
 }
 
 # Some fields are not available by default with latest API version so
@@ -568,11 +567,11 @@ def sync_stream(stream_name, is_sub_stream=False):
 
     extraction_time = singer.utils.now()
     if is_sub_stream:
-        # As this function expecting stream name as parent name hence changing values
+        # We need to change the parent, when only child is selected, hence need to change
+        # stream_name to its parent.
         stream_name = PARENT_STREAM_MAP.get(stream_name)
         replication_key = STREAM_REPLICATION_KEY.get(stream_name)
     else:
-        # replication_key = metadata.get(stream_metadata, (), 'valid-replication-keys')[0]
         replication_key = STREAM_REPLICATION_KEY.get(stream_name)
 
     # Invoice Items bookmarks on `date`, but queries on `created`
@@ -910,6 +909,8 @@ def sync_event_updates(stream_name, is_sub_stream):
     date_window_size = 60 * 60 * 24 # Seconds in a day
 
     if is_sub_stream:
+        # We need to change the parent, when only child is selected, hence need to change
+        # stream_name to its parent.
         sub_stream_name = stream_name
         stream_name = PARENT_STREAM_MAP.get(sub_stream_name)
 
@@ -920,6 +921,7 @@ def sync_event_updates(stream_name, is_sub_stream):
                                          'updates_created') or \
                      int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
 
+    # Get the bookmark value of the sub_stream if its selected and present
     if sub_stream_name:
         sub_stream_bookmark_value = parent_bookmark_value = singer.get_bookmark(Context.state,
                                             sub_stream_name + '_events',
@@ -929,6 +931,7 @@ def sync_event_updates(stream_name, is_sub_stream):
     if is_sub_stream:
         bookmark_value = sub_stream_bookmark_value
     elif sub_stream_name and Context.is_selected(sub_stream_name):
+        # Get the minimum bookmark value from parent and child streams if both are selected.
         bookmark_value = min(parent_bookmark_value, sub_stream_bookmark_value)
     else:
         bookmark_value = parent_bookmark_value
@@ -1056,7 +1059,7 @@ def sync():
         if Context.is_selected(stream_name):
             if not Context.is_sub_stream(stream_name) or not is_parent_selected(stream_name):  # Run the sync for parent-streams
                 sync_stream(stream_name, Context.is_sub_stream(stream_name))
-                # This prevents us from retrieving 'events.events'
+                # This prevents us from retrieving immutable stream events.
                 if STREAM_TO_TYPE_FILTER.get(stream_name):
                     sync_event_updates(stream_name, Context.is_sub_stream(stream_name))
 

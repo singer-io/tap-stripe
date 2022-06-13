@@ -14,7 +14,7 @@ class TestParentChildBookmarking(unittest.TestCase):
     @mock.patch('tap_stripe.utils.now')
     def test_child_bookmarking(self, mock_now, mock_get_catalog_entry, mock_event_updates, mock_to_map, mock_is_selected, mock_write_schema, mock_is_sub_stream, mock_paginate, mock_is_parent_selected):
         '''
-            Verify that state is updated with parent's bookmark after syncing the child.
+            Verify that the paginate function is called with the child stream bookmark
         '''
         # mocked now time
         now_time = utils.strptime_with_tz('2022-01-31 16:17:40.948019+00:00')

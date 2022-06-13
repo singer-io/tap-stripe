@@ -143,7 +143,6 @@ class TestParentChildBookmarking(unittest.TestCase):
         # Verify that one record is being written
         self.assertEqual(1, mock_write_record.call_count)
 
-    # @mock.patch('tap_stripe.Context.is_selected', return_value=True)
     @mock.patch('tap_stripe.metadata.to_map')
     @mock.patch('tap_stripe.Context.get_catalog_entry')
     def test_is_parent_selected_when_parent_is_selected(self, mock_get_catalog_entry, mock_to_map):
@@ -153,6 +152,7 @@ class TestParentChildBookmarking(unittest.TestCase):
         mock_get_catalog_entry.return_value = {'tap_stream_id': 'subscriptions', 'schema': {}, 'key_properties': [], 'metadata': [{"valid-replication-keys": ["created"],  "selected": True}]}
         mock_to_map.return_value = {(): {'table-key-properties': ['id'], 'selected': True, 'forced-replication-method': 'INCREMENTAL', 'valid-replication-keys': ['created']}}
         parent_selected = is_parent_selected('subscription_items')
+        # verify that the parent_selected returns True
         self.assertTrue(parent_selected)
 
     @mock.patch('tap_stripe.metadata.to_map')
@@ -164,4 +164,5 @@ class TestParentChildBookmarking(unittest.TestCase):
         mock_get_catalog_entry.return_value = {'tap_stream_id': 'subscriptions', 'schema': {}, 'key_properties': [], 'metadata': [{"valid-replication-keys": ["created"],  "selected": False}]}
         mock_to_map.return_value = {(): {'table-key-properties': ['id'], 'selected': False, 'forced-replication-method': 'INCREMENTAL', 'valid-replication-keys': ['created']}}
         parent_selected = is_parent_selected('subscription_items')
+        # verify that the parent_selected returns False
         self.assertFalse(parent_selected)

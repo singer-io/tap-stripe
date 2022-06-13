@@ -89,7 +89,6 @@ STREAM_TO_TYPE_FILTER = {
     'subscription_items': {'type': 'customer.subscription.*', 'object': ['subscription_item']},
     'payout_transactions': {'type': 'payout.*', 'object': ['transfer', 'payout']},
     # Cannot find evidence of these streams having events associated:
-    # subscription_items - appears on subscriptions events
     # balance_transactions - seems to be immutable
 }
 
@@ -199,12 +198,6 @@ class Context():
     def is_sub_stream(cls, stream_name):
         for sub_stream_id in SUB_STREAMS.values():
             if stream_name == sub_stream_id:
-                return True
-        return False
-    @classmethod
-    def is_parent_stream(cls, stream_name):
-        for stream_id in PARENT_STREAM_MAP.values():
-            if stream_name == stream_id:
                 return True
         return False
 
@@ -560,7 +553,9 @@ def sync_stream(stream_name, is_sub_stream=False):
     """
     Sync each stream, looking for newly created records. Updates are captured by events stream.
 
-    :param is_sub_stream - Check whether the function is called via the parent stream(only parent/both ar selected)
+    :param 
+    stream_name - Name of the stream
+    is_sub_stream - Check whether the function is called via the parent stream(only parent/both ar selected)
                             or when called through only child stream i.e. when parent is not selected.
     """
     LOGGER.info("Started syncing stream %s", stream_name)
@@ -596,6 +591,7 @@ def sync_stream(stream_name, is_sub_stream=False):
         # If both the parent and child streams are selected, get the minimum bookmark value
         if not is_sub_stream:
             bookmark = min(stream_bookmark, sub_stream_bookmark)
+    # Set the substream bookmark to None (when only parent is selected)
     else:
         sub_stream_bookmark = None
 
@@ -653,7 +649,7 @@ def sync_stream(stream_name, is_sub_stream=False):
                 stream_obj_created = rec[replication_key]
                 rec['updated'] = stream_obj_created
 
-                # sync stream if object is greater than or equal to the bookmark and if only parent is selected
+                # sync stream if object is greater than or equal to the bookmark and if parent is selected
                 if stream_obj_created >= stream_bookmark and not is_sub_stream:
                     rec = transformer.transform(rec,
                                                 Context.get_catalog_entry(stream_name)['schema'],
@@ -908,7 +904,9 @@ def sync_event_updates(stream_name, is_sub_stream):
 
     look at 'events update' bookmark and pull events after that
 
-    :param is_sub_stream - Check whether the function is called via the parent stream(only parent/both ar selected)
+    :param
+    stream_name - Name of the stream
+    is_sub_stream - Check whether the function is called via the parent stream(only parent/both ar selected)
                             or when called through only child stream i.e. when parent is not selected.
     '''
     LOGGER.info("Started syncing event based updates")
@@ -942,7 +940,7 @@ def sync_event_updates(stream_name, is_sub_stream):
         # Get the minimum bookmark value from parent and child streams if both are selected.
         bookmark_value = min(parent_bookmark_value, sub_stream_bookmark_value)
 
-    # Update the bookmark to parent bpokmark value, if child is not selected
+    # Update the bookmark to parent bookmark value, if child is not selected
     else:
         bookmark_value = parent_bookmark_value
 

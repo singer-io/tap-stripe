@@ -560,7 +560,7 @@ def sync_stream(stream_name, is_sub_stream=False):
     """
     Sync each stream, looking for newly created records. Updates are captured by events stream.
 
-    :param is_sub_stream - Check whether the funciton is called via the parent stream(only parent/both ar selected)
+    :param is_sub_stream - Check whether the function is called via the parent stream(only parent/both ar selected)
                             or when called through only child stream i.e. when parent is not selected.
     """
     LOGGER.info("Started syncing stream %s", stream_name)
@@ -907,6 +907,9 @@ def sync_event_updates(stream_name, is_sub_stream):
     Get updates via events endpoint
 
     look at 'events update' bookmark and pull events after that
+
+    :param is_sub_stream - Check whether the function is called via the parent stream(only parent/both ar selected)
+                            or when called through only child stream i.e. when parent is not selected.
     '''
     LOGGER.info("Started syncing event based updates")
 

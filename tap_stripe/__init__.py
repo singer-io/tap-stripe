@@ -85,7 +85,7 @@ STREAM_TO_TYPE_FILTER = {
     'transfers': {'type': 'transfer.*', 'object': ['transfer']},
     'disputes': {'type': 'charge.dispute.*', 'object': ['dispute']},
     'products': {'type': 'product.*', 'object': ['product']},
-    'invoice_line_items': {'type': 'invoice.*', 'object': ['invoice_line_item']},
+    'invoice_line_items': {'type': 'invoice.*', 'object': ['line_item']},
     'subscription_items': {'type': 'customer.subscription.*', 'object': ['subscription_item']},
     'payout_transactions': {'type': 'payout.*', 'object': ['transfer', 'payout']},
     # Cannot find evidence of these streams having events associated:

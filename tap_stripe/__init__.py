@@ -568,7 +568,6 @@ def sync_stream(stream_name, is_sub_stream=False):
     if is_sub_stream:
         # We need to get the parent data first for syncing the child streams. Hence,
         # changing stream_name to parent stream when only child is selected.
-        sub_stream_name = stream_name
         stream_name = PARENT_STREAM_MAP.get(stream_name)
 
     replication_key = STREAM_REPLICATION_KEY.get(stream_name)
@@ -915,9 +914,9 @@ def sync_event_updates(stream_name, is_sub_stream):
     date_window_size = 60 * 60 * 24 # Seconds in a day
 
     if is_sub_stream:
-        # Need to update the stream_name to its parent's stream name as for child we need to fetch the parents first
-        sub_stream_name = stream_name
-        stream_name = PARENT_STREAM_MAP.get(sub_stream_name)
+        # We need to get the parent data first for syncing the child streams. Hence,
+        # changing stream_name to parent stream when only child is selected.
+        stream_name = PARENT_STREAM_MAP.get(stream_name)
 
     sub_stream_name = SUB_STREAMS.get(stream_name)
 

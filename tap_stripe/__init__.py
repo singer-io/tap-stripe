@@ -555,8 +555,8 @@ def sync_stream(stream_name, is_sub_stream=False):
 
     :param
     stream_name - Name of the stream
-    is_sub_stream - Check whether the function is called via the parent stream(only parent/both ar selected)
-                            or when called through only child stream i.e. when parent is not selected.
+    is_sub_stream - Check whether the function is called via the parent stream(only parent/both are selected)
+                    or when called through only child stream i.e. when parent is not selected.
     """
     LOGGER.info("Started syncing stream %s", stream_name)
 
@@ -906,8 +906,8 @@ def sync_event_updates(stream_name, is_sub_stream):
 
     :param
     stream_name - Name of the stream
-    is_sub_stream - Check whether the function is called via the parent stream(only parent/both ar selected)
-                            or when called through only child stream i.e. when parent is not selected.
+    is_sub_stream - Check whether the function is called via the parent stream(only parent/both are selected)
+                    or when called through only child stream i.e. when parent is not selected.
     '''
     LOGGER.info("Started syncing event based updates")
 

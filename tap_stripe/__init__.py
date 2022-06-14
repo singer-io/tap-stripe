@@ -555,7 +555,7 @@ def sync_stream(stream_name, is_sub_stream=False):
 
     :param
     stream_name - Name of the stream
-    is_sub_stream - Check whether the function is called via the parent stream(only parent/both are selected)
+    is_sub_stream - Check whether the function is called via the parent stream(only parent/both parent-child are selected)
                     or when called through only child stream i.e. when parent is not selected.
     """
     LOGGER.info("Started syncing stream %s", stream_name)
@@ -564,13 +564,14 @@ def sync_stream(stream_name, is_sub_stream=False):
     stream_field_whitelist = json.loads(Context.config.get('whitelist_map', '{}')).get(stream_name)
 
     extraction_time = singer.utils.now()
+
     if is_sub_stream:
-        # We need to change the parent, when only child is selected, hence need to change
-        # stream_name to its parent.
+        # We need to get the parent data first for syncing the child streams. Hence,
+        # changing stream_name to parent stream when only child is selected.
+        sub_stream_name = stream_name
         stream_name = PARENT_STREAM_MAP.get(stream_name)
-        replication_key = STREAM_REPLICATION_KEY.get(stream_name)
-    else:
-        replication_key = STREAM_REPLICATION_KEY.get(stream_name)
+
+    replication_key = STREAM_REPLICATION_KEY.get(stream_name)
 
     # Invoice Items bookmarks on `date`, but queries on `created`
     filter_key = 'created' if stream_name == 'invoice_items' else replication_key
@@ -1033,6 +1034,7 @@ def sync_event_updates(stream_name, is_sub_stream):
         # cannot bookmark until the entire page is processed
         date_window_start = date_window_end
         date_window_end = date_window_end + date_window_size
+
         # Write the parent bookmark value only when the parent is selected
         if not is_sub_stream:
             singer.write_bookmark(Context.state,
@@ -1040,6 +1042,7 @@ def sync_event_updates(stream_name, is_sub_stream):
                                 'updates_created',
                                 max_created)
             singer.write_state(Context.state)
+
         # Write the child bookmark value only when the child is selected
         if sub_stream_name and Context.is_selected(sub_stream_name):
             singer.write_bookmark(Context.state,

@@ -60,11 +60,16 @@ SCHEMA_MISSING_FIELDS = {
     },
     'subscription_items': set(),
     'plans': set(),
-    'invoice_line_items': set(),
+    'invoice_line_items': {
+        'amount_excluding_tax',
+        'unit_amount_excluding_tax'
+    },
     'invoices': {
         'test_clock',
         'application',
-        'rendering_options'
+        'rendering_options',
+        'total_excluding_tax',
+        'subtotal_excluding_tax'
     },
     'payment_intents': {
         'amount_details'

@@ -7,7 +7,7 @@ class TestParentChildBookmarking(unittest.TestCase):
     @mock.patch('tap_stripe.paginate')
     @mock.patch('tap_stripe.Context.is_sub_stream', return_value=[True])
     @mock.patch('tap_stripe.singer.write_schema')
-    @mock.patch('tap_stripe.Context.is_selected', return_value=[True])
+    @mock.patch('tap_stripe.Context.is_selected', return_value=True)
     @mock.patch('tap_stripe.metadata.to_map')
     @mock.patch('tap_stripe.sync_event_updates')
     @mock.patch('tap_stripe.Context.get_catalog_entry')
@@ -20,7 +20,7 @@ class TestParentChildBookmarking(unittest.TestCase):
             Verify that the paginate function is called with the child stream bookmark
         '''
         # mocked now time
-        now_time = utils.strptime_with_tz('2022-01-31 16:17:40.948019+00:00')
+        now_time = utils.strptime_with_tz('2022-02-01 15:32:13.000000+00:00')
         mock_now.return_value = now_time
         # catalog passed in the context
         Context.catalog = {'streams': [{'tap_stream_id': 'invoice_line_items', 'schema': {}, 'key_properties': [], 'metadata': []}]}
@@ -28,9 +28,9 @@ class TestParentChildBookmarking(unittest.TestCase):
         # metadata.to_map return value
         mock_to_map.return_value = {(): {'table-key-properties': ['id'], 'selected': True, 'forced-replication-method': 'INCREMENTAL', 'valid-replication-keys': ['created']}}
         invoice_line_items_ts = 1641137533 # 02-01-2022T03:32:13Z
-        Context.state = {"bookmarks": {"invoices": {"date": 1641137533}, "invoice_line_items": {"date": invoice_line_items_ts}}}
+        Context.state = {"bookmarks": {"invoices": {"date": 1641137539}, "invoice_line_items": {"date": invoice_line_items_ts}}}
         sync()
-        stop_window = dt_to_epoch(now_time)
+        stop_window = invoice_line_items_ts + (30 * 24 * 60 * 60)
         # Verify that the paginate function is called with the child stream bookmark
         mock_paginate.assert_called_with(stripe.Invoice, 'created', invoice_line_items_ts, stop_window, 'invoices', None)
 

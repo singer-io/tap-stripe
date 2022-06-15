@@ -587,6 +587,7 @@ def sync_stream(stream_name, is_sub_stream=False):
     # Get the bookmark of the sub_stream if it is selected
     if should_sync_sub_stream:
         sub_stream_bookmark = get_bookmark_for_sub_stream(sub_stream_name)
+        bookmark = sub_stream_bookmark
 
         # If both the parent and child streams are selected, get the minimum bookmark value
         if not is_sub_stream:

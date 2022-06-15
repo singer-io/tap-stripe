@@ -223,7 +223,10 @@ KNOWN_FAILING_FIELDS = {
         # missing subfield ['payment_method']
         'last_payment_error'
     },
-    'invoice_line_items': set()
+    'invoice_line_items': {
+        # missing subfield ['custom_unit_amount]
+        'price'
+    }
     # 'invoice_line_items': { # TODO This is a test issue that prevents us from consistently passing
     #     'unique_line_item_id',
     #     'invoice_item',

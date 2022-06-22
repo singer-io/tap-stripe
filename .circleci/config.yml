@@ -223,6 +223,14 @@ workflows:
           requires:
             - 'Testing all_fields'
       - run_integration_test:
+          name: 'Testing parent_child_independent'
+          context:
+            - circleci-user
+            - tier-1-tap-user
+          file: parent_child_independent
+          requires:
+            - 'Testing all_fields'
+      - run_integration_test:
           name: 'Testing automatic_payout_transactions'
           context:
             - circleci-user

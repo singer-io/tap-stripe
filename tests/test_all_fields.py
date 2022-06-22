@@ -60,10 +60,16 @@ SCHEMA_MISSING_FIELDS = {
     },
     'subscription_items': set(),
     'plans': set(),
-    'invoice_line_items': set(),
+    'invoice_line_items': {
+        'amount_excluding_tax',
+        'unit_amount_excluding_tax'
+    },
     'invoices': {
         'test_clock',
-        'application'
+        'application',
+        'rendering_options',
+        'total_excluding_tax',
+        'subtotal_excluding_tax'
     },
     'payment_intents': {
         'amount_details'
@@ -179,7 +185,10 @@ KNOWN_FAILING_FIELDS = {
     'coupons': {
         'percent_off', # BUG_9720 | Decimal('67') != Decimal('66.6') (value is changing in duplicate records)
     },
-    'customers': set(),
+    'customers': {
+        # missing subfield 'rendering_options
+        'invoice_settings'
+    },
     'subscriptions': {
         # BUG_12478 | missing subfields in coupon where coupon is subfield within discount
         # BUG_12478 | missing subfields on discount ['checkout_session', 'id', 'invoice', 'invoice_item', 'promotion_code']
@@ -214,7 +223,10 @@ KNOWN_FAILING_FIELDS = {
         # missing subfield ['payment_method']
         'last_payment_error'
     },
-    'invoice_line_items': set()
+    'invoice_line_items': {
+        # missing subfield ['custom_unit_amount]
+        'price'
+    }
     # 'invoice_line_items': { # TODO This is a test issue that prevents us from consistently passing
     #     'unique_line_item_id',
     #     'invoice_item',

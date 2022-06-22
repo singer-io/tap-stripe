@@ -15,12 +15,12 @@ class MockClass():
 
 bookmark_time = 1645046000 # epoch bookmark time
 
-@mock.patch("tap_stripe.reduce_foreign_keys", return_value = {"date": 16452804585})
-@mock.patch("tap_stripe.convert_dict_to_stripe_object", return_value = {"date": "2022-02-17T00:00:00"})
+@mock.patch("tap_stripe.reduce_foreign_keys", return_value = {"created": 16452804585})
+@mock.patch("tap_stripe.convert_dict_to_stripe_object", return_value = {"created": "2022-02-17T00:00:00"})
 @mock.patch("tap_stripe.paginate", return_value = [MockClass()])
 @mock.patch("tap_stripe.Context.get_catalog_entry")
 @mock.patch("tap_stripe.singer.metadata.to_map")
-@mock.patch("tap_stripe.singer.metadata.get", return_value = ["date"])
+@mock.patch("tap_stripe.singer.metadata.get", return_value = ["created"])
 @mock.patch("tap_stripe.epoch_to_dt")
 @mock.patch("tap_stripe.dt_to_epoch", side_effect = [1645056000, 1645056000, 1647647700]) # epoch timestamps
 @mock.patch("tap_stripe.sync_sub_stream")

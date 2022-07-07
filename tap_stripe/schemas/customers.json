@@ -11,6 +11,12 @@
       ],
       "properties": {}
     },
+    "updated_by_event_type": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
     "preferred_locales": {
       "type": [
         "null",
@@ -206,6 +212,22 @@
         },
         {
           "$ref": "shared/source.json#/"
+        }
+      ]
+    },
+    "tax_ids": {
+      "anyOf": [
+        {
+          "type": [
+            "null",
+            "array"
+          ],
+          "items": {
+            "$ref": "shared/tax_ids.json#/"
+          }
+        },
+        {
+          "$ref": "shared/tax_ids.json#/"
         }
       ]
     },

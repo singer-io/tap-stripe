@@ -18,6 +18,12 @@
       ],
       "format": "date-time"
     },
+    "updated_by_event_type": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
     "customer_tax_exempt": {
       "type": [
         "null",
@@ -45,8 +51,9 @@
     "created": {
       "type": [
         "null",
-        "integer"
-      ]
+        "string"
+      ],
+      "format": "date-time"
     },
     "status_transitions": {
       "type": [
@@ -492,8 +499,9 @@
     "finalized_at": {
       "type": [
         "null",
-        "integer"
-      ]
+        "string"
+      ],
+      "format": "date-time"
     },
     "pre_payment_credit_notes_amount": {
       "type": [
@@ -707,6 +715,12 @@
         "integer"
       ]
     },
+    "application_fee_amount": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
     "lines": {
       "type": [
         "null",
@@ -774,6 +788,158 @@
         "null",
         "string"
       ]
+    },
+    "payment_settings": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {
+        "payment_method_options": {
+          "type": [
+            "null",
+            "object"
+          ],
+          "properties": {
+            "acss_debit": {
+              "type": [
+                "null",
+                "object"
+              ],
+              "properties": {
+                "mandate_options": {
+                  "type": [
+                    "null",
+                    "object"
+                  ],
+                  "properties": {
+                    "transaction_type": {
+                      "type": [
+                        "null",
+                        "string"
+                      ]
+                    }
+                  }
+                },
+                "verification_method": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                }
+              }
+            },
+            "bancontact": {
+              "type": [
+                "null",
+                "object"
+              ],
+              "properties": {
+                "preferred_language": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                }
+              }
+            },
+            "card": {
+              "type": [
+                "null",
+                "object"
+              ],
+              "properties": {
+                "request_three_d_secure": {
+                  "type": [
+                    "null",
+                    "string"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "payment_method_types": {
+          "type": [
+            "null",
+            "array"
+          ],
+          "items": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      }
+    },
+    "on_behalf_of": {
+      "type": [
+        "null",
+        "string",
+        "object"
+      ],
+      "properties": {}
+    },
+    "custom_fields": {
+      "type": [
+        "null",
+        "array"
+      ],
+      "items": {
+        "type": [
+          "null",
+          "object"
+        ],
+        "properties": {
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ] 
+          },
+          "value": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      }
+    },
+    "paid_out_of_band": {
+      "type": [
+        "null",
+        "boolean"
+      ]
+    },
+    "automatic_tax": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {
+        "enabled": {
+          "type": [
+            "null",
+            "boolean"
+          ]
+        },
+        "status": {
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      }
+    },
+    "quote": {
+      "type": [
+        "null",
+        "object",
+        "string"
+      ],
+      "properties": {}
     },
     "updated": {
       "type": [

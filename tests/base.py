@@ -8,6 +8,7 @@ import json
 import decimal
 from datetime import datetime as dt
 from datetime import timezone as tz
+from dateutil import parser
 
 from tap_tester import connections, menagerie, runner
 
@@ -79,12 +80,8 @@ class BaseTapTest(unittest.TestCase):
             'events': default,
             'customers': default,
             'plans': default,
-            'invoices': {
-                self.AUTOMATIC_FIELDS: {"updated"},
-                self.REPLICATION_KEYS: {"date"},
-                self.PRIMARY_KEYS: {"id"},
-                self.REPLICATION_METHOD: self.INCREMENTAL,
-            },
+            'payment_intents': default,
+            'invoices': default,
             'invoice_items': {
                 self.AUTOMATIC_FIELDS: {"updated"},
                 self.REPLICATION_KEYS: {"date"},
@@ -314,13 +311,16 @@ class BaseTapTest(unittest.TestCase):
                                    'schema': batch['schema'],
                                    'key_names' : batch.get('key_names'),
                                    'table_version': batch.get('table_version')}
+            # add the records which are created in the created dictionary
             created[stream]['messages'] += [m for m in batch['messages']
                                                 if m['data'].get("updated") == m['data'].get(bookmark_key)]
+
             if stream not in updated:
                 updated[stream] = {'messages': [],
                                    'schema': batch['schema'],
                                    'key_names' : batch.get('key_names'),
                                    'table_version': batch.get('table_version')}
+            # add the records which are updated in the updated dictionary
             updated[stream]['messages'] += [m for m in batch['messages']
                                                 if m['data'].get("updated") != m['data'].get(bookmark_key)]
         return created, updated
@@ -377,9 +377,10 @@ class BaseTapTest(unittest.TestCase):
             int_or_float_to_decimal_keys = [
                 'percent_off', 'percent_off_precise', 'height', 'length', 'weight', 'width'
             ]
+            
             object_keys = [
-                'discount', 'plan', 'coupon', 'status_transitions', 'period', 'sources', 'source',
-                'package_dimensions',
+                'discount', 'plan', 'coupon', 'status_transitions', 'period', 'sources', 'source', 'charges', 'refunds',
+                'package_dimensions', 'price' # Convert epoch timestamp value of 'price.created' to standard datetime format. This field is available specific for invoice_line_items stream
             ]
 
             # timestamp to datetime
@@ -523,3 +524,7 @@ class BaseTapTest(unittest.TestCase):
         super().__init__(*args, **kwargs)
         self.start_date = self.get_properties().get('start_date')
         self.maxDiff=None
+
+
+    def dt_to_ts(self, dtime):
+        return parser.parse(dtime).timestamp()

@@ -16,6 +16,12 @@
         "string"
       ]
     },
+    "updated_by_event_type": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
     "active": {
       "type": [
         "null",
@@ -160,6 +166,12 @@
       "format": "date-time"
     },
     "url": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "tax_code": {
       "type": [
         "null",
         "string"

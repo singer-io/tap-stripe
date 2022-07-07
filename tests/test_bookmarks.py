@@ -43,6 +43,7 @@ class BookmarkTest(BaseTapTest):
             "invoices",
             "payouts",
             "plans",
+            "payment_intents",
             "products",
             "subscription_items",
             "subscriptions",
@@ -69,12 +70,12 @@ class BookmarkTest(BaseTapTest):
         For EACH stream that is incrementally replicated there are multiple rows of data with
             different values for the replication key
         """
-        untested_streams = self.child_streams().union({
+        untested_streams = {
             'transfers',
             'payout_transactions',  # BUG see create test
             'balance_transactions',  # join stream, can't be updated
             'disputes',
-        })
+        }
         cannot_update_streams = {
             'invoice_line_items',  # updates not available via api
         }
@@ -208,7 +209,7 @@ class BookmarkTest(BaseTapTest):
                         second_sync_record_count.get(stream, 0),
                         msg="first sync didn't have more records, bookmark usage not verified")
 
-                    if stream in self.streams_to_create:
+                    if stream in self.streams_to_create.difference(cannot_update_streams):
                         for replication_key in replication_keys:
                             updates_replication_key = "updates_created"
                             updates_stream = stream + "_events"
@@ -225,11 +226,15 @@ class BookmarkTest(BaseTapTest):
                             first_sync_bookmark = dt.fromtimestamp(
                                 first_sync_state.get('bookmarks').get(updates_stream).get(updates_replication_key)
                             )
-                            for record in second_sync_data:
-                                date_value = record["updated"]
-                                self.assertGreaterEqual(date_value,
-                                                        dt.strftime(first_sync_bookmark, self.TS_COMPARISON_FORMAT),
-                                                        msg="A 2nd sync record has a replication-key that is less than or equal to the 1st sync bookmark.")
+                            # This assertion would fail for the child streams as it is replicated based on the parent i.e. it would fetch the parents based on
+                            # the bookmark and retrieve all the child records for th parent.
+                            # Hence skipping this assertion for child streams.
+                            if stream not in self.child_streams().union({'payout_transactions'}):
+                                for record in second_sync_data:
+                                    date_value = record["updated"]
+                                    self.assertGreaterEqual(date_value,
+                                                            dt.strftime(first_sync_bookmark, self.TS_COMPARISON_FORMAT),
+                                                            msg="A 2nd sync record has a replication-key that is less than or equal to the 1st sync bookmark.")
 
                 elif stream in self.expected_full_table_streams():
                     raise Exception("Expectations changed, but this test was not updated to reflect them.")
@@ -271,13 +276,24 @@ class BookmarkTest(BaseTapTest):
                     self.assertIn(expected_pk_value, sync_pk_values)
 
                 # Verify updated fields are replicated as expected
-                for updated_record in updated_records[stream]:
-                    expected_updated_key = 'metadata'
-                    expected_updated_value_substring = 'bob'
-                    updated_pk_value = updated_record.get('id')
-                    sync_records_metadata = [sync_record.get('metadata')
-                                             for sync_record in second_sync_data
-                                             if sync_record.get('id') == updated_pk_value]
-                    self.assertTrue(len(sync_records_metadata) == 1)
-                    self.assertIn(expected_updated_value_substring,
-                                  sync_records_metadata[0].get('test_value'))
+                if stream == "payment_intents":
+                    # payment_intents stream does not generate any event on the update of the metadata field.
+                    # payment_intent can be confirmed by updating the payment_method field and it generates succeeds event.
+                    # So, for the payment_intents stream, we are verifying updates for the payment_method field.
+                    for updated_record in updated_records[stream]:
+                        updated_pk_value = updated_record.get('id')
+                        sync_records_payment_method = [sync_record.get('payment_method')
+                                                for sync_record in second_sync_data
+                                                if sync_record.get('id') == updated_pk_value]
+                        self.assertIsNotNone(sync_records_payment_method[0])
+                else:
+                    for updated_record in updated_records[stream]:
+                        expected_updated_key = 'metadata'
+                        expected_updated_value_substring = 'bob'
+                        updated_pk_value = updated_record.get('id')
+                        sync_records_metadata = [sync_record.get('metadata')
+                                                for sync_record in second_sync_data
+                                                if sync_record.get('id') == updated_pk_value]
+                        self.assertTrue(len(sync_records_metadata) == 1)
+                        self.assertIn(expected_updated_value_substring,
+                                    sync_records_metadata[0].get('test_value'))

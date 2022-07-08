@@ -10,7 +10,7 @@ def get_payouts():
     """
     # list of all data to return
     data = []
-    # api call of 1st page starting from 4 days ago as there is a lag from the Stripe side to reflect
+    # Api call of 1st page starting from 4 days ago as there is a lag from the Stripe side to reflect
     # the automatic payout transactions data
     stripe_obj = client["payouts"].list(limit=100, created={"gte": int(dt.combine(dt.today()-timedelta(days=4), time.min).timestamp())})
     dict_obj = stripe_obj_to_dict(stripe_obj)
@@ -59,7 +59,7 @@ class AutomaticPayoutTransactionTest(BaseTapTest):
                 cls.payouts_with_automatic_false.append(record.get("id"))
 
     def test_run(self):
-        # decreased the start_date for payout_transactions stream as there is a lag from the Stripe side to reflect
+        # Decreased the start_date for payout_transactions stream as there is a lag from the Stripe side to reflect
         # the automatic payout transactions data
         self.start_date = dt.strftime(dt.today() - timedelta(days=4), self.START_DATE_FORMAT)
         conn_id = connections.ensure_connection(self, original_properties=False)

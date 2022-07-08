@@ -15,7 +15,7 @@ class ParentChildIndependentTest(BaseTapTest):
         # select child streams only and run the test
         child_streams = {"invoice_line_items", "subscription_items"}
         self.run_test(child_streams)
-        # separated the payout_transactions stream as there is a lag from the Stripe side to reflect
+        # Separated the payout_transactions stream as there is a lag from the Stripe side to reflect
         # the automatic payout transactions data, hence we want to change the start_date for that stream
         child_streams = {"payout_transactions"}
         start_date = dt.strftime(dt.today() - timedelta(days=4), self.START_DATE_FORMAT)

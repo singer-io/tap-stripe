@@ -10,7 +10,8 @@ def get_payouts():
     """
     # list of all data to return
     data = []
-    # api call of 1st page starting from 4 days ago
+    # api call of 1st page starting from 4 days ago as there is a lag from the Stripe side to reflect
+    # the automatic payout transactions data
     stripe_obj = client["payouts"].list(limit=100, created={"gte": int(dt.combine(dt.today()-timedelta(days=4), time.min).timestamp())})
     dict_obj = stripe_obj_to_dict(stripe_obj)
 

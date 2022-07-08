@@ -59,7 +59,7 @@ class AutomaticPayoutTransactionTest(BaseTapTest):
 
     def test_run(self):
         self.start_date = dt.strftime(dt.today() - timedelta(days=4), self.START_DATE_FORMAT)
-        conn_id = connections.ensure_connection(self)
+        conn_id = connections.ensure_connection(self, original_properties=False)
 
         expected_streams = {"payouts", "payout_transactions"}
 

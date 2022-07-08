@@ -9,10 +9,11 @@ def get_payouts():
         Return all the payouts (with pagination), to determine the automatic and non-automatic payouts
     """
     # list of all data to return
+    four_days_ago = int(dt.combine(dt.today()-timedelta(days=4), time.min).timestamp())
     data = []
     # Api call of 1st page starting from 4 days ago as there is a lag from the Stripe side to reflect
     # the automatic payout transactions data
-    stripe_obj = client["payouts"].list(limit=100, created={"gte": int(dt.combine(dt.today()-timedelta(days=4), time.min).timestamp())})
+    stripe_obj = client["payouts"].list(limit=100, created={"gte": four_days_ago})
     dict_obj = stripe_obj_to_dict(stripe_obj)
 
     try:
@@ -23,7 +24,7 @@ def get_payouts():
 
     # loop over rest of the pages and collect data
     while dict_obj.get("has_more"):
-        stripe_obj = client["payouts"].list(limit=100, created={"gte": int(dt.combine(dt.today()-timedelta(days=4), time.min).timestamp())}, starting_after=dict_obj.get('data')[-1].get('id'))
+        stripe_obj = client["payouts"].list(limit=100, created={"gte": four_days_ago}, starting_after=dict_obj.get('data')[-1].get('id'))
         dict_obj = stripe_obj_to_dict(stripe_obj)
         data += dict_obj['data']
 

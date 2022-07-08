@@ -1,4 +1,6 @@
 from utils import stripe_obj_to_dict, client, midnight
+from datetime import datetime as dt
+from datetime import timedelta
 from tap_tester import runner, connections
 from base import BaseTapTest
 
@@ -56,6 +58,7 @@ class AutomaticPayoutTransactionTest(BaseTapTest):
                 cls.payouts_with_automatic_false.append(record.get("id"))
 
     def test_run(self):
+        self.start_date = dt.strftime(dt.today() - timedelta(days=4), self.START_DATE_FORMAT)
         conn_id = connections.ensure_connection(self)
 
         expected_streams = {"payouts", "payout_transactions"}

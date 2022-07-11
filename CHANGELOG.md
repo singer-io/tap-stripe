@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.0.0
+  * Upgraded SDK and API version[#105](https://github.com/singer-io/tap-stripe/pull/105)
+  * Added event_type in all the schemas [#123](https://github.com/singer-io/tap-stripe/pull/123)
+  * Added a new Payment Intent stream [#127](https://github.com/singer-io/tap-stripe/pull/127)
+  * Revert back `tiers` field datatype conversion [#117](https://github.com/singer-io/tap-stripe/pull/117)
+  * Updated the object type for payouts [#133](https://github.com/singer-io/tap-stripe/pull/133)
+  * Changed the lookback window logic [#138](https://github.com/singer-io/tap-stripe/pull/138)
+  * Made parent child streams independent of each other [#141](https://github.com/singer-io/tap-stripe/pull/141)
+  * Logged the request_id for each request [#135](https://github.com/singer-io/tap-stripe/pull/135)
+  * Check for credentials in discovery mode [#128](https://github.com/singer-io/tap-stripe/pull/128)
+  * Added request timeout and retry [#126](https://github.com/singer-io/tap-stripe/pull/126)
+  * Added integration tests  [#129](https://github.com/singer-io/tap-stripe/pull/129) [#131](https://github.com/singer-io/tap-stripe/pull/131)
+  * Updated existing integration tests
+
 ## 1.5.2
   * Event date window reduced from one week to one day [#120](https://github.com/singer-io/tap-stripe/pull/120)
 

@@ -1,4 +1,4 @@
-import logging
+
 import random
 import json
 import backoff
@@ -10,6 +10,7 @@ from time import sleep
 import stripe as stripe_client
 
 from tap_tester import menagerie
+from tap_tester import LOGGER
 from base import BaseTapTest
 
 
@@ -601,9 +602,9 @@ def delete_object(stream, oid):
 
             try:
                 delete = client[stream].delete(oid)
-                logging.info("DELETE SUCCESSFUL of record {} in stream {}".format(oid, stream))
+                LOGGER.info("DELETE SUCCESSFUL of record {} in stream {}".format(oid, stream))
                 return delete
             except:
-                logging.info("DELETE FAILED of record {} in stream {}".format(oid, stream))
+                LOGGER.info("DELETE FAILED of record {} in stream {}".format(oid, stream))
 
     return None

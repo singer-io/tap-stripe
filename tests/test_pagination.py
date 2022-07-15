@@ -1,7 +1,6 @@
 """
 Test tap pagination of streams
 """
-import logging
 import time
 from tap_tester import menagerie, runner, connections
 from base import BaseTapTest

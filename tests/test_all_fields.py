@@ -1,5 +1,4 @@
 import os
-import logging
 from pathlib import Path
 from random import random
 from time import sleep, perf_counter
@@ -8,7 +7,7 @@ from dateutil.parser import parse
 
 from collections import namedtuple
 
-from tap_tester import menagerie, runner, connections
+from tap_tester import menagerie, runner, connections, LOGGER
 from base import BaseTapTest
 from utils import \
     create_object, delete_object, list_all_object, stripe_obj_to_dict
@@ -18,7 +17,9 @@ from utils import \
 #             Fields that are consistently missing during replication
 #             Original Ticket [https://stitchdata.atlassian.net/browse/SRCE-4736]
 KNOWN_MISSING_FIELDS = {
-    'customers':set(),
+    'customers': {
+        'default_currency',
+    },
     'subscriptions':{
         'payment_settings',
         'default_tax_rates',
@@ -258,6 +259,7 @@ FICKLE_FIELDS = {
     'invoices': {
         'hosted_invoice_url', # expect https://invoice.stripe.com/i/acct_14zvmQDcBSxinnbL/test...zcy0200wBekbjGw?s=ap
         'invoice_pdf',        # get    https://invoice.stripe.com/i/acct_14zvmQDcBSxinnbL/test...DE102006vZ98t5I?s=ap
+        'payment_settings',  # 'default_mandate' subfield unexpectedly present
     },
     'plans': set(),
     'invoice_line_items': set()
@@ -303,7 +305,7 @@ class ALlFieldsTest(BaseTapTest):
 
     @classmethod
     def setUpClass(cls):
-        logging.info("Start Setup")
+        LOGGER.info("Start Setup")
         # Create data prior to first sync
         cls.streams_to_test = {
             "customers",
@@ -335,7 +337,7 @@ class ALlFieldsTest(BaseTapTest):
 
     @classmethod
     def tearDownClass(cls):
-        logging.info("Start Teardown")
+        LOGGER.info("Start Teardown")
         for stream in cls.streams_to_test:
             for record in cls.new_objects[stream]:
                 delete_object(stream, record["id"])
@@ -411,7 +413,7 @@ class ALlFieldsTest(BaseTapTest):
         for stream, count in first_record_count_by_stream.items():
             assert stream in self.expected_streams()
             self.assertGreater(count, 0, msg="failed to replicate any data for: {}".format(stream))
-        print("total replicated row count: {}".format(replicated_row_count))
+        LOGGER.info("total replicated row count: {}".format(replicated_row_count))
 
 
         # Test by Stream
@@ -459,7 +461,7 @@ class ALlFieldsTest(BaseTapTest):
                 # Log the fields that are included in the schema but not in the expectations.
                 # These are fields we should strive to get data for in our test data set
                 if schema_keys.difference(adjusted_expected_keys):
-                    print("WARNING Stream[{}] Fields missing from expectations: [{}]".format(
+                    LOGGER.warn("Stream[{}] Fields missing from expectations: [{}]".format(
                         stream, schema_keys.difference(adjusted_expected_keys)
                     ))
 
@@ -521,11 +523,11 @@ class ALlFieldsTest(BaseTapTest):
                         #    actual_record_dupe['created'] == actual_record['created'] and \
                         #    actual_record_dupe['updated'] == actual_record['updated']:
                         #     import pdb; pdb.set_trace()
-                        #     print(f"Discrepancy {set(actual_record_dupe.keys()).difference(set(actual_record.keys())))}")
-                        #     print("created: {actual_record['created']}")
-                        #     print("created dupe: {actual_record_dupe['created']}")
-                        #     print("updated: {actual_record['updated']}")
-                        #     print("updated dupe: {actual_record_dupe['updated']}")
+                        #     LOGGER.info(f"Discrepancy {set(actual_record_dupe.keys()).difference(set(actual_record.keys())))}")
+                        #     LOGGER.info("created: {actual_record['created']}")
+                        #     LOGGER.info("created dupe: {actual_record_dupe['created']}")
+                        #     LOGGER.info("updated: {actual_record['updated']}")
+                        #     LOGGER.info("updated dupe: {actual_record_dupe['updated']}")
 
                         field_adjustment_set = FIELDS_ADDED_BY_TAP[stream].union(
                             KNOWN_MISSING_FIELDS.get(stream, set())  # BUG_12478
@@ -554,7 +556,7 @@ class ALlFieldsTest(BaseTapTest):
 
                                 except AssertionError as failure_1:
 
-                                    print(f"WARNING {base_err_msg} failed exact comparison.\n"
+                                    LOGGER.warn(f"{base_err_msg} failed exact comparison.\n"
                                         f"AssertionError({failure_1})")
 
                                     if field in KNOWN_FAILING_FIELDS[stream] or field in FIELDS_TO_NOT_CHECK[stream]:
@@ -567,4 +569,4 @@ class ALlFieldsTest(BaseTapTest):
                                         raise AssertionError(f"{base_err_msg} Unexpected field is being fickle.")
 
                                     else:
-                                        print(f"WARNING {base_err_msg} failed datatype comparison. Field is None.")
+                                        LOGGER.warn(f"{base_err_msg} failed datatype comparison. Field is None.")

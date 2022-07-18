@@ -2,14 +2,13 @@
 Test tap sets a bookmark and respects it for the next sync of a stream
 """
 import json
-import logging
 from pathlib import Path
 from random import random
 from time import sleep, perf_counter
 from datetime import datetime as dt
 from dateutil.parser import parse
 
-from tap_tester import menagerie, runner, connections
+from tap_tester import menagerie, runner, connections, LOGGER
 from base import BaseTapTest
 from utils import create_object, update_object, delete_object, \
     get_hidden_objects, activate_tracking, stripe_obj_to_dict
@@ -32,7 +31,7 @@ class BookmarkTest(BaseTapTest):
 
     @classmethod
     def setUpClass(cls):
-        logging.info("Start Setup")
+        LOGGER.info("Start Setup")
         # Create data prior to first sync
         cls.streams_to_create = {
             "customers",
@@ -52,7 +51,7 @@ class BookmarkTest(BaseTapTest):
 
     @classmethod
     def tearDownClass(cls):
-        logging.info("Start Teardown")
+        LOGGER.info("Start Teardown")
         for stream in cls.streams_to_create:
             for record in cls.new_objects[stream]:
                 delete_object(stream, record["id"])
@@ -257,8 +256,8 @@ class BookmarkTest(BaseTapTest):
                     "Expected: {}\nActual: {}".format(len(expected_records), len(second_sync_data))
                 )
                 if (len(second_sync_data) - len(expected_records)) > 0:
-                    logging.warn('Second sync replicated %s records more than our create and update for %s',
-                                 len(second_sync_data), stream)
+                    LOGGER.warn('Second sync replicated %s records more than our create and update for %s',
+                                len(second_sync_data), stream)
 
                 if not primary_keys:
                     raise NotImplementedError("PKs are needed for comparing records")

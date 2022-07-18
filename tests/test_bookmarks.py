@@ -8,7 +8,7 @@ from time import sleep, perf_counter
 from datetime import datetime as dt
 from dateutil.parser import parse
 
-from tap_tester import menagerie, runner, connections
+from tap_tester import menagerie, runner, connections, LOGGER
 from base import BaseTapTest
 from utils import create_object, update_object, delete_object, \
     get_hidden_objects, activate_tracking, stripe_obj_to_dict

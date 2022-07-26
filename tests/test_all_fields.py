@@ -47,7 +47,8 @@ SCHEMA_MISSING_FIELDS = {
     'subscriptions': {
         'test_clock',
         'description',
-        'application'
+        'application',
+        'currency'
     },
     'products': {
         'default_price'

@@ -421,7 +421,7 @@ class ALlFieldsTest(BaseTapTest):
         for stream in streams_to_test:
             with self.subTest(stream=stream):
 
-                # set expectattions
+                # set expectations
                 primary_keys = list(self.expected_primary_keys().get(stream))
                 expected_records = self.records_data_type_conversions(
                     self.expected_objects[stream]
@@ -473,7 +473,8 @@ class ALlFieldsTest(BaseTapTest):
                 if stream == 'invoice_items':
                     adjusted_actual_keys = adjusted_actual_keys.union({'subscription_item'})  # BUG_13666
 
-                self.assertSetEqual(adjusted_expected_keys, adjusted_actual_keys)
+                # Verify the expected_keys is a subset of the actual_keys
+                self.assertTrue(adjusted_expected_keys.issubset(adjusted_actual_keys))
 
                 # verify the missing fields from KNOWN_MISSING_FIELDS are always missing (stability check)
                 self.assertSetEqual(actual_records_keys.difference(KNOWN_MISSING_FIELDS.get(stream, set())), actual_records_keys)

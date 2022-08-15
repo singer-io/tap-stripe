@@ -2,7 +2,7 @@
 Test tap pagination of streams
 """
 import time
-from tap_tester import menagerie, runner, connections
+from tap_tester import menagerie, runner, connections, LOGGER
 from base import BaseTapTest
 from utils import create_object, update_object, \
     delete_object, list_all_object, get_catalogs, get_schema
@@ -60,7 +60,7 @@ class PaginationTest(BaseTapTest):
         self.select_all_streams_and_fields(conn_id, our_catalogs, select_all_fields=True)
 
         # Ensure tested streams have a record count which exceeds the API LIMIT
-        print(" INFO Checking record counts for tested streams...")
+        LOGGER.info("Checking record counts for tested streams...")
         streams_to_create = {}
         for stream in tested_streams:
             records = list_all_object(stream)
@@ -68,21 +68,21 @@ class PaginationTest(BaseTapTest):
             # To not append the Streams having record_count >100 which don't results in index out of range error for "new_objects[stream][0].keys()"
             if record_count <= self.API_LIMIT:
                 streams_to_create[stream] = record_count
-                print(" INFO Stream {} has {} records created today".format(stream, record_count))        
-                    
-        print(" INFO Creating records for tested streams...")
+                LOGGER.info("Stream %s has %s records created today", stream, record_count)
+
+        LOGGER.info("Creating records for tested streams...")
         new_objects = {stream: [] for stream in streams_to_create}
         for stream in streams_to_create:
             if stream != "events" and streams_to_create[stream] <= self.API_LIMIT:
                 while streams_to_create[stream] <= self.API_LIMIT:
-                    print(" INFO Creating a record for {} | {} records created today ".format(stream,
-                                                                                        streams_to_create[stream]))
+                    LOGGER.info("Creating a record for %s | %s records created today ",
+                                stream, streams_to_create[stream])
                     new_objects[stream].append(create_object(stream))
                     streams_to_create[stream] += 1
                 records = list_all_object(stream)
                 self.assertEqual(100, len(records))
-                print(" INFO Stream {} has at least {} records created today".format(stream, len(records) + 1))  
-            
+                LOGGER.info("Stream %s has at least %s records created today", stream, len(records) + 1)
+
         # Run a sync job using orchestrator
         record_count_by_stream = self.run_and_verify_sync(conn_id)
         synced_records = runner.get_records_from_target_output()
@@ -116,13 +116,13 @@ class PaginationTest(BaseTapTest):
                 )
 
                 actual_record_message = synced_records.get(stream).get('messages')
-                
+
                 # Primary keys list of the actual stream records which would have `updated_by_event_type` as None
                 non_events_primary_keys_list = [tuple([message.get('data').get(expected_pk) for expected_pk in stream_primary_keys[stream]])
                                         for message in actual_record_message
                                         if message.get('action') == 'upsert' and not message.get('data').get('updated_by_event_type', None)]
-                
-                
+
+
                 primary_keys_list_1 = non_events_primary_keys_list[:self.API_LIMIT]
                 primary_keys_list_2 = non_events_primary_keys_list[self.API_LIMIT:2*self.API_LIMIT]
 

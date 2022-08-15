@@ -5,7 +5,8 @@ from base import BaseTapTest
 
 class ParentChildIndependentTest(BaseTapTest):
 
-    def name(self):
+    @staticmethod
+    def name():
         return "tt_stripe_parent_child_test"
 
     def test_child_streams(self):

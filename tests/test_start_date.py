@@ -159,8 +159,7 @@ class StartDateTest(BaseTapTest):
                         self.assertGreaterEqual(target_value, expected_value)
 
                     except (OverflowError, ValueError, TypeError):
-                        print("bookmarks cannot be converted to dates, "
-                              "can't test start_date for {}".format(stream))
+                        LOGGER.warn("bookmarks cannot be converted to dates, can't test start_date for %s", stream)
 
                 if stream in updated:
                     delete_object(stream, updated[stream])

@@ -4,7 +4,7 @@ import os
 from datetime import datetime as dt
 from datetime import timedelta
 
-from tap_tester import menagerie, connections, runner
+from tap_tester import menagerie, connections, runner, LOGGER
 
 from base import BaseTapTest
 
@@ -19,7 +19,8 @@ class ConversionWindowBaseTest(BaseTapTest):
     """
     lookback_window = '600' # default value
 
-    def name(self):
+    @staticmethod
+    def name():
         return f"tt_stripe_lookback_window_{self.lookback_window}"
 
     def get_properties(self):
@@ -37,7 +38,7 @@ class ConversionWindowBaseTest(BaseTapTest):
         Testing that basic sync functions without Critical Errors when
         a valid lookback_window is set.
         """
-        print("Configurable Properties Test (lookback_window)")
+        LOGGER.info("Configurable Properties Test (lookback_window)")
 
         conn_id = connections.ensure_connection(self)
 

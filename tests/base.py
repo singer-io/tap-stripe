@@ -2,7 +2,6 @@
 Setup expectations for test sub classes
 Run discovery for as a prerequisite for most tests
 """
-import unittest
 import os
 import json
 import decimal
@@ -10,10 +9,11 @@ from datetime import datetime as dt
 from datetime import timezone as tz
 from dateutil import parser
 
-from tap_tester import connections, menagerie, runner
+from tap_tester import connections, menagerie, runner, LOGGER
+from tap_tester.base_case import BaseCase
 
 
-class BaseTapTest(unittest.TestCase):
+class BaseTapTest(BaseCase):
     """
     Setup expectations for test sub classes
     Run discovery for as a prerequisite for most tests
@@ -297,7 +297,7 @@ class BaseTapTest(unittest.TestCase):
 
                 if bk_value < min_bookmarks[stream][stream_bookmark_key]:
                     min_bookmarks[stream][stream_bookmark_key] = bk_value
-        print(min_bookmarks)
+        LOGGER.info(min_bookmarks)
         return min_bookmarks
 
     def split_records_into_created_and_updated(self, records):
@@ -430,7 +430,7 @@ class BaseTapTest(unittest.TestCase):
         found_catalog_names = set(map(lambda c: c['tap_stream_id'], found_catalogs))
         diff = self.expected_streams().symmetric_difference(found_catalog_names)
         self.assertEqual(len(diff), 0, msg="discovered schemas do not match: {}".format(diff))
-        print("discovered schemas are OK")
+        LOGGER.info("discovered schemas are OK")
 
         return found_catalogs
 
@@ -477,7 +477,7 @@ class BaseTapTest(unittest.TestCase):
             catalog_entry = menagerie.get_annotated_schema(conn_id, cat['stream_id'])
             # Verify all testable streams are selected
             selected = catalog_entry.get('annotated-schema').get('selected')
-            print("Validating selection on {}: {}".format(cat['stream_name'], selected))
+            LOGGER.info("Validating selection on %s: %s", cat['stream_name'], selected)
             if cat['stream_name'] not in streams_to_select:
                 self.assertFalse(selected, msg="Stream selected, but not testable.")
                 continue # Skip remaining assertions if we aren't selecting this stream
@@ -487,7 +487,7 @@ class BaseTapTest(unittest.TestCase):
                 # Verify all fields within each selected stream are selected
                 for field, field_props in catalog_entry.get('annotated-schema').get('properties').items():
                     field_selected = field_props.get('selected')
-                    print("\tValidating selection on {}.{}: {}".format(cat['stream_name'], field, field_selected))
+                    LOGGER.info("\tValidating selection on %s.%s: %s", cat['stream_name'], field, field_selected)
                     self.assertTrue(field_selected, msg="Field not selected.")
             else:
                 # Verify only automatic fields are selected

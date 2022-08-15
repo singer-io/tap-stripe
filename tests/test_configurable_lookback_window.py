@@ -21,7 +21,7 @@ class ConversionWindowBaseTest(BaseTapTest):
 
     @staticmethod
     def name():
-        return f"tt_stripe_lookback_window_{self.lookback_window}"
+        return "tt_stripe_lookback_window_600"
 
     def get_properties(self):
         """Configurable properties, with a switch to override the 'start_date' property"""
@@ -71,6 +71,10 @@ class ConversionWindowBaseTest(BaseTapTest):
 class LookbackWindowTestConfig(ConversionWindowBaseTest):
 
     lookback_window = '300'
+
+    @staticmethod
+    def name():
+        return "tt_stripe_lookback_window_300"
 
     def test_run(self):
         self.run_test()

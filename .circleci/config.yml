@@ -94,13 +94,16 @@ jobs:
           name: 'Integration Testing'
           no_output_timeout: 45m
           command: |
-            source /usr/local/share/virtualenvs/tap-stripe/bin/activate
             source /usr/local/share/virtualenvs/tap-tester/bin/activate
             source /usr/local/share/virtualenvs/dev_env.sh
             pip install 'stripe==2.64.0'
+            mkdir /tmp/${CIRCLE_PROJECT_REPONAME}
+            export STITCH_CONFIG_DIR=/tmp/${CIRCLE_PROJECT_REPONAME}
             run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_<< parameters.file >>.py
       - slack/notify-on-failure:
           only_for_branches: master
+      - store_artifacts:
+          path: /tmp/tap-stripe
 
 workflows:
   commit: &commit_jobs

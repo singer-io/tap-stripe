@@ -1,4 +1,3 @@
-
 import random
 import json
 import backoff
@@ -152,6 +151,7 @@ def stripe_obj_to_dict(stripe_obj):
 def list_all_object(stream, max_limit: int = 100, get_invoice_lines: bool = False):
     """Retrieve all records for an object"""
     if stream in client:
+        LOGGER.info("Acquiring all %s records", stream)
 
         if stream == "subscriptions":
             stripe_obj = client[stream].list(limit=max_limit, created={"gte": midnight})
@@ -222,7 +222,7 @@ def list_all_object(stream, max_limit: int = 100, get_invoice_lines: bool = Fals
             return objects
 
         elif stream == "customers":
-            stripe_obj = client[stream].list(limit=max_limit, created={"gte": midnight}, 
+            stripe_obj = client[stream].list(limit=max_limit, created={"gte": midnight},
                                              expand=['data.sources', 'data.subscriptions', 'data.tax_ids']) # retrieve fields by passing expand paramater in SDK object
             dict_obj = stripe_obj_to_dict(stripe_obj)
 
@@ -247,7 +247,7 @@ def list_all_object(stream, max_limit: int = 100, get_invoice_lines: bool = Fals
         if dict_obj.get('data'):
             if not isinstance(dict_obj['data'], list):
                 return [dict_obj['data']]
-            
+
             if stream == "payment_intents":
                 for obj in dict_obj['data']:
                     obj['charges'] = obj['charges'].get('data', [])
@@ -368,7 +368,7 @@ def standard_create(stream):
             package_dimensions={"height": 92670.16, "length": 9158.65, "weight": 582.73, "width": 96656496.18},
             shippable=True,
             url='fakeurl.stitch',
-            type='good' # In the latest API version, it is mandatory to provide the value of the `type` field in the body. 
+            type='good' # In the latest API version, it is mandatory to provide the value of the `type` field in the body.
         )
 
     return None
@@ -381,7 +381,9 @@ def standard_create(stream):
 def create_object(stream):
     """Logic for creating a record for a given  object stream"""
     global NOW
-    NOW = dt.utcnow()  # update NOW time to maintain uniqueness across records
+    NOW = dt.utcnow()  # update NOW time to maintain uniqueness across record
+
+    LOGGER.info("Creating a %s record", stream)
 
     if stream in client:
         global metadata_value
@@ -497,7 +499,7 @@ def create_object(stream):
                 tax_rates=[],  # TODO tax rates
             )
         # To generate the data for the `disputes` stream, we need to provide wrong card numbers
-        #  in the `charges` API. Hence bifurcated this data creation into two. 
+        #  in the `charges` API. Hence bifurcated this data creation into two.
         # Refer documentation: https://stripe.com/docs/testing#disputes
         if stream == 'charges' or stream == 'disputes':
             if stream == 'disputes':
@@ -567,6 +569,8 @@ def update_object(stream, oid):
     global NOW
     NOW = dt.utcnow()
 
+    LOGGER.info("Updating %s object %s", stream, oid)
+
     if stream in client:
         if stream == "balance_transactions":
             # bt = list_all_object(stream)['data'][oid]
@@ -578,21 +582,57 @@ def update_object(stream, oid):
 
             return None
         if stream == "payment_intents":
-            # payment_intents does not generate `updated` events on metadata update.
-            # Moreover, updating the payment_method will always require you to confirm the PaymentIntent. That's why here we are using confirm method.
-            # Reference: https://stripe.com/docs/api/payment_intents/update
-            return client[stream].confirm(
-                oid, payment_method="pm_card_visa",
-            )
+            raise NotImplementedError("Use update_payment_intent instead.")
         return client[stream].modify(
             oid, metadata={"test_value": "senor_bob_{}@stitchdata.com".format(NOW)},
         )
 
     return None
 
+def update_payment_intent(stream):
+    """
+    Update a payment_intent object.
+
+    NB: The payment_intents object cannot generate `updated` events on the metadata field.
+        Instead, updateing the payment_method will always require you to confirm the PaymentIntent.
+        Reference: https://stripe.com/docs/api/payment_intents/update
+
+        Additionally, we have observed a race condition in which a recently created  payment may
+        have been confirmed either by an `autoconfirm` charge or by actions in another test. To
+        reduce the risk of altering creates and updates on other streams, we are choosing to iterate
+        through all exisitng objects and retry if a given object is already confirmed.
+    """
+    existing_objects = list_all_object(stream)
+    for existing_obj in existing_objects:
+        try:
+            LOGGER.info("Updating %s object %s", stream, existing_obj["id"])
+            updated_object = client[stream].confirm(
+                existing_obj['id'], payment_method="pm_card_visa",
+            )
+        except stripe_client.error.InvalidRequestError as err:
+            LOGGER.info("Update failed for %s object %s", stream, existing_obj["id"])
+            is_final_iteration = existing_objects.index(existing_obj) == len(existing_objects) - 1
+            is_previously_confirmed = 'previously confirmed' in err.error['message']
+
+            # throw error if no objects were able to be updated
+            if is_final_iteration and is_previously_confirmed:
+                raise RuntimeError(f"The test client has exhausted the available {stream} objects to update.") from err
+
+            # throw error if it is unrelated to the known race condition
+            elif not is_previously_confirmed:
+                raise err
+
+            # otherwise try the next object
+            LOGGER.info("Will attempt to update a new  %s object", stream)
+            continue
+
+        return updated_object
+
 
 def delete_object(stream, oid):
     """Delete a specific record for a given object"""
+    LOGGER.info("Deleting %s object %s", stream, oid)
+
     if stream in client:
         if stream in {"payouts","charges"}:
             return None
@@ -605,6 +645,6 @@ def delete_object(stream, oid):
                 LOGGER.info("DELETE SUCCESSFUL of record {} in stream {}".format(oid, stream))
                 return delete
             except:
-                LOGGER.info("DELETE FAILED of record {} in stream {}".format(oid, stream))
+                LOGGER.warn("DELETE FAILED of record {} in stream {}".format(oid, stream))
 
     return None

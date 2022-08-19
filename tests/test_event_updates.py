@@ -6,10 +6,10 @@ from time import sleep
 from random import random
 
 import requests
-from tap_tester import menagerie, runner, connections
+from tap_tester import menagerie, runner, connections, LOGGER
 from base import BaseTapTest
 from utils import \
-    get_catalogs, update_object, create_object, delete_object
+    get_catalogs, update_object, update_payment_intent, create_object, delete_object
 
 
 class EventUpdatesTest(BaseTapTest):
@@ -89,7 +89,7 @@ class EventUpdatesTest(BaseTapTest):
         )
 
         updated = {}  # holds id for updated objects in each stream
-        for stream in streams_to_update:
+        for stream in streams_to_update - {'payment_intents'}:
 
             # There needs to be some test data for each stream, otherwise this will break
             self.assertGreater(len(first_sync_created[stream]["messages"]), 0,
@@ -99,8 +99,15 @@ class EventUpdatesTest(BaseTapTest):
 
             # We need to make sure the data actually changes, otherwise no event update
             # will get created
+            LOGGER.info("Updating %s object %s", stream, record["id"])
             update_object(stream, record["id"])
             updated[stream] = record["id"]
+
+        # updating the PaymentIntent object may require multiple attempts
+        stream = 'payment_intents'
+        if stream in streams_to_update:
+            updated_obj = update_payment_intent(stream)
+            updated[stream] = updated_obj["id"]
 
         # Run a second sync job using orchestrator
         second_sync_record_count = self.run_and_verify_sync(conn_id)

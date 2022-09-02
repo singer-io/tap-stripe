@@ -11,7 +11,7 @@ from dateutil.parser import parse
 from tap_tester import menagerie, runner, connections, LOGGER
 from base import BaseTapTest
 from utils import create_object, update_object, delete_object, \
-    get_hidden_objects, activate_tracking, stripe_obj_to_dict
+    get_hidden_objects, activate_tracking, stripe_obj_to_dict, update_payment_intent
 
 
 class BookmarkTest(BaseTapTest):
@@ -131,12 +131,19 @@ class BookmarkTest(BaseTapTest):
         for stream in self.streams_to_create.difference(cannot_update_streams):
             # There needs to be some test data for each stream, otherwise this will break
             record = expected_records_first_sync[stream][0]
-            updated_record = update_object(stream, record["id"])
+            if stream == 'payment_intents':
+                # updating the PaymentIntent object may require multiple attempts
+                updated_record = update_payment_intent(stream)
+            else:
+                updated_record = update_object(stream, record["id"])
             updated_records[stream].append(updated_record)
             expected_records_second_sync[stream].append({"id": updated_record['id']})
 
         # Ensure different times between udpates and inserts
+        # NB: using sleep is a testing anti-pattern, please only do this if absolutely necessary
+        LOGGER.info("Beginning sleep for 2 seconds")
         sleep(2)
+        LOGGER.info("sleep has completed")
 
         # Insert (create) one record for each stream prior to 2nd sync
         for stream in self.streams_to_create:

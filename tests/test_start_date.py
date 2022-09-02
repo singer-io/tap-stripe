@@ -10,7 +10,7 @@ from dateutil.parser import parse
 from tap_tester import menagerie, runner, connections
 
 from base import BaseTapTest
-from utils import create_object, update_object, delete_object, get_catalogs
+from utils import create_object, update_object, update_payment_intent, delete_object, get_catalogs
 
 
 class StartDateTest(BaseTapTest):
@@ -98,11 +98,15 @@ class StartDateTest(BaseTapTest):
         first_sync_created, _ = self.split_records_into_created_and_updated(first_sync_records)
         updated = {}  # holds id for updated objects in each stream
         for stream in new_objects:
-            # There needs to be some test data for each stream, otherwise this will break
-            record = first_sync_created[stream]["messages"][0]["data"]
-            update_object(stream, record["id"])
+            if stream == 'payment_intents':
+                # updating the PaymentIntent object may require multiple attempts
+                record = update_payment_intent(stream)
+            else:
+                # There needs to be some test data for each stream, otherwise this will break
+                record = first_sync_created[stream]["messages"][0]["data"]
+                update_object(stream, record["id"])
             updated[stream] = record["id"]
-        
+
         # Run a sync job using orchestrator
         second_sync_record_count = self.run_and_verify_sync(conn_id, clear_state=True)
 
@@ -132,7 +136,7 @@ class StartDateTest(BaseTapTest):
                 # verify all data from 2nd sync >= start_date
                 target_mark = second_min_bookmarks.get(stream, {"mark": None})
                 target_value = next(iter(target_mark.values()))  # there should be only one
-                
+
                 record_count_1 = first_sync_record_count[stream]
                 record_count_2 = second_sync_record_count[stream]
                 primary_keys_list_1 = [tuple(message.get('data').get(expected_pk) for expected_pk in stream_primary_keys[stream])
@@ -163,5 +167,3 @@ class StartDateTest(BaseTapTest):
 
                 if stream in updated:
                     delete_object(stream, updated[stream])
-
-

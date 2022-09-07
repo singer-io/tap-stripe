@@ -912,7 +912,11 @@ def sync_event_updates(stream_name, is_sub_stream):
     '''
     LOGGER.info("Started syncing event based updates")
 
-    date_window_size = 60 * 60 * 24 # Seconds in a day
+    window_size = int(float(Context.config.get('date_window_size', 30)))
+    if window_size > 30:
+        window_size = 30
+        LOGGER.warning("Using window size of 30 days for %s stream.", stream_name)
+    date_window_size = 60 * 60 * 24 * window_size # Seconds in window_size days
 
     if is_sub_stream:
         # We need to get the parent data first for syncing the child streams. Hence,
@@ -945,7 +949,8 @@ def sync_event_updates(stream_name, is_sub_stream):
     else:
         bookmark_value = parent_bookmark_value
 
-    max_created = bookmark_value
+    # Starting sync from 30 days before if bookmark/startdate is older than 30 days.
+    max_created = int(max(bookmark_value, (singer.utils.now() - timedelta(days=30)).timestamp()))
     date_window_start = max_created
     date_window_end = max_created + date_window_size
 

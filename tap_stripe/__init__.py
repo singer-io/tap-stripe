@@ -125,6 +125,7 @@ IMMUTABLE_STREAM_LOOKBACK = 600 # 10 min in epoch time, Stripe accuracy is to th
 LOGGER = singer.get_logger()
 
 DEFAULT_DATE_WINDOW_SIZE = 30 #days
+DEFAULT_EVENT_DATE_WINDOW_SIZE = 1 #day
 
 # default request timeout
 REQUEST_TIMEOUT = 300 # 5 minutes
@@ -176,6 +177,8 @@ class Context():
     stream_map = {}
     new_counts = {}
     updated_counts = {}
+    window_size = DEFAULT_DATE_WINDOW_SIZE
+    event_window_size = DEFAULT_EVENT_DATE_WINDOW_SIZE
 
     @classmethod
     def get_catalog_entry(cls, stream_name):
@@ -599,7 +602,7 @@ def sync_stream(stream_name, is_sub_stream=False):
     with Transformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
         end_time = dt_to_epoch(utils.now())
 
-        window_size = float(Context.config.get('date_window_size', DEFAULT_DATE_WINDOW_SIZE))
+        window_size = Context.window_size
 
         if DEFAULT_DATE_WINDOW_SIZE != window_size:
             LOGGER.info('Using non-default date window size of %.2f',window_size)
@@ -912,11 +915,11 @@ def sync_event_updates(stream_name, is_sub_stream):
     '''
     LOGGER.info("Started syncing event based updates")
 
-    window_size = int(float(Context.config.get('date_window_size', 30)))
-    if window_size > 30:
-        window_size = 30
-        LOGGER.warning("Using window size of 30 days for %s stream.", stream_name)
-    date_window_size = 60 * 60 * 24 * window_size # Seconds in window_size days
+    event_window_size = int(Context.event_window_size)
+    if event_window_size > 30:
+        event_window_size = 30
+        LOGGER.warning("Using event window size of 30 days for %s stream.", stream_name)
+    events_date_window_size = 60 * 60 * 24 * event_window_size # Seconds in window_size days
 
     if is_sub_stream:
         # We need to get the parent data first for syncing the child streams. Hence,
@@ -952,7 +955,7 @@ def sync_event_updates(stream_name, is_sub_stream):
     # Starting sync from 30 days before if bookmark/startdate is older than 30 days.
     max_created = int(max(bookmark_value, (singer.utils.now() - timedelta(days=30)).timestamp()))
     date_window_start = max_created
-    date_window_end = max_created + date_window_size
+    date_window_end = max_created + events_date_window_size
 
     stop_paging = False
 
@@ -1038,7 +1041,7 @@ def sync_event_updates(stream_name, is_sub_stream):
         # The events stream returns results in descending order, so we
         # cannot bookmark until the entire page is processed
         date_window_start = date_window_end
-        date_window_end = date_window_end + date_window_size
+        date_window_end = date_window_end + events_date_window_size
 
         # Write the parent bookmark value only when the parent is selected
         if not is_sub_stream:
@@ -1083,6 +1086,24 @@ def sync():
                 if STREAM_TO_TYPE_FILTER.get(stream_name):
                     sync_event_updates(stream_name, Context.is_sub_stream(stream_name))
 
+def get_date_window_size(param, default_value):
+    """
+    Get timeout value from config, if the value is passed. 
+    Else return the default value.
+    """
+    windo_size = Context.config.get(param)
+
+    # If windo_size is not passed in the config then set it to the default(30 days)
+    if windo_size is None:
+        return default_value
+
+    # If config windo_size is other than 0,"0" or invalid string then use windo_size
+    if ((type(windo_size) in [int, float]) or
+            (type(windo_size)==str and windo_size.replace('.', '', 1).isdigit())) and float(windo_size):
+        return float(windo_size)
+    else:
+        raise Exception("The entered windo size is invalid, it should be a valid none-zero integer.")
+
 @utils.handle_top_exception(LOGGER)
 def main():
     # Parse command line arguments
@@ -1098,6 +1119,8 @@ def main():
         print(json.dumps(catalog, indent=2))
     # Otherwise run in sync mode
     else:
+        Context.window_size = get_date_window_size('date_window_size', DEFAULT_DATE_WINDOW_SIZE)
+        Context.event_window_size = get_date_window_size('event_date_window_size', DEFAULT_EVENT_DATE_WINDOW_SIZE)
         Context.tap_start = utils.now()
         if args.catalog:
             Context.catalog = args.catalog.to_dict()

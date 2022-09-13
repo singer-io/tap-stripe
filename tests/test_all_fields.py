@@ -35,7 +35,7 @@ KNOWN_MISSING_FIELDS = {
     'subscription_items': set(),
     'plans': set(),
     'invoice_line_items': set(),
-    'invoices': set(),
+    'invoices': {'latest_revision', 'from_invoice'},
     'payment_intents': set()
 }
 
@@ -474,13 +474,13 @@ class ALlFieldsTest(BaseTapTest):
                     adjusted_actual_keys = adjusted_actual_keys.union({'subscription_item'})  # BUG_13666
 
                 # Verify the expected_keys is a subset of the actual_keys
-                self.assertTrue(adjusted_expected_keys.issubset(adjusted_actual_keys))
+                self.assertTrue(adjusted_expected_keys.issubset(adjusted_actual_keys), msg=f"{adjusted_expected_keys} is not a subset of {adjusted_actual_keys}")
 
                 # verify the missing fields from KNOWN_MISSING_FIELDS are always missing (stability check)
                 self.assertSetEqual(actual_records_keys.difference(KNOWN_MISSING_FIELDS.get(stream, set())), actual_records_keys)
 
                 # Verify that all fields sent to the target fall into the expected schema
-                self.assertTrue(actual_records_keys.issubset(schema_keys))
+                self.assertTrue(actual_records_keys.issubset(schema_keys), msg=f"{actual_records_keys} is not a subset of {schema_keys}")
 
                 # Verify there are no duplicate pks in the target
                 actual_pks = [tuple(actual_record.get(pk) for pk in primary_keys) for actual_record in actual_records_data]

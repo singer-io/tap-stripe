@@ -13,12 +13,12 @@ class TestGetWindowSize(unittest.TestCase):
         ["string_integer", "10", 10.0],
         ["string_float", "100.5", 100.5],
     ])
-    def test_window_size_values(self, name, timeout_value, expected_value):
+    def test_window_size_values(self, name, date_window_size, expected_value):
         """
         Test that for the valid value of window size,
         No exception is raised and the expected value is set.
         """
-        Context.config = {"date_window_size": timeout_value}
+        Context.config = {"date_window_size": date_window_size}
 
         # Verify window size value is expected
         self.assertEqual(get_date_window_size("date_window_size", DEFAULT_DATE_WINDOW_SIZE), expected_value)
@@ -26,20 +26,22 @@ class TestGetWindowSize(unittest.TestCase):
     @parameterized.expand([
         ["integer_zero", 0],
         ["float_zero", 0.0],
+        ["negative_value", -10],
         ["string_zero", "0"],
         ["string_float_zero", "0.0"],
+        ["string_negative_value", "-100"],
         ["string_alphabate", "abc"],
     ])
-    def test_invalid_value(self, name, timeout_value):
+    def test_invalid_value(self, name, date_window_size):
         """
         Test that for invalid value exception is raised.
         """
-        Context.config = {"date_window_size": timeout_value}
+        Context.config = {"date_window_size": date_window_size}
         with self.assertRaises(Exception) as e:
             get_date_window_size("date_window_size", DEFAULT_DATE_WINDOW_SIZE)
 
         # Verify that the exception message is expected.
-        self.assertEqual(str(e.exception), "The entered windo size is invalid, it should be a valid none-zero integer.")
+        self.assertEqual(str(e.exception), "The entered window size is invalid, it should be a valid none-zero integer.")
 
     def test_none_value(self):
         """

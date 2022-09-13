@@ -125,7 +125,7 @@ IMMUTABLE_STREAM_LOOKBACK = 600 # 10 min in epoch time, Stripe accuracy is to th
 LOGGER = singer.get_logger()
 
 DEFAULT_DATE_WINDOW_SIZE = 30 #days
-DEFAULT_EVENT_DATE_WINDOW_SIZE = 1 #day
+DEFAULT_EVENT_DATE_WINDOW_SIZE = 7 #day
 
 # default request timeout
 REQUEST_TIMEOUT = 300 # 5 minutes
@@ -914,12 +914,11 @@ def sync_event_updates(stream_name, is_sub_stream):
                     or when called through only child stream i.e. when parent is not selected.
     '''
     LOGGER.info("Started syncing event based updates")
-
-    event_window_size = int(Context.event_window_size)
+    event_window_size = Context.event_window_size
     if event_window_size > 30:
         event_window_size = 30
         LOGGER.warning("Using event window size of 30 days for %s stream.", stream_name)
-    events_date_window_size = 60 * 60 * 24 * event_window_size # Seconds in window_size days
+    events_date_window_size = int(60 * 60 * 24 * event_window_size) # Seconds in window_size days
 
     if is_sub_stream:
         # We need to get the parent data first for syncing the child streams. Hence,
@@ -1091,18 +1090,19 @@ def get_date_window_size(param, default_value):
     Get timeout value from config, if the value is passed. 
     Else return the default value.
     """
-    windo_size = Context.config.get(param)
+    window_size = Context.config.get(param)
 
-    # If windo_size is not passed in the config then set it to the default(30 days)
-    if windo_size is None:
+    # If window_size is not passed in the config then set it to the default(30 days)
+    if window_size is None:
         return default_value
 
-    # If config windo_size is other than 0,"0" or invalid string then use windo_size
-    if ((type(windo_size) in [int, float]) or
-            (type(windo_size)==str and windo_size.replace('.', '', 1).isdigit())) and float(windo_size):
-        return float(windo_size)
+    # If config window_size is other than 0, "0" or an invalid string then use window_size
+    if ((type(window_size) in [int, float]) or
+        (type(window_size)==str and window_size.replace('.', '', 1).isdigit())) and \
+            float(window_size) > 0:
+        return float(window_size)
     else:
-        raise Exception("The entered windo size is invalid, it should be a valid none-zero integer.")
+        raise Exception("The entered window size is invalid, it should be a valid none-zero integer.")
 
 @utils.handle_top_exception(LOGGER)
 def main():

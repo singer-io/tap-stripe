@@ -915,6 +915,7 @@ def sync_event_updates(stream_name, is_sub_stream):
     '''
     LOGGER.info("Started syncing event based updates")
     event_window_size = Context.event_window_size
+    # Reset event_window_size to 30 days if it is greater than 30 because Stripe Event API returns data of the last 30 days only.
     if event_window_size > 30:
         event_window_size = 30
         LOGGER.warning("Using event window size of 30 days for %s stream.", stream_name)
@@ -953,6 +954,8 @@ def sync_event_updates(stream_name, is_sub_stream):
 
     # Starting sync from 30 days before if bookmark/startdate is older than 30 days.
     max_created = int(max(bookmark_value, (singer.utils.now() - timedelta(days=30)).timestamp()))
+    if max_created != bookmark_value:
+        LOGGER.warning("Provided current bookmark/start_date is older than the last 30 days. So, starting sync for the last 30 days as Stripe Event API returns data for the last 30 days only.")
     date_window_start = max_created
     date_window_end = max_created + events_date_window_size
 
@@ -1087,7 +1090,7 @@ def sync():
 
 def get_date_window_size(param, default_value):
     """
-    Get timeout value from config, if the value is passed. 
+    Get timeout value from config, if the value is passed.
     Else return the default value.
     """
     window_size = Context.config.get(param)
@@ -1098,7 +1101,7 @@ def get_date_window_size(param, default_value):
 
     # If config window_size is other than 0, "0" or an invalid string then use window_size
     if ((type(window_size) in [int, float]) or
-        (type(window_size)==str and window_size.replace('.', '', 1).isdigit())) and \
+        (isinstance(window_size, str) and window_size.replace('.', '', 1).isdigit())) and \
             float(window_size) > 0:
         return float(window_size)
     else:

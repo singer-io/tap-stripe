@@ -374,7 +374,7 @@ def standard_create(stream):
     return None
 
 @backoff.on_exception(backoff.expo,
-                      (stripe_client.error.InvalidRequestError),
+                      (stripe_client.error.InvalidRequestError, stripe.error.APIError),
                       max_tries=2,
                       factor=2,
                       jitter=None)

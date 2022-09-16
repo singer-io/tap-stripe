@@ -11,7 +11,7 @@ class TestLookbackEvaluation(unittest.TestCase):
         config = { "client_secret": "test_secret", "account_id": "test_account", "start_date": "2022-03-30T00:00:00"}
         Context.config = config
         Context.state = {}
-        start_window = evaluate_start_time_based_on_lookback(stream_name, replication_key, IMMUTABLE_STREAM_LOOKBACK)
+        start_window = evaluate_start_time_based_on_lookback(1648599000, IMMUTABLE_STREAM_LOOKBACK)
         # Verify that the start_window is start_date
         self.assertEqual(start_window, utils.strptime_to_utc(Context.config['start_date']).timestamp())
     
@@ -22,7 +22,7 @@ class TestLookbackEvaluation(unittest.TestCase):
         config = { "client_secret": "test_secret", "account_id": "test_account", "start_date": "2022-03-30T00:00:00"}
         Context.config = config
         Context.state = {}
-        start_window = evaluate_start_time_based_on_lookback(stream_name, replication_key, IMMUTABLE_STREAM_LOOKBACK)
+        start_window = evaluate_start_time_based_on_lookback(1648599000, IMMUTABLE_STREAM_LOOKBACK)
         # Verify that the start_window is start_date
         self.assertEqual(start_window, utils.strptime_to_utc(Context.config['start_date']).timestamp())
 
@@ -37,7 +37,7 @@ class TestLookbackEvaluation(unittest.TestCase):
         config = { "client_secret": "test_secret", "account_id": "test_account", "start_date": "2022-03-30T00:00:00"}
         Context.config = config
         Context.state = state
-        start_window = evaluate_start_time_based_on_lookback(stream_name, replication_key, IMMUTABLE_STREAM_LOOKBACK)
+        start_window = evaluate_start_time_based_on_lookback(1648739554, IMMUTABLE_STREAM_LOOKBACK)
         # Verify that the start_window is bookmark - lookback
         self.assertEqual(start_window, Context.state['bookmarks'][stream_name][replication_key] - IMMUTABLE_STREAM_LOOKBACK)
 
@@ -50,6 +50,6 @@ class TestLookbackEvaluation(unittest.TestCase):
         config = { "client_secret": "test_secret", "account_id": "test_account", "start_date": "2022-03-30T00:00:00"}
         Context.config = config
         Context.state = state
-        start_window = evaluate_start_time_based_on_lookback(stream_name, replication_key, IMMUTABLE_STREAM_LOOKBACK)
+        start_window = evaluate_start_time_based_on_lookback(1648739554, IMMUTABLE_STREAM_LOOKBACK)
         # Verify that the start_window is bookmark - lookback
         self.assertEqual(start_window,Context.state['bookmarks'][stream_name][replication_key] - IMMUTABLE_STREAM_LOOKBACK)

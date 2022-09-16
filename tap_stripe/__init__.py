@@ -631,7 +631,8 @@ def sync_stream(stream_name, is_sub_stream=False):
                     lookback_window = IMMUTABLE_STREAM_LOOKBACK # default lookback
             except ValueError:
                 raise ValueError('Please provide a valid integer value for the lookback_window parameter.') from None
-            start_window = evaluate_start_time_based_on_lookback(start_window, lookback_window)
+            if start_window != Context.config["start_date"]:
+                start_window = evaluate_start_time_based_on_lookback(start_window, lookback_window)
             stream_bookmark = start_window
 
         # NB: We observed records coming through newest->oldest and so
@@ -924,9 +925,9 @@ def sync_event_updates(stream_name, is_sub_stream):
     # Reset event_window_size to 30 days if it is greater than 30 because Stripe Event API returns data of the last 30 days only.
     if event_window_size > 30:
         event_window_size = 30
-        LOGGER.warning("Using event window size of 30 days for %s stream.", stream_name)
+        LOGGER.warning("Using a default window size of 30 days as Stripe Event API returns data of the last 30 days only.")
     events_date_window_size = int(60 * 60 * 24 * event_window_size) # event_window_size in seconds
-    sync_start_time = dt_to_epoch(utils.now()) - events_date_window_size
+    sync_start_time = dt_to_epoch(utils.now())
 
     if is_sub_stream:
         # We need to get the parent data first for syncing the child streams. Hence,
@@ -1055,7 +1056,7 @@ def sync_event_updates(stream_name, is_sub_stream):
         # Write bookmark for parent or child stream if it is selected
         write_bookmark_for_event_updates(is_sub_stream, stream_name, sub_stream_name, max_created)
 
-    max_created = max(max_created, sync_start_time)
+    max_created = max(max_created, sync_start_time - events_date_window_size)
     write_bookmark_for_event_updates(is_sub_stream, stream_name, sub_stream_name, max_created)
 
     singer.write_state(Context.state)
@@ -1108,7 +1109,7 @@ def sync():
 
 def get_date_window_size(param, default_value):
     """
-    Get timeout value from config, if the value is passed.
+    Get date_window value from config, if the value is passed.
     Else return the default value.
     """
     window_size = Context.config.get(param)
@@ -1117,12 +1118,12 @@ def get_date_window_size(param, default_value):
     if window_size is None:
         return default_value
 
-    # If config window_size is other than 0, "0" or an invalid string then use window_size
     if ((type(window_size) in [int, float]) or
         (isinstance(window_size, str) and window_size.replace('.', '', 1).isdigit())) and \
             float(window_size) > 0:
         return float(window_size)
     else:
+        # Raise Exception if window_size value is 0, "0" or invalid string.
         raise Exception("The entered window size is invalid, it should be a valid none-zero integer.")
 
 @utils.handle_top_exception(LOGGER)

@@ -35,7 +35,10 @@ KNOWN_MISSING_FIELDS = {
     'subscription_items': set(),
     'plans': set(),
     'invoice_line_items': set(),
-    'invoices': set(),
+    'invoices': {
+        'latest_revision',
+        'from_invoice'
+    },
     'payment_intents': set()
 }
 

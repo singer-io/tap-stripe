@@ -179,6 +179,7 @@ class Context():
     updated_counts = {}
     window_size = DEFAULT_DATE_WINDOW_SIZE
     event_window_size = DEFAULT_EVENT_DATE_WINDOW_SIZE
+    lookback_window = IMMUTABLE_STREAM_LOOKBACK
 
     @classmethod
     def get_catalog_entry(cls, stream_name):
@@ -488,12 +489,11 @@ def get_bookmark_for_stream(stream_name, replication_key):
             int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
     return stream_bookmark
 
-def evaluate_start_time_based_on_lookback(stream_name, replication_key, lookback_window):
+def evaluate_start_time_based_on_lookback(bookmark, lookback_window):
     '''
     For historical syncs take the start date as the starting point in a sync, even if it is more recent than
     {today - lookback_window}. For incremental syncs, the tap should start syncing from {previous state - lookback_window}
     '''
-    bookmark = singer.get_bookmark(Context.state, stream_name, replication_key)
     start_date = int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
     if bookmark:
         lookback_evaluated_time = bookmark - lookback_window
@@ -549,6 +549,21 @@ def convert_dict_to_stripe_object(record):
                     record[key][index] = convert_to_stripe_object(record[key][index])
 
     return record
+
+def get_lookback_window():
+    """
+    Return lookback_window value if it is provided in the config else return default value 10 min.
+    """
+    try:
+        lookback_window = Context.config.get('lookback_window', IMMUTABLE_STREAM_LOOKBACK) # get configurable lookback window
+        if lookback_window and int(lookback_window) or lookback_window in (0, '0'):
+            lookback_window = int(lookback_window)
+        else:
+            lookback_window = IMMUTABLE_STREAM_LOOKBACK # default lookback
+    except ValueError:
+        raise ValueError('Please provide a valid integer value for the lookback_window parameter.') from None
+
+    return lookback_window
 
 # pylint: disable=too-many-locals
 # pylint: disable=too-many-statements
@@ -613,19 +628,17 @@ def sync_stream(stream_name, is_sub_stream=False):
         # when they are available via the API, so these streams will need
         # a short lookback window.
         if stream_name in IMMUTABLE_STREAMS:
+            if stream_name == "events":
+                start_window = int(max(bookmark, (singer.utils.now() - timedelta(days=30)).timestamp()))
+                if start_window != bookmark:
+                    LOGGER.warning("Provided current bookmark/start_date is older than the last 30 days. So, starting sync for the last 30 days as Stripe Event API returns data for the last 30 days only.")
+
             # pylint:disable=fixme
             # TODO: This may be an issue for other streams' created_at
             # entries, but to keep the surface small, doing this only for
             # immutable streams at first to confirm the suspicion.
-            try:
-                lookback_window = Context.config.get('lookback_window', IMMUTABLE_STREAM_LOOKBACK) # added configurable lookback window
-                if lookback_window and int(lookback_window) or lookback_window in (0, '0'):
-                    lookback_window = int(lookback_window)
-                else:
-                    lookback_window = IMMUTABLE_STREAM_LOOKBACK # default lookback
-            except ValueError:
-                raise ValueError('Please provide a valid integer value for the lookback_window parameter.') from None
-            start_window = evaluate_start_time_based_on_lookback(stream_name, replication_key, lookback_window)
+            lookback_window = Context.lookback_window
+            start_window = evaluate_start_time_based_on_lookback(start_window, lookback_window)
             stream_bookmark = start_window
 
         # NB: We observed records coming through newest->oldest and so
@@ -919,7 +932,8 @@ def sync_event_updates(stream_name, is_sub_stream):
     if event_window_size > 30:
         event_window_size = 30
         LOGGER.warning("Using event window size of 30 days for %s stream.", stream_name)
-    events_date_window_size = int(60 * 60 * 24 * event_window_size) # Seconds in window_size days
+    events_date_window_size = int(60 * 60 * 24 * event_window_size) # event_window_size in seconds
+    sync_start_time = dt_to_epoch(utils.now()) - events_date_window_size
 
     if is_sub_stream:
         # We need to get the parent data first for syncing the child streams. Hence,
@@ -952,10 +966,13 @@ def sync_event_updates(stream_name, is_sub_stream):
     else:
         bookmark_value = parent_bookmark_value
 
-    # Starting sync from 30 days before if bookmark/startdate is older than 30 days.
+    # Starting sync from 30 days before if bookmark/start_date is older than 30 days.
     max_created = int(max(bookmark_value, (singer.utils.now() - timedelta(days=30)).timestamp()))
     if max_created != bookmark_value:
         LOGGER.warning("Provided current bookmark/start_date is older than the last 30 days. So, starting sync for the last 30 days as Stripe Event API returns data for the last 30 days only.")
+
+    lookback_window = Context.lookback_window
+    max_created = evaluate_start_time_based_on_lookback(max_created, lookback_window)
     date_window_start = max_created
     date_window_end = max_created + events_date_window_size
 
@@ -1037,13 +1054,12 @@ def sync_event_updates(stream_name, is_sub_stream):
                                 sync_sub_stream(sub_stream_name,
                                                 event_resource_obj,
                                                 updates=True)
-            if events_obj.created > max_created:
-                max_created = events_obj.created
 
         # The events stream returns results in descending order, so we
         # cannot bookmark until the entire page is processed
         date_window_start = date_window_end
         date_window_end = date_window_end + events_date_window_size
+        max_created = sync_start_time
 
         # Write the parent bookmark value only when the parent is selected
         if not is_sub_stream:
@@ -1124,6 +1140,7 @@ def main():
     else:
         Context.window_size = get_date_window_size('date_window_size', DEFAULT_DATE_WINDOW_SIZE)
         Context.event_window_size = get_date_window_size('event_date_window_size', DEFAULT_EVENT_DATE_WINDOW_SIZE)
+        Context.lookback_window = get_lookback_window()
         Context.tap_start = utils.now()
         if args.catalog:
             Context.catalog = args.catalog.to_dict()

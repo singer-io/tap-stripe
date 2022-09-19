@@ -125,7 +125,7 @@ IMMUTABLE_STREAM_LOOKBACK = 600 # 10 min in epoch time, Stripe accuracy is to th
 LOGGER = singer.get_logger()
 
 DEFAULT_DATE_WINDOW_SIZE = 30 #days
-DEFAULT_EVENT_DATE_WINDOW_SIZE = 7 #day
+DEFAULT_EVENT_DATE_WINDOW_SIZE = 7 #days
 
 # default request timeout
 REQUEST_TIMEOUT = 300 # 5 minutes
@@ -177,8 +177,8 @@ class Context():
     stream_map = {}
     new_counts = {}
     updated_counts = {}
-    window_size = DEFAULT_DATE_WINDOW_SIZE
-    event_window_size = DEFAULT_EVENT_DATE_WINDOW_SIZE
+    window_size = DEFAULT_DATE_WINDOW_SIZE # By default collect data of 30 days in one API call to collect newly created records
+    event_window_size = DEFAULT_EVENT_DATE_WINDOW_SIZE # By default collect data of 7 days in one API call for event_updates
 
     @classmethod
     def get_catalog_entry(cls, stream_name):

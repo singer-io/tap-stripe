@@ -44,5 +44,5 @@ class TestLoggerWarningForEvents(unittest.TestCase):
         sync_stream("events")
 
         # Verify warning message for bookmark of less than last 30 days.
-        mock_logger.assert_called_with("Provided current bookmark/start_date is older than the last 30 days. So, starting sync for"\
-                                       " the last 30 days as Stripe Event API returns data for the last 30 days only.")
+        mock_logger.assert_called_with("Provided current bookmark/start_date for newly created event records is older than the last 30 days."\
+            " So, starting sync for the last 30 days as Stripe Event API returns data for the last 30 days only.")

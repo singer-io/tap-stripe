@@ -120,15 +120,16 @@ PARENT_STREAM_MAP = {
 
 # NB: These streams will only sync through once for creates, never updates.
 IMMUTABLE_STREAMS = {'balance_transactions', 'events'}
-IMMUTABLE_STREAM_LOOKBACK = 600 # 10 min in epoch time, Stripe accuracy is to the second
+IMMUTABLE_STREAM_LOOKBACK = 600  # 10 min in epoch time, Stripe accuracy is to the second
 
 LOGGER = singer.get_logger()
 
-DEFAULT_DATE_WINDOW_SIZE = 30 #days
-DEFAULT_EVENT_DATE_WINDOW_SIZE = 7 #days
+DEFAULT_DATE_WINDOW_SIZE = 30  # default date window to fetch newly created records
+DEFAULT_EVENT_UPDATE_DATE_WINDOW = 7  # default date window to fetch event updates
 
 # default request timeout
-REQUEST_TIMEOUT = 300 # 5 minutes
+REQUEST_TIMEOUT = 300  # 5 minutes
+
 
 def new_list(self, api_key=None, stripe_version=None, stripe_account=None, **params):
     """
@@ -144,7 +145,7 @@ def new_list(self, api_key=None, stripe_version=None, stripe_account=None, **par
         have deleted records.
     """
     try:
-        stripe_object = self._request( # pylint: disable=protected-access
+        stripe_object = self._request(  # pylint: disable=protected-access
             "get",
             self.get("url"),
             api_key=api_key,
@@ -152,7 +153,7 @@ def new_list(self, api_key=None, stripe_version=None, stripe_account=None, **par
             stripe_account=stripe_account,
             **params
         )
-        stripe_object._retrieve_params = params # pylint: disable=protected-access
+        stripe_object._retrieve_params = params  # pylint: disable=protected-access
         return stripe_object
     except InvalidRequestError as error:
         # see if we found 'No such invoice item' in the error message
@@ -165,9 +166,11 @@ def new_list(self, api_key=None, stripe_version=None, stripe_account=None, **par
         # if error contains message other than 'No such invoice item', raise the same error
         raise error
 
+
 # To handle deleted invoice line item call, we replaced the 'list()' function of the 'ListObject'
 # class of SDK to skip the deleted invoice line item call and continue syncing
 ListObject.list = new_list
+
 
 class Context():
     config = {}
@@ -177,8 +180,9 @@ class Context():
     stream_map = {}
     new_counts = {}
     updated_counts = {}
-    window_size = DEFAULT_DATE_WINDOW_SIZE # By default collect data of 30 days in one API call to collect newly created records
-    event_window_size = DEFAULT_EVENT_DATE_WINDOW_SIZE # By default collect data of 7 days in one API call for event_updates
+    window_size = DEFAULT_DATE_WINDOW_SIZE  # By default fetch data from last 30 days for newly created records.
+    event_window_size = DEFAULT_EVENT_UPDATE_DATE_WINDOW  # By default collect data of 7 days in one
+                                                                # API call for event_updates
 
     @classmethod
     def get_catalog_entry(cls, stream_name):
@@ -221,9 +225,11 @@ class Context():
                         Context.updated_counts[stream_name])
         LOGGER.info('------------------')
 
+
 def apply_request_timer_to_client(client):
     """ Instruments the Stripe SDK client object with a request timer. """
     _original_request = client.request
+
     def wrapped_request(*args, **kwargs):
         url = args[1]
         match = re.match(r'http[s]?://api\.stripe\.com/v1/(\w+)\??', url)
@@ -231,6 +237,7 @@ def apply_request_timer_to_client(client):
         with metrics.http_request_timer(stream_name):
             return _original_request(*args, **kwargs)
     client.request = wrapped_request
+
 
 def configure_stripe_client():
     stripe.set_app_info(Context.config.get('user_agent', 'Singer.io Tap'),
@@ -248,7 +255,7 @@ def configure_stripe_client():
     # if request_timeout is other than 0, "0" or "" then use request_timeout
     if request_timeout and float(request_timeout):
         request_timeout = float(request_timeout)
-    else: # If value is 0, "0" or "" then set default to 300 seconds.
+    else:  # If value is 0, "0" or "" then set default to 300 seconds.
         request_timeout = REQUEST_TIMEOUT
     # configure the clint with the request_timeout
     client = stripe.http_client.RequestsClient(timeout=request_timeout)
@@ -262,6 +269,7 @@ def configure_stripe_client():
     msg = "Successfully connected to Stripe Account with display name" \
           + " `%s`"
     LOGGER.info(msg, account.settings.dashboard.display_name)
+
 
 def unwrap_data_objects(rec):
     """
@@ -281,7 +289,7 @@ def unwrap_data_objects(rec):
     if not isinstance(rec, dict):
         return rec
 
-    for k, v in rec.items(): #pylint: disable=invalid-name
+    for k, v in rec.items():  # pylint: disable=invalid-name
         if k == "data" and 'object' in rec and rec['object'] == 'list':
             if isinstance(v, dict):
                 return unwrap_data_objects(v)
@@ -294,12 +302,14 @@ def unwrap_data_objects(rec):
             rec[k] = [unwrap_data_objects(o) for o in rec[k]]
     return rec
 
+
 class DependencyException(Exception):
     pass
 
 
 def get_abs_path(path):
     return os.path.join(os.path.dirname(os.path.realpath(__file__)), path)
+
 
 def load_shared_schema_refs():
     shared_schemas_path = get_abs_path('schemas/shared')
@@ -315,6 +325,8 @@ def load_shared_schema_refs():
     return shared_schema_refs
 
 # Load schemas from schemas folder
+
+
 def load_schemas():
     schemas = {}
 
@@ -327,6 +339,7 @@ def load_schemas():
             schemas[file_raw] = {'path': filename, 'schema': json.load(file)}
 
     return schemas
+
 
 def get_discovery_metadata(schema, key_properties, replication_method, replication_key):
     mdata = metadata.new()
@@ -369,6 +382,7 @@ def discover():
 
     return {'streams': streams}
 
+
 def value_at_breadcrumb(breadcrumb, rec):
     if len(breadcrumb) == 1:
         return rec.get(breadcrumb[0])
@@ -407,7 +421,7 @@ def apply_whitelist(rec, stream_field_whitelist):
     filtered_rec = {}
 
     # Keep all the top level fields
-    for k, v in rec.items(): #pylint: disable=invalid-name
+    for k, v in rec.items():  # pylint: disable=invalid-name
         if not isinstance(v, (dict, list)):
             filtered_rec[k] = v
 
@@ -437,6 +451,7 @@ def reduce_foreign_keys(rec, stream_name):
                     rec['lines'][k] = [li.to_dict_recursive() for li in val]
     return rec
 
+
 def new_request(self, method, url, params=None, headers=None):
     '''The new request function to overwrite the request() function of the APIRequestor class of SDK.'''
     rbody, rcode, rheaders, my_api_key = self.request_raw(
@@ -446,9 +461,11 @@ def new_request(self, method, url, params=None, headers=None):
     LOGGER.debug('request id : %s', resp.request_id)
     return resp, my_api_key
 
+
 # To log the request_id, we replaced the request() function of the APIRequestor
 # class o SDK, captured the response and logged the request_id
 APIRequestor.request = new_request
+
 
 def paginate(sdk_obj, filter_key, start_date, end_date, stream_name, request_args=None, limit=100):
     yield from sdk_obj.list(
@@ -473,6 +490,7 @@ def dt_to_epoch(dt):
 def epoch_to_dt(epoch_ts):
     return datetime.fromtimestamp(epoch_ts)
 
+
 def get_bookmark_for_stream(stream_name, replication_key):
     """
         Returns bookmark for the streams from the state if found otherwise start_date
@@ -488,6 +506,7 @@ def get_bookmark_for_stream(stream_name, replication_key):
             int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
     return stream_bookmark
 
+
 def evaluate_start_time_based_on_lookback(bookmark, lookback_window):
     '''
     For historical syncs take the start date as the starting point in a sync, even if it is more recent than
@@ -498,6 +517,7 @@ def evaluate_start_time_based_on_lookback(bookmark, lookback_window):
         lookback_evaluated_time = bookmark - lookback_window
         return lookback_evaluated_time
     return start_date
+
 
 def get_bookmark_for_sub_stream(stream_name):
     """
@@ -511,6 +531,7 @@ def get_bookmark_for_sub_stream(stream_name):
     # Get the bookmark value of the child stream
     bookmark_value = get_bookmark_for_stream(child_stream, parent_replication_key)
     return bookmark_value
+
 
 def write_bookmark_for_stream(stream_name, replication_key, stream_bookmark):
     """
@@ -529,6 +550,7 @@ def write_bookmark_for_stream(stream_name, replication_key, stream_bookmark):
                               stream_name,
                               replication_key,
                               stream_bookmark)
+
 
 def convert_dict_to_stripe_object(record):
     """
@@ -551,6 +573,8 @@ def convert_dict_to_stripe_object(record):
 
 # pylint: disable=too-many-locals
 # pylint: disable=too-many-statements
+
+
 def sync_stream(stream_name, is_sub_stream=False):
     """
     Sync each stream, looking for newly created records. Updates are captured by events stream.
@@ -604,7 +628,7 @@ def sync_stream(stream_name, is_sub_stream=False):
         window_size = Context.window_size
 
         if DEFAULT_DATE_WINDOW_SIZE != window_size:
-            LOGGER.info('Using non-default date window size of %.2f',window_size)
+            LOGGER.info('Using non-default date window size of %.2f', window_size)
         start_window = bookmark
 
         # NB: Immutable streams are never synced for updates. We've
@@ -613,21 +637,25 @@ def sync_stream(stream_name, is_sub_stream=False):
         # a short lookback window.
         if stream_name in IMMUTABLE_STREAMS:
             if stream_name == "events":
-                # Start sync from 30 days before if bookmark/start_date is older than 30 days.
+                # Start sync for newly created event records from the last 30 days before if
+                # bookmark/start_date is older than 30 days.
                 start_window = int(max(bookmark, (singer.utils.now() - timedelta(days=30)).timestamp()))
                 if start_window != bookmark:
-                    LOGGER.warning("Provided current bookmark/start_date is older than the last 30 days. So, starting sync for the last 30 days as Stripe Event API returns data for the last 30 days only.")
+                    LOGGER.warning("Provided current bookmark/start_date for newly created event records is older" \
+                                   " than the last 30 days. So, starting sync for the last 30 days as Stripe Event API" \
+                                    " returns data for the last 30 days only.")
 
             # pylint:disable=fixme
             # TODO: This may be an issue for other streams' created_at
             # entries, but to keep the surface small, doing this only for
             # immutable streams at first to confirm the suspicion.
             try:
-                lookback_window = Context.config.get('lookback_window', IMMUTABLE_STREAM_LOOKBACK) # added configurable lookback window
+                # added configurable lookback window
+                lookback_window = Context.config.get('lookback_window', IMMUTABLE_STREAM_LOOKBACK)
                 if lookback_window and int(lookback_window) or lookback_window in (0, '0'):
                     lookback_window = int(lookback_window)
                 else:
-                    lookback_window = IMMUTABLE_STREAM_LOOKBACK # default lookback
+                    lookback_window = IMMUTABLE_STREAM_LOOKBACK  # default lookback
             except ValueError:
                 raise ValueError('Please provide a valid integer value for the lookback_window parameter.') from None
             if start_window != Context.config["start_date"]:
@@ -711,11 +739,12 @@ def get_object_list_iterator(object_list):
         # grabs more data at once, and mitigates an infinite loop scenario
         # where legacy line_items may have the same id of `sub_1234abc`,
         # which breaks pagination. (see below)
-        object_list._retrieve_params["limit"] = 100 # pylint:disable=protected-access
+        object_list._retrieve_params["limit"] = 100  # pylint:disable=protected-access
         return object_list.auto_paging_iter()
     if isinstance(object_list, dict):
         return [object_list]
     return object_list
+
 
 # For Cycle Detection Below: In order to reliably detect cycles with
 # sub-stream objects while mitigating the impact by requesting 100 on the
@@ -724,12 +753,14 @@ def get_object_list_iterator(object_list):
 # we are in a cycle.
 INITIAL_SUB_STREAM_OBJECT_LIST_LENGTH = 10
 
+
 def is_parent_selected(sub_stream_name):
     """
     Given a child stream, check if the parent is selected.
     """
     parent_stream = PARENT_STREAM_MAP.get(sub_stream_name)
     return Context.is_selected(parent_stream)
+
 
 def sync_sub_stream(sub_stream_name, parent_obj, updates=False):
     """
@@ -861,7 +892,7 @@ def sync_sub_stream(sub_stream_name, parent_obj, updates=False):
                                         Context.get_catalog_entry(sub_stream_name)['schema'],
                                         metadata.to_map(
                                             Context.get_catalog_entry(sub_stream_name)['metadata']
-                                        ))
+            ))
             # NB: Older structures (such as invoice_line_items) may not have had their ID present.
             #     Skip these if they don't match the structure we expect.
             if "id" in rec:
@@ -895,6 +926,7 @@ def should_sync_event(events_obj, object_type, id_to_created_map):
         id_to_created_map[event_resource_id] = events_obj.created
     return should_sync
 
+
 def recursive_to_dict(some_obj):
     if isinstance(some_obj, stripe.stripe_object.StripeObject):
         return recursive_to_dict(dict(some_obj))
@@ -907,6 +939,7 @@ def recursive_to_dict(some_obj):
 
     # Else just return
     return some_obj
+
 
 def sync_event_updates(stream_name, is_sub_stream):
     '''
@@ -921,7 +954,7 @@ def sync_event_updates(stream_name, is_sub_stream):
     '''
     LOGGER.info("Started syncing event based updates")
     event_window_size = Context.event_window_size
-    events_date_window_size = int(60 * 60 * 24 * event_window_size) # event_window_size in seconds
+    events_update_date_window_size = int(60 * 60 * 24 * event_window_size) # event_window_size in seconds
     sync_start_time = dt_to_epoch(utils.now())
 
     if is_sub_stream:
@@ -934,14 +967,14 @@ def sync_event_updates(stream_name, is_sub_stream):
     parent_bookmark_value = singer.get_bookmark(Context.state,
                                                 stream_name + '_events',
                                                 'updates_created') or \
-                            int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
+        int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
 
     # Get the bookmark value of the sub_stream if its selected and present
     if sub_stream_name:
         sub_stream_bookmark_value = singer.get_bookmark(Context.state,
                                                         sub_stream_name + '_events',
                                                         'updates_created') or \
-                            int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
+            int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
 
     # If only child stream is selected, update bookmark to sub-stream bookmark value
     if is_sub_stream:
@@ -954,13 +987,15 @@ def sync_event_updates(stream_name, is_sub_stream):
     # Update the bookmark to parent bookmark value, if child is not selected
     else:
         bookmark_value = parent_bookmark_value
-    # Start sync from 30 days before if bookmark/start_date is older than 30 days.
+
+    # Start sync for event updates record from the last 30 days before if bookmark/start_date is older than 30 days.
     max_created = int(max(bookmark_value, (epoch_to_dt(sync_start_time) - timedelta(days=30)).timestamp()))
     if max_created != bookmark_value:
-        LOGGER.warning("Provided current bookmark/start_date is older than the last 30 days. So, starting sync for the last 30 days as Stripe Event API returns data for the last 30 days only.")
+        LOGGER.warning("Provided current bookmark/start_date for event updates is older than the last 30 days."\
+            "So, starting sync for the last 30 days as Stripe Event API returns data for the last 30 days only.")
 
     date_window_start = max_created
-    date_window_end = max_created + events_date_window_size
+    date_window_end = max_created + events_update_date_window_size
     stop_paging = False
 
     # Create a map to hold relate event object ids to timestamps
@@ -972,7 +1007,7 @@ def sync_event_updates(stream_name, is_sub_stream):
         response = STREAM_SDK_OBJECTS['events']['sdk_object'].list(**{
             "limit": 100,
             "type": STREAM_TO_TYPE_FILTER[stream_name]['type'],
-            "stripe_account" : Context.config.get('account_id'),
+            "stripe_account": Context.config.get('account_id'),
             # None passed to starting_after appears to retrieve
             # all of them so this should always be safe.
             "created[gte]": date_window_start,
@@ -980,7 +1015,7 @@ def sync_event_updates(stream_name, is_sub_stream):
         })
 
         # If no results, and we are not up to current time
-        if not len(response) and date_window_end > extraction_time.timestamp(): # pylint: disable=len-as-condition
+        if not len(response) and date_window_end > extraction_time.timestamp():  # pylint: disable=len-as-condition
             stop_paging = True
 
         for events_obj in response.auto_paging_iter():
@@ -1045,15 +1080,22 @@ def sync_event_updates(stream_name, is_sub_stream):
         # The events stream returns results in descending order, so we
         # cannot bookmark until the entire page is processed
         date_window_start = date_window_end
-        date_window_end = date_window_end + events_date_window_size
+        date_window_end = date_window_end + events_update_date_window_size
 
         # Write bookmark for parent or child stream if it is selected
         write_bookmark_for_event_updates(is_sub_stream, stream_name, sub_stream_name, max_created)
 
-    max_created = max(max_created, sync_start_time - events_date_window_size)
+    # max_created is the maximum replication key value among all records.
+    # sync_start_time is epoch time when tap started to sync event updates.
+    # events_update_date_window_size is the size of date_window to make API requests for event updates.
+    # Take back sync_start_time events_update_date_window_size(default 7, maximum 30) days behind to compare
+    # with max_created value. Save a maximum of max_created and sync_start_time because stripe returns
+    # records of the last 30 days for event updates.
+    max_created = max(max_created, sync_start_time - events_update_date_window_size)
     write_bookmark_for_event_updates(is_sub_stream, stream_name, sub_stream_name, max_created)
 
     singer.write_state(Context.state)
+
 
 def write_bookmark_for_event_updates(is_sub_stream, stream_name, sub_stream_name, max_created):
     """
@@ -1062,18 +1104,19 @@ def write_bookmark_for_event_updates(is_sub_stream, stream_name, sub_stream_name
     # Write the parent bookmark value only when the parent is selected
     if not is_sub_stream:
         singer.write_bookmark(Context.state,
-                            stream_name + '_events',
-                            'updates_created',
-                            max_created)
+                              stream_name + '_events',
+                              'updates_created',
+                              max_created)
         singer.write_state(Context.state)
 
     # Write the child bookmark value only when the child is selected
     if sub_stream_name and Context.is_selected(sub_stream_name):
         singer.write_bookmark(Context.state,
-                            sub_stream_name + '_events',
-                            'updates_created',
-                            max_created)
+                              sub_stream_name + '_events',
+                              'updates_created',
+                              max_created)
         singer.write_state(Context.state)
+
 
 def sync():
     """
@@ -1101,10 +1144,13 @@ def sync():
                 if STREAM_TO_TYPE_FILTER.get(stream_name):
                     sync_event_updates(stream_name, Context.is_sub_stream(stream_name))
 
+
 def get_date_window_size(param, default_value):
     """
     Get date_window value from config, if the value is passed.
     Else return the default value.
+    param: Name of param to fetch from the config. (e.g. date_window_size)
+    default_value: Default value to return for the given param.
     """
     window_size = Context.config.get(param)
 
@@ -1119,7 +1165,8 @@ def get_date_window_size(param, default_value):
         return float(window_size)
     else:
         # Raise Exception if window_size value is 0, "0" or invalid string.
-        raise Exception("The entered window size is invalid, it should be a valid none-zero integer.")
+        raise Exception("The entered window size '{}' is invalid, it should be a valid non-zero integer.".format(window_size))
+
 
 @utils.handle_top_exception(LOGGER)
 def main():
@@ -1137,7 +1184,7 @@ def main():
     # Otherwise run in sync mode
     else:
         Context.window_size = get_date_window_size('date_window_size', DEFAULT_DATE_WINDOW_SIZE)
-        Context.event_window_size = get_date_window_size('event_date_window_size', DEFAULT_EVENT_DATE_WINDOW_SIZE)
+        Context.event_window_size = get_date_window_size('event_date_window_size', DEFAULT_EVENT_UPDATE_DATE_WINDOW)
         # Reset event_window_size to 30 days if it is greater than 30 because Stripe Event API returns data of the last 30 days only.
         if Context.event_window_size > 30:
             Context.event_window_size = 30
@@ -1154,7 +1201,6 @@ def main():
         finally:
             # Print counts
             Context.print_counts()
-
 
 
 if __name__ == "__main__":

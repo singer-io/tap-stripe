@@ -15,7 +15,7 @@ from utils import \
 
 class TestEventUpdatesSyncStart(BaseTapTest):
     """
-    Test for event records of streams, Even if start date is set before 30 days,
+    Test for event update records of streams. Even if the start date is set before 30 days,
     no record before 30 days will be received.
     """
     @staticmethod

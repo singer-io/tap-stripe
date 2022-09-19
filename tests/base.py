@@ -46,6 +46,7 @@ class BaseTapTest(BaseCase):
         return_value = {
             'start_date': dt.strftime(dt.today(), self.START_DATE_FORMAT),
             'account_id': os.getenv('TAP_STRIPE_ACCOUNT_ID'),
+            'event_date_window_size': 35
         }
 
         if original:

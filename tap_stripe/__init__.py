@@ -1112,6 +1112,7 @@ def get_date_window_size(param, default_value):
     if window_size is None:
         return default_value
 
+    # Return float of window_size which is passed in the config and is in the valid format of int, float or string.
     if ((type(window_size) in [int, float]) or
         (isinstance(window_size, str) and window_size.replace('.', '', 1).isdigit())) and \
             float(window_size) > 0:

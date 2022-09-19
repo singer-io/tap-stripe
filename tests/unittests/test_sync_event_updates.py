@@ -2,10 +2,21 @@ import unittest
 from parameterized import parameterized
 from unittest import mock
 import datetime
-from tap_stripe import Context, sync_event_updates
+from tap_stripe import Context, sync_event_updates, write_bookmark_for_event_updates
 
 MOCK_DATE_TIME = datetime.datetime.strptime("2021-01-01T08:30:50Z", "%Y-%m-%dT%H:%M:%SZ")
 MOCK_CURRENT_TIME = datetime.datetime.strptime("2022-04-01T08:30:50Z", "%Y-%m-%dT%H:%M:%SZ")
+
+class MockContext():
+    """
+    Mock class of Context
+    """
+    state = {}
+
+    @classmethod
+    def is_selected(self, stream_name):
+        return True
+    
 
 class TestSyncEventUpdates(unittest.TestCase):
     """
@@ -16,7 +27,7 @@ class TestSyncEventUpdates(unittest.TestCase):
     @mock.patch('tap_stripe.write_bookmark_for_event_updates')
     def test_sync_event_updates_bookmark_in_last_7_days(self, mock_write_bookmark, mock_stripe_event, mock_utils_now):
         """
-        Test that sync_event_updates write the maximum bookmark value in the state when its value is within last
+        Test that sync_event_updates write the maximum bookmark value in the state when its value is with in last 
         events_date_window_size(7 days default) days.
         """
         config = {"client_secret": "test_secret", "account_id": "test_account", "start_date": "2022-02-17T00:00:00"}
@@ -36,7 +47,7 @@ class TestSyncEventUpdates(unittest.TestCase):
     def test_sync_event_updates_bookmark_before_last_7_days(self, mock_logger, mock_write_bookmark, mock_stripe_event, mock_utils_now):
         """
         Test that sync_event_updates write the expected bookmark value(events_date_window_size days less than the current date) in the state when maximum
-        bookmark value is before the last events_date_window_size(7 days default) days of the current date.
+        bookmark value is before the last events_date_window_size(7 days default) days of current date.
         """
         config = {"client_secret": "test_secret", "account_id": "test_account", "start_date": "2022-02-17T00:00:00"}
         Context.config = config
@@ -45,9 +56,33 @@ class TestSyncEventUpdates(unittest.TestCase):
         mock_stripe_event.return_value = ""
         sync_event_updates('charges', False)
 
-        # Verify that tap writes the maximum of bookmark/start_date value and sync_start_time.
-        mock_write_bookmark.assert_called_with(False, 'charges', None, 1648197050)
+        # Verify that tap writes maximum of bookmark/start_date value and sync_start_time.
+        mock_write_bookmark.assert_called_with(False, 'charges', None, 1648177250)
 
-        # Verify warning message for the bookmark of less than last 30 days.
+        # Verify warning message for bookmark of less than last 30 days.
         mock_logger.assert_called_with("Provided current bookmark/start_date is older than the last 30 days. So, starting sync for"\
                                        " the last 30 days as Stripe Event API returns data for the last 30 days only.")
+
+
+    @mock.patch("singer.write_state")
+    def test_write_bookmark_event_updates_for_non_sub_streams(self, mock_state):
+        """
+        Test that tap writes expected bookmark for non sub streams.
+        """
+        Context.state = {'bookmarks': {}}
+        write_bookmark_for_event_updates(False, 'charges', None, 1648177250)
+        
+        # Verify expected bookmark value
+        mock_state.assert_called_with({'bookmarks': {'charges_events': {'updates_created': 1648177250}}})
+
+    @mock.patch('tap_stripe.Context', return_value = Context)
+    @mock.patch("singer.write_state")
+    def test_write_bookmark_event_updates_for_non_sub_streams(self, mock_state, mock_context):
+        """
+        Test that tap writes expected bookmark for sub streams.
+        """
+        Context.state = {'bookmarks': {}}
+        write_bookmark_for_event_updates(True, 'invoices', 'invoice_line_items', 1648177250)
+        
+        # Verify expected bookmark value
+        mock_state.assert_called_with(mock_context.state)

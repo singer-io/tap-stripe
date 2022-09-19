@@ -44,9 +44,9 @@ class TestGetWindowSize(unittest.TestCase):
         # Verify that the exception message is expected.
         self.assertEqual(
             str(e.exception),
-            "The entered window size is invalid, it should be a valid none-zero integer.")
+            "The entered window size '{}' is invalid, it should be a valid non-zero integer.".format(date_window_size))
 
-    def test_none_value(self):
+    def test_non_value(self):
         """
         Test if no window size is not passed in the config, then set it to the default value.
         """

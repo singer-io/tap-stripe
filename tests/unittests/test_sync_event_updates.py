@@ -57,7 +57,7 @@ class TestSyncEventUpdates(unittest.TestCase):
         sync_event_updates('charges', False)
 
         # Verify that tap writes maximum of bookmark/start_date value and sync_start_time.
-        mock_write_bookmark.assert_called_with(False, 'charges', None, 1648177250)
+        mock_write_bookmark.assert_called_with(False, 'charges', None, 1648197050)
 
         # Verify warning message for bookmark of less than last 30 days.
         mock_logger.assert_called_with("Provided current bookmark/start_date for event updates is older than the last"\

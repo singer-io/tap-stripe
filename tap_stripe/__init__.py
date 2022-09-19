@@ -181,7 +181,7 @@ class Context():
     new_counts = {}
     updated_counts = {}
     window_size = DEFAULT_DATE_WINDOW_SIZE  # By default fetch data from last 30 days for newly created records.
-    event_window_size = DEFAULT_EVENT_UPDATE_DATE_WINDOW  # By default collect data of 7 days in one
+    event_update_window_size = DEFAULT_EVENT_UPDATE_DATE_WINDOW  # By default collect data of 7 days in one
                                                                 # API call for event_updates
 
     @classmethod
@@ -953,8 +953,8 @@ def sync_event_updates(stream_name, is_sub_stream):
                     or when called through only child stream i.e. when parent is not selected.
     '''
     LOGGER.info("Started syncing event based updates")
-    event_window_size = Context.event_window_size
-    events_update_date_window_size = int(60 * 60 * 24 * event_window_size) # event_window_size in seconds
+    event_update_window_size = Context.event_update_window_size
+    events_update_date_window_size = int(60 * 60 * 24 * event_update_window_size) # event_update_window_size in seconds
     sync_start_time = dt_to_epoch(utils.now())
 
     if is_sub_stream:
@@ -1165,7 +1165,8 @@ def get_date_window_size(param, default_value):
         return float(window_size)
     else:
         # Raise Exception if window_size value is 0, "0" or invalid string.
-        raise Exception("The entered window size '{}' is invalid, it should be a valid non-zero integer.".format(window_size))
+        raise Exception("The entered window size '{}' is invalid, it should"\
+            " be a valid non-zero integer.".format(window_size))
 
 
 @utils.handle_top_exception(LOGGER)
@@ -1184,10 +1185,11 @@ def main():
     # Otherwise run in sync mode
     else:
         Context.window_size = get_date_window_size('date_window_size', DEFAULT_DATE_WINDOW_SIZE)
-        Context.event_window_size = get_date_window_size('event_date_window_size', DEFAULT_EVENT_UPDATE_DATE_WINDOW)
-        # Reset event_window_size to 30 days if it is greater than 30 because Stripe Event API returns data of the last 30 days only.
-        if Context.event_window_size > 30:
-            Context.event_window_size = 30
+        Context.event_update_window_size = get_date_window_size('event_date_window_size', DEFAULT_EVENT_UPDATE_DATE_WINDOW)
+        # Reset event_update_window_size to 30 days if it is greater than 30 because Stripe Event API returns data of
+        # the last 30 days only.
+        if Context.event_update_window_size > 30:
+            Context.event_update_window_size = 30
             LOGGER.warning("Using a default window size of 30 days as Stripe Event API returns data of the last 30 days only.")
 
         Context.tap_start = utils.now()

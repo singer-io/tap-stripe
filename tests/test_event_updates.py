@@ -1,22 +1,17 @@
 """
 Test tap gets all updates for streams with updates published to the events stream
 """
-import json
 from datetime import datetime, timedelta
-from time import sleep
-from random import random
 
-import requests
-from tap_tester import menagerie, runner, connections, LOGGER
+from tap_tester import runner, connections, LOGGER
 from base import BaseTapTest
-from utils import \
-    get_catalogs, update_object, update_payment_intent, create_object, delete_object
+from utils import update_object, update_payment_intent, create_object, delete_object
 
 
 class TestEventUpdatesSyncStart(BaseTapTest):
     """
-    Test for event update records of streams. Even if the start date is set before 30 days,
-    no record before 30 days will be received.
+    Test for event update and event creation records of streams.
+    Even if the start date is set before 30 days, no record before 30 days will be received.
     """
     @staticmethod
     def name():
@@ -24,7 +19,7 @@ class TestEventUpdatesSyncStart(BaseTapTest):
 
     def test_run(self):
         """
-        Verify that each record is from last 30 days.
+        Verify that each record is from the last 30 days.
         """
 
         # Setting start_date to 32 days before today
@@ -32,8 +27,8 @@ class TestEventUpdatesSyncStart(BaseTapTest):
         conn_id = connections.ensure_connection(self, original_properties=False)
 
         # AS it takes more than an hour to sync all the event_updates streams,
-        # we are taking given two streams for sync
-        event_update_streams = {"subscriptions", "customers"}
+        # we are taking given three streams for sync
+        event_update_streams = {"subscriptions", "customers", "events"}
 
         found_catalogs = self.run_and_verify_check_mode(conn_id)
         our_catalogs = [catalog for catalog in found_catalogs

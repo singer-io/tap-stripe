@@ -31,8 +31,8 @@ class TestEventUpdatesSyncStart(BaseTapTest):
         self.start_date = datetime.strftime(datetime.today() - timedelta(days=32), self.START_DATE_FORMAT)
         conn_id = connections.ensure_connection(self, original_properties=False)
 
-        # AS it takes more than hour to sync all the event_updates streams,
-        # we are taking given two streams for sync 
+        # AS it takes more than an hour to sync all the event_updates streams,
+        # we are taking given two streams for sync
         event_update_streams = {"subscriptions", "customers"}
 
         found_catalogs = self.run_and_verify_check_mode(conn_id)

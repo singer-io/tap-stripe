@@ -1,6 +1,6 @@
 import unittest
 from unittest import mock
-import datetime
+from datetime import datetime
 from tap_stripe import IMMUTABLE_STREAM_LOOKBACK, Context, sync_stream
 
 class MockClass():
@@ -14,10 +14,11 @@ class MockClass():
         '''The mocked to_dict_recursive method of the Balance Transactions/Events class.'''
         return "Test Data"
 
-bookmark_time = 1645046000 # epoch bookmark time
+BOOKMARK_TIME = 1645046000 # epoch bookmark time
+BOOKMARK_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 
 @mock.patch("singer.write_record")
-@mock.patch('singer.utils.now', return_value = datetime.datetime.strptime("2022-01-01T08:30:50Z", "%Y-%m-%dT%H:%M:%SZ"))
+@mock.patch('singer.utils.now', return_value = datetime.strptime("2022-01-01T08:30:50Z", BOOKMARK_FORMAT))
 @mock.patch("tap_stripe.reduce_foreign_keys", return_value = {"created": 16452804585})
 @mock.patch("tap_stripe.convert_dict_to_stripe_object", return_value = {"created": "2022-02-17T00:00:00"})
 @mock.patch("tap_stripe.paginate", return_value = [MockClass()])
@@ -27,7 +28,7 @@ bookmark_time = 1645046000 # epoch bookmark time
 @mock.patch("tap_stripe.epoch_to_dt")
 @mock.patch("tap_stripe.dt_to_epoch", side_effect = [1645056000, 1645056000, 1647647700, 1645056000]) # epoch timestamps
 @mock.patch("tap_stripe.sync_sub_stream")
-@mock.patch("tap_stripe.singer.get_bookmark", side_effect = [bookmark_time, bookmark_time])
+@mock.patch("tap_stripe.singer.get_bookmark", side_effect = [BOOKMARK_TIME, BOOKMARK_TIME])
 class TestLookbackWindow(unittest.TestCase):
 
     def test_default_value_lookback(self, mock_get_bookmark_for_stream, mock_sync_substream, mock_dt_to_epoch, mock_epoch_to_dt, mock_get, mock_metadata_map, mock_get_catalog_entry, mock_paginate, mock_convert_dict_to_stripe_object, mock_reduce_foreign_keys, mock_utils_now, mock_write_record):
@@ -37,7 +38,7 @@ class TestLookbackWindow(unittest.TestCase):
         Context.new_counts['balance_transactions'] = 1
         sync_stream("balance_transactions")
         # expected start_date should be the bookmark time - `lookback`(default lookback)
-        expected_start_window = bookmark_time - IMMUTABLE_STREAM_LOOKBACK
+        expected_start_window = BOOKMARK_TIME - IMMUTABLE_STREAM_LOOKBACK
         mock_epoch_to_dt.assert_called_with(expected_start_window)
 
     def test_config_provided_value_lookback(self, mock_get_bookmark_for_stream, mock_sync_substream, mock_dt_to_epoch, mock_epoch_to_dt, mock_get, mock_metadata_map, mock_get_catalog_entry, mock_paginate, mock_convert_dict_to_stripe_object, mock_reduce_foreign_keys, mock_utils_now, mock_write_record):
@@ -47,7 +48,7 @@ class TestLookbackWindow(unittest.TestCase):
         Context.new_counts['balance_transactions'] = 1
         sync_stream("balance_transactions")
         # expected start_date should be the bookmark time - `lookback`(lookback passed in the config)
-        expected_start_window = bookmark_time - config.get('lookback_window')
+        expected_start_window = BOOKMARK_TIME - config.get('lookback_window')
         mock_epoch_to_dt.assert_called_with(expected_start_window)
         
     def test_empty_string_in_config_lookback(self, mock_get_bookmark_for_stream, mock_sync_substream, mock_dt_to_epoch, mock_epoch_to_dt, mock_get, mock_metadata_map, mock_get_catalog_entry, mock_paginate, mock_convert_dict_to_stripe_object, mock_reduce_foreign_keys, mock_utils_now, mock_write_record):
@@ -57,7 +58,7 @@ class TestLookbackWindow(unittest.TestCase):
         Context.new_counts['balance_transactions'] = 1
         sync_stream("balance_transactions")
         # expected start_date should be the bookmark time - `lookback`(default lookback)
-        expected_start_window = bookmark_time - IMMUTABLE_STREAM_LOOKBACK
+        expected_start_window = BOOKMARK_TIME - IMMUTABLE_STREAM_LOOKBACK
         mock_epoch_to_dt.assert_called_with(expected_start_window)
 
     def test_default_value_lookback_events(self, mock_get_bookmark_for_stream, mock_sync_substream, mock_dt_to_epoch, mock_epoch_to_dt, mock_get, mock_metadata_map, mock_get_catalog_entry, mock_paginate, mock_convert_dict_to_stripe_object, mock_reduce_foreign_keys, mock_utils_now, mock_write_record):
@@ -67,7 +68,7 @@ class TestLookbackWindow(unittest.TestCase):
         Context.new_counts['events'] = 1
         sync_stream("events")
         # expected start_date should be the bookmark time - `lookback`(default lookback)
-        expected_start_window = bookmark_time - IMMUTABLE_STREAM_LOOKBACK
+        expected_start_window = BOOKMARK_TIME - IMMUTABLE_STREAM_LOOKBACK
         mock_epoch_to_dt.assert_called_with(expected_start_window)
 
     def test_config_provided_value_lookback_events(self, mock_get_bookmark_for_stream, mock_sync_substream, mock_dt_to_epoch, mock_epoch_to_dt, mock_get, mock_metadata_map, mock_get_catalog_entry, mock_paginate, mock_convert_dict_to_stripe_object, mock_reduce_foreign_keys, mock_utils_now, mock_write_record):
@@ -77,7 +78,7 @@ class TestLookbackWindow(unittest.TestCase):
         Context.new_counts['events'] = 1
         sync_stream("events")
         # expected start_date should be the bookmark time - `lookback`(lookback passed in the config)
-        expected_start_window = bookmark_time - config.get('lookback_window')
+        expected_start_window = BOOKMARK_TIME - config.get('lookback_window')
         mock_epoch_to_dt.assert_called_with(expected_start_window)
         
     def test_empty_string_in_config_lookback_events(self, mock_get_bookmark_for_stream, mock_sync_substream, mock_dt_to_epoch, mock_epoch_to_dt, mock_get, mock_metadata_map, mock_get_catalog_entry, mock_paginate, mock_convert_dict_to_stripe_object, mock_reduce_foreign_keys, mock_utils_now, mock_write_record):
@@ -87,7 +88,7 @@ class TestLookbackWindow(unittest.TestCase):
         Context.new_counts['events'] = 1
         sync_stream("events")
         # expected start_date should be the bookmark time - `lookback`(default lookback)
-        expected_start_window = bookmark_time - IMMUTABLE_STREAM_LOOKBACK
+        expected_start_window = BOOKMARK_TIME - IMMUTABLE_STREAM_LOOKBACK
         mock_epoch_to_dt.assert_called_with(expected_start_window)
 
     def test_invalid_value_string_in_config_lookback_events(self, mock_get_bookmark_for_stream, mock_sync_substream, mock_dt_to_epoch, mock_epoch_to_dt, mock_get, mock_metadata_map, mock_get_catalog_entry, mock_paginate, mock_convert_dict_to_stripe_object, mock_reduce_foreign_keys, mock_utils_now, mock_write_record):
@@ -119,7 +120,7 @@ class TestLookbackWindow(unittest.TestCase):
         Context.new_counts['events'] = 1
         sync_stream("events")
         # expected start_date should be the bookmark time - `lookback`(default lookback)
-        expected_start_window = bookmark_time - config.get('lookback_window')
+        expected_start_window = BOOKMARK_TIME - config.get('lookback_window')
         mock_epoch_to_dt.assert_called_with(expected_start_window)
 
     def test_0_in_config_lookback_balance_transactions(self, mock_get_bookmark_for_stream, mock_sync_substream, mock_dt_to_epoch, mock_epoch_to_dt, mock_get, mock_metadata_map, mock_get_catalog_entry, mock_paginate, mock_convert_dict_to_stripe_object, mock_reduce_foreign_keys, mock_utils_now, mock_write_record):
@@ -129,7 +130,7 @@ class TestLookbackWindow(unittest.TestCase):
         Context.new_counts['balance_transactions'] = 1
         sync_stream("balance_transactions")
         # expected start_date should be the bookmark time - `lookback`(default lookback)
-        expected_start_window = bookmark_time - config.get('lookback_window')
+        expected_start_window = BOOKMARK_TIME - config.get('lookback_window')
         mock_epoch_to_dt.assert_called_with(expected_start_window)
 
     def test_string_0_in_config_lookback_balance_transactions(self, mock_get_bookmark_for_stream, mock_sync_substream, mock_dt_to_epoch, mock_epoch_to_dt, mock_get, mock_metadata_map, mock_get_catalog_entry, mock_paginate, mock_convert_dict_to_stripe_object, mock_reduce_foreign_keys, mock_utils_now, mock_write_record):
@@ -139,7 +140,7 @@ class TestLookbackWindow(unittest.TestCase):
         Context.new_counts['balance_transactions'] = 1
         sync_stream("balance_transactions")
         # expected start_date should be the bookmark time - `lookback`(default lookback)
-        expected_start_window = bookmark_time - int(config.get('lookback_window'))
+        expected_start_window = BOOKMARK_TIME - int(config.get('lookback_window'))
         mock_epoch_to_dt.assert_called_with(expected_start_window)
 
     def test_string_0_in_config_lookback_events(self, mock_get_bookmark_for_stream, mock_sync_substream, mock_dt_to_epoch, mock_epoch_to_dt, mock_get, mock_metadata_map, mock_get_catalog_entry, mock_paginate, mock_convert_dict_to_stripe_object, mock_reduce_foreign_keys, mock_utils_now, mock_write_record):
@@ -149,5 +150,5 @@ class TestLookbackWindow(unittest.TestCase):
         Context.new_counts['events'] = 1
         sync_stream("events")
         # expected start_date should be the bookmark time - `lookback`(default lookback)
-        expected_start_window = bookmark_time - int(config.get('lookback_window'))
+        expected_start_window = BOOKMARK_TIME - int(config.get('lookback_window'))
         mock_epoch_to_dt.assert_called_with(expected_start_window)

@@ -1,0 +1,53 @@
+import unittest
+from parameterized import parameterized
+from unittest import mock
+import datetime
+from tap_stripe import Context, sync_event_updates
+
+MOCK_DATE_TIME = datetime.datetime.strptime("2021-01-01T08:30:50Z", "%Y-%m-%dT%H:%M:%SZ")
+MOCK_CURRENT_TIME = datetime.datetime.strptime("2022-04-01T08:30:50Z", "%Y-%m-%dT%H:%M:%SZ")
+
+class TestSyncEventUpdates(unittest.TestCase):
+    """
+    Verify bookmark logic and logger message of sync_event_updates.
+    """
+    @mock.patch('stripe.Event.list')
+    @mock.patch('singer.utils.now', side_effect = [MOCK_DATE_TIME, MOCK_DATE_TIME, MOCK_DATE_TIME])
+    @mock.patch('tap_stripe.write_bookmark_for_event_updates')
+    def test_sync_event_updates_bookmark_in_last_7_days(self, mock_write_bookmark, mock_stripe_event, mock_utils_now):
+        """
+        Test that sync_event_updates write the maximum bookmark value in the state when its value is within last
+        events_date_window_size(7 days default) days.
+        """
+        config = {"client_secret": "test_secret", "account_id": "test_account", "start_date": "2022-02-17T00:00:00"}
+        Context.config = config
+        Context.state = {'bookmarks': {'charges_events': {'created': 1698739554}}}
+
+        mock_stripe_event.return_value = ""
+        sync_event_updates('charges', False)
+
+        # Verify that tap writes bookmark/start_date value in the state.
+        mock_write_bookmark.assert_called_with(False, 'charges', None, 1645056000)
+
+    @mock.patch('stripe.Event.list')
+    @mock.patch('singer.utils.now', side_effect = [MOCK_CURRENT_TIME, MOCK_CURRENT_TIME, MOCK_DATE_TIME])
+    @mock.patch('tap_stripe.write_bookmark_for_event_updates')
+    @mock.patch('tap_stripe.LOGGER.warning')
+    def test_sync_event_updates_bookmark_before_last_7_days(self, mock_logger, mock_write_bookmark, mock_stripe_event, mock_utils_now):
+        """
+        Test that sync_event_updates write the expected bookmark value(events_date_window_size days less than the current date) in the state when maximum
+        bookmark value is before the last events_date_window_size(7 days default) days of the current date.
+        """
+        config = {"client_secret": "test_secret", "account_id": "test_account", "start_date": "2022-02-17T00:00:00"}
+        Context.config = config
+        Context.state = {'bookmarks': {'charges_events': {'created': 1698739554}}}
+
+        mock_stripe_event.return_value = ""
+        sync_event_updates('charges', False)
+
+        # Verify that tap writes the maximum of bookmark/start_date value and sync_start_time.
+        mock_write_bookmark.assert_called_with(False, 'charges', None, 1648177250)
+
+        # Verify warning message for the bookmark of less than last 30 days.
+        mock_logger.assert_called_with("Provided current bookmark/start_date is older than the last 30 days. So, starting sync for"\
+                                       " the last 30 days as Stripe Event API returns data for the last 30 days only.")

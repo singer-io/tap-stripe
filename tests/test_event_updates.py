@@ -18,8 +18,8 @@ class TestEventUpdatesSyncStart(BaseTapTest):
     Test for event records of streams, Even if start date is set before 30 days,
     no record before 30 days will be received.
     """
-
-    def name(self):
+    @staticmethod
+    def name():
         return "tt_stripe_event_sync_start"
 
     def test_run(self):

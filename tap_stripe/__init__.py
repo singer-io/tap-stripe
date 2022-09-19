@@ -179,7 +179,6 @@ class Context():
     updated_counts = {}
     window_size = DEFAULT_DATE_WINDOW_SIZE
     event_window_size = DEFAULT_EVENT_DATE_WINDOW_SIZE
-    lookback_window = IMMUTABLE_STREAM_LOOKBACK
 
     @classmethod
     def get_catalog_entry(cls, stream_name):

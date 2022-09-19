@@ -702,10 +702,6 @@ def sync_event_updates(stream_name):
     LOGGER.info("Started syncing event based updates")
 
     event_window_size = Context.event_window_size
-    # Reset event_window_size to 30 days if it is greater than 30 because Stripe Event API returns data of the last 30 days only.
-    if event_window_size > 30:
-        event_window_size = 30
-        LOGGER.warning("Using a default window size of 30 days as Stripe Event API returns data of the last 30 days only.")
     events_date_window_size = int(60 * 60 * 24 * event_window_size) # event_window_size in seconds
     sync_start_time = dt_to_epoch(utils.now())
 
@@ -715,7 +711,7 @@ def sync_event_updates(stream_name):
                      int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
 
     # Start sync from 30 days before if bookmark/start_date is older than 30 days.
-    max_created = int(max(bookmark_value, sync_start_time))
+    max_created = int(max(bookmark_value, (epoch_to_dt(sync_start_time) - timedelta(days=30)).timestamp()))
     if max_created != bookmark_value:
         LOGGER.warning("Provided current bookmark/start_date is older than the last 30 days. So, starting sync for the last 30 days as Stripe Event API returns data for the last 30 days only.")
 
@@ -881,6 +877,11 @@ def main():
         Context.state = args.state
         Context.window_size = get_date_window_size('date_window_size', DEFAULT_DATE_WINDOW_SIZE)
         Context.event_window_size = get_date_window_size('event_date_window_size', DEFAULT_EVENT_DATE_WINDOW_SIZE)
+        # Reset event_window_size to 30 days if it is greater than 30 because Stripe Event API returns data of the last 30 days only.
+        if Context.event_window_size > 30:
+            Context.event_window_size = 30
+            LOGGER.warning("Using a default window size of 30 days as Stripe Event API returns data of the last 30 days only.")
+
         configure_stripe_client()
         validate_dependencies()
         try:

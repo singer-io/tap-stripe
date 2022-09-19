@@ -398,7 +398,7 @@ def dt_to_epoch(dt):
 def epoch_to_dt(epoch_ts):
     return datetime.fromtimestamp(epoch_ts)
 
-# pylint: disable=too-many-locals
+# pylint: disable=too-many-locals, too-many-statements
 def sync_stream(stream_name):
     """
     Sync each stream, looking for newly created records. Updates are captured by events stream.

@@ -2,14 +2,65 @@
 Test tap gets all updates for streams with updates published to the events stream
 """
 import json
+from datetime import datetime, timedelta
 from time import sleep
 from random import random
 
 import requests
-from tap_tester import menagerie, runner, connections
+from tap_tester import menagerie, runner, connections, LOGGER
 from base import BaseTapTest
 from utils import \
-    get_catalogs, update_object, create_object, delete_object
+    get_catalogs, update_object, update_payment_intent, create_object, delete_object
+
+
+class TestEventUpdatesSyncStart(BaseTapTest):
+    """
+    Test for event records of streams, Even if start date is set before 30 days,
+    no record before 30 days will be received.
+    """
+
+    @staticmethod
+    def name():
+        return "tt_stripe_event_sync_start"
+
+    def test_run(self):
+        """
+        Verify that each record is from last 30 days.
+        """
+
+        # Setting start_date to 32 days before today
+        self.start_date = datetime.strftime(datetime.today() - timedelta(days=32), self.START_DATE_FORMAT)
+        conn_id = connections.ensure_connection(self, original_properties=False)
+
+        # AS it takes more than hour to sync all the event_updates streams,
+        # we are taking given two streams for sync 
+        event_update_streams = {"subscriptions", "customers"}
+
+        found_catalogs = self.run_and_verify_check_mode(conn_id)
+        our_catalogs = [catalog for catalog in found_catalogs
+                        if catalog.get('tap_stream_id') in
+                        event_update_streams]
+        self.select_all_streams_and_fields(conn_id, our_catalogs, select_all_fields=True)
+
+        # Getting a date before 30 days of current date-time
+        events_start_date = datetime.strftime(datetime.now() - timedelta(days=30), self.START_DATE_FORMAT)
+
+        # Run a sync job using orchestrator
+        self.run_and_verify_sync(conn_id)
+
+        # Get the set of records from the sync
+        synced_records = runner.get_records_from_target_output()
+        
+        for stream in event_update_streams:
+            with self.subTest(stream=stream):
+
+                # Get event-based records based on the newly added field `updated_by_event_type`
+                events_records_data = [message['data'] for message in synced_records.get(stream).get('messages')
+                                    if message['action'] == 'upsert' and 
+                                    message.get('data').get('updated_by_event_type', None)]
+
+                for record in events_records_data:
+                    self.assertGreaterEqual(record.get('updated'), events_start_date)
 
 
 class EventUpdatesTest(BaseTapTest):

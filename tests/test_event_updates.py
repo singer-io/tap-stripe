@@ -15,26 +15,25 @@ from utils import \
 
 class TestEventUpdatesSyncStart(BaseTapTest):
     """
-    Test for event records of streams, Even if start date is set before 30 days,
-    no record before 30 days will be received.
+    Test for event update and event creation records of streams.
+    Even if the start date is set before 30 days, no record before 30 days will be received.
     """
-
     @staticmethod
     def name():
         return "tt_stripe_event_sync_start"
 
     def test_run(self):
         """
-        Verify that each record is from last 30 days.
+        Verify that each record is from the last 30 days.
         """
 
         # Setting start_date to 32 days before today
         self.start_date = datetime.strftime(datetime.today() - timedelta(days=32), self.START_DATE_FORMAT)
         conn_id = connections.ensure_connection(self, original_properties=False)
 
-        # AS it takes more than hour to sync all the event_updates streams,
-        # we are taking given two streams for sync 
-        event_update_streams = {"subscriptions", "customers"}
+        # AS it takes more than an hour to sync all the event_updates streams,
+        # we are taking given three streams for sync
+        event_update_streams = {"subscriptions", "customers", "events"}
 
         found_catalogs = self.run_and_verify_check_mode(conn_id)
         our_catalogs = [catalog for catalog in found_catalogs
@@ -61,7 +60,6 @@ class TestEventUpdatesSyncStart(BaseTapTest):
 
                 for record in events_records_data:
                     self.assertGreaterEqual(record.get('updated'), events_start_date)
-
 
 class EventUpdatesTest(BaseTapTest):
     """

@@ -2,6 +2,7 @@ import unittest
 from parameterized import parameterized
 from tap_stripe import Context, get_date_window_size, DEFAULT_DATE_WINDOW_SIZE
 
+
 class TestGetWindowSize(unittest.TestCase):
     """
     Test `get_date_window_size` method of the client.
@@ -41,9 +42,11 @@ class TestGetWindowSize(unittest.TestCase):
             get_date_window_size("date_window_size", DEFAULT_DATE_WINDOW_SIZE)
 
         # Verify that the exception message is expected.
-        self.assertEqual(str(e.exception), "The entered window size is invalid, it should be a valid none-zero integer.")
+        self.assertEqual(
+            str(e.exception),
+            "The entered window size '{}' is invalid, it should be a valid non-zero integer.".format(date_window_size))
 
-    def test_none_value(self):
+    def test_non_value(self):
         """
         Test if no window size is not passed in the config, then set it to the default value.
         """

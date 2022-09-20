@@ -1,16 +1,11 @@
 """
 Test tap gets all updates for streams with updates published to the events stream
 """
-import json
 from datetime import datetime, timedelta
-from time import sleep
-from random import random
 
-import requests
-from tap_tester import menagerie, runner, connections, LOGGER
+from tap_tester import runner, connections
 from base import BaseTapTest
-from utils import \
-    get_catalogs, update_object, update_payment_intent, create_object, delete_object
+from utils import update_object, create_object, delete_object
 
 
 class TestEventUpdatesSyncStart(BaseTapTest):

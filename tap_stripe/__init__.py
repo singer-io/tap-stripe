@@ -385,8 +385,8 @@ def reduce_foreign_keys(rec, stream_name):
                         stripe.error.RateLimitError,
                         max_tries=7,
                         factor=2)
-def new_request(self, method, url, params=None, headers=None):
-    '''The new request function to overwrite the request() function of the APIRequestor class of SDK.'''
+def api_request(self, method, url, params=None, headers=None):
+    '''The request function to overwrite the request() function of the APIRequestor class of SDK.'''
     rbody, rcode, rheaders, my_api_key = self.request_raw(
         method.lower(), url, params, headers)
     resp = self.interpret_response(rbody, rcode, rheaders)
@@ -394,7 +394,7 @@ def new_request(self, method, url, params=None, headers=None):
 
 
 # To retry RateLimitError, we replaced the request() function of the APIRequestor class.
-APIRequestor.request = new_request
+APIRequestor.request = api_request
 
 def paginate(sdk_obj, filter_key, start_date, end_date, request_args=None, limit=100):
     yield from sdk_obj.list(
@@ -469,9 +469,8 @@ def sync_stream(stream_name):
                 # bookmark/start_date is older than 30 days.
                 start_window = int(max(bookmark, (singer.utils.now() - timedelta(days=30)).timestamp()))
                 if start_window != bookmark:
-                    LOGGER.warning("Provided current bookmark/start_date for newly created event records is older" \
-                                   " than the last 30 days. So, starting sync for the last 30 days as Stripe Event API" \
-                                    " returns data for the last 30 days only.")
+                    LOGGER.warning("Provided start_date or current bookmark for newly created event records is older than 30 days.")
+                    LOGGER.warning("The Stripe Event API returns data for the last 30 days only. So, syncing event data from 30 days only.")
             # pylint:disable=fixme
             # TODO: This may be an issue for other streams' created_at
             # entries, but to keep the surface small, doing this only for
@@ -734,9 +733,9 @@ def sync_event_updates(stream_name):
     # Start sync for event updates record from the last 30 days before if bookmark/start_date is older than 30 days.
     max_created = int(max(bookmark_value, (epoch_to_dt(sync_start_time) - timedelta(days=30)).timestamp()))
     if max_created != bookmark_value:
-        LOGGER.warning("Provided current bookmark/start_date for event updates is older than the last 30 days."\
-                        "So, starting sync for the last 30 days as Stripe Event API returns data for the last 30 "\
-                        "days only.")
+        LOGGER.warning("Provided start_date or current bookmark for newly created event records is older than 30 days.")
+        LOGGER.warning("The Stripe Event API returns data for the last 30 days only. So, syncing event data from 30 days only.")
+
     date_window_start = max_created
     date_window_end = max_created + events_update_date_window_size
 

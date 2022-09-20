@@ -275,14 +275,12 @@ def configure_stripe_client():
 def unwrap_data_objects(rec):
     """
     Looks for levels in the record that look like:
-
     {
         "url": ...,
         "object": ...,
         "data": {...}|[...]|...,
         ...
     }
-
     and recursively de-nests any that match by bringing the "data"
     value up to its parent's level.
     """
@@ -583,7 +581,6 @@ def convert_dict_to_stripe_object(record):
 def sync_stream(stream_name, is_sub_stream=False):
     """
     Sync each stream, looking for newly created records. Updates are captured by events stream.
-
     :param
     stream_name - Name of the stream
     is_sub_stream - Check whether the function is called via the parent stream(only parent/both parent-child are selected)
@@ -949,9 +946,7 @@ def recursive_to_dict(some_obj):
 def sync_event_updates(stream_name, is_sub_stream):
     '''
     Get updates via events endpoint
-
     look at 'events update' bookmark and pull events after that
-
     :param
     stream_name - Name of the stream
     is_sub_stream - Check whether the function is called via the parent stream(only parent/both are selected)

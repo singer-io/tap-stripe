@@ -16,18 +16,18 @@ class MockRequest():
 
 class TestRateLimitError(unittest.TestCase):
     """
-    Test that the tap retries each request 6 times on rate limit error.
+    Test that the tap retries each request 7 times on rate limit error.
     """
     
     @mock.patch("time.sleep")
     def test_retry_count_of_429_error(self, mock_sleep):
         """
-        Test that the tap retries each request 6 times on 429 error.
-        - Verify that `time.sleep` was called 5 times. (1 count less than no of retry count)
+        Test that the tap retries each request 7 times on 429 error.
+        - Verify that `time.sleep` was called 6 times. (1 count less than no of retry count)
         """
         mock_request = MockRequest('url')
         with self.assertRaises(stripe.error.RateLimitError) as e:
             new_request(mock_request, 'GET', 'dummy_url')
 
-        # Verify that `time.sleep` was called 5 times.
-        self.assertEqual(mock_sleep.call_count, 5)
+        # Verify that `time.sleep` was called 6 times.
+        self.assertEqual(mock_sleep.call_count, 6)

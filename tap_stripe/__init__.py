@@ -452,12 +452,11 @@ def reduce_foreign_keys(rec, stream_name):
                     rec['lines'][k] = [li.to_dict_recursive() for li in val]
     return rec
 
-# Retry 429 RateLimitError 5 times.
-@backoff.on_exception(backoff.constant,
+# Retry 429 RateLimitError 7 times.
+@backoff.on_exception(backoff.expo,
                         stripe.error.RateLimitError,
-                        max_tries=6,
-                        interval=10,
-                        jitter=None)
+                        max_tries=7,
+                        factor=2)
 def new_request(self, method, url, params=None, headers=None):
     '''The new request function to overwrite the request() function of the APIRequestor class of SDK.'''
     rbody, rcode, rheaders, my_api_key = self.request_raw(

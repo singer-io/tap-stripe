@@ -733,7 +733,7 @@ def sync_event_updates(stream_name):
     # Start sync for event updates record from the last 30 days before if bookmark/start_date is older than 30 days.
     max_created = int(max(bookmark_value, (epoch_to_dt(sync_start_time) - timedelta(days=30)).timestamp()))
     if max_created != bookmark_value:
-        LOGGER.warning("Provided start_date or current bookmark for newly created event records is older than 30 days.")
+        LOGGER.warning("Provided start_date or current bookmark for event updates is older than 30 days.")
         LOGGER.warning("The Stripe Event API returns data for the last 30 days only. So, syncing event data from 30 days only.")
 
     date_window_start = max_created

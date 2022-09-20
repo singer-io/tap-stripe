@@ -1,7 +1,7 @@
 import unittest
 from unittest import mock
 import stripe
-from tap_stripe import new_request
+from tap_stripe import api_request
 
 class MockRequest():
     '''Mock Request object'''
@@ -27,7 +27,7 @@ class TestRateLimitError(unittest.TestCase):
         """
         mock_request = MockRequest('url')
         with self.assertRaises(stripe.error.RateLimitError) as e:
-            new_request(mock_request, 'GET', 'dummy_url')
+            api_request(mock_request, 'GET', 'dummy_url')
 
         # Verify that `time.sleep` was called 6 times.
         self.assertEqual(mock_sleep.call_count, 6)

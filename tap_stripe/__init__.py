@@ -7,10 +7,12 @@ import re
 from datetime import datetime, timedelta
 import stripe
 import stripe.error
+from stripe.api_requestor import APIRequestor
 from stripe.stripe_object import StripeObject
 import singer
 from singer import utils, Transformer, metrics
 from singer import metadata
+import backoff
 
 REQUIRED_CONFIG_KEYS = [
     "start_date",
@@ -378,6 +380,23 @@ def reduce_foreign_keys(rec, stream_name):
                     rec['lines'][k] = [li.to_dict_recursive() for li in val]
     return rec
 
+# Retry 429 RateLimitError 7 times.
+@backoff.on_exception(backoff.expo,
+                        stripe.error.RateLimitError,
+                        max_tries=7,
+                        factor=2)
+def new_request(self, method, url, params=None, headers=None):
+    '''The new request function to overwrite the request() function of the APIRequestor class of SDK.'''
+    rbody, rcode, rheaders, my_api_key = self.request_raw(
+        method.lower(), url, params, headers, is_streaming=False
+    )
+    resp = self.interpret_response(rbody, rcode, rheaders)
+    LOGGER.debug('request id : %s', resp.request_id)
+    return resp, my_api_key
+
+
+# To retry RateLimitError, we replaced the request() function of the APIRequestor class.
+APIRequestor.request = new_request
 
 def paginate(sdk_obj, filter_key, start_date, end_date, request_args=None, limit=100):
     yield from sdk_obj.list(

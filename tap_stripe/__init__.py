@@ -643,9 +643,8 @@ def sync_stream(stream_name, is_sub_stream=False):
                 # bookmark/start_date is older than 30 days.
                 start_window = int(max(bookmark, (singer.utils.now() - timedelta(days=30)).timestamp()))
                 if start_window != bookmark:
-                    LOGGER.warning("Provided current bookmark/start_date for newly created event records is older" \
-                                   " than the last 30 days. So, starting sync for the last 30 days as Stripe Event API" \
-                                    " returns data for the last 30 days only.")
+                    LOGGER.warning("Provided start_date or current bookmark for newly created event records is older than 30 days")
+                    LOGGER.warning("The Stripe Event API returns data for the last 30 days only. So, syncing event data from 30 days only.")
 
             # pylint:disable=fixme
             # TODO: This may be an issue for other streams' created_at
@@ -991,8 +990,8 @@ def sync_event_updates(stream_name, is_sub_stream):
     # Start sync for event updates record from the last 30 days before if bookmark/start_date is older than 30 days.
     max_created = int(max(bookmark_value, (epoch_to_dt(sync_start_time) - timedelta(days=30)).timestamp()))
     if max_created != bookmark_value:
-        LOGGER.warning("Provided current bookmark/start_date for event updates is older than the last 30 days."\
-            "So, starting sync for the last 30 days as Stripe Event API returns data for the last 30 days only.")
+        LOGGER.warning("Provided start_date or current bookmark for event updates is older than 30 days.")
+        LOGGER.warning("The Stripe Event API returns data for the last 30 days only. So, syncing event data from 30 days only.")
 
     date_window_start = max_created
     date_window_end = max_created + events_update_date_window_size
@@ -1094,8 +1093,6 @@ def sync_event_updates(stream_name, is_sub_stream):
     max_created = max(max_created, sync_start_time - events_update_date_window_size)
     write_bookmark_for_event_updates(is_sub_stream, stream_name, sub_stream_name, max_created)
 
-    singer.write_state(Context.state)
-
 
 def write_bookmark_for_event_updates(is_sub_stream, stream_name, sub_stream_name, max_created):
     """
@@ -1107,7 +1104,6 @@ def write_bookmark_for_event_updates(is_sub_stream, stream_name, sub_stream_name
                               stream_name + '_events',
                               'updates_created',
                               max_created)
-        singer.write_state(Context.state)
 
     # Write the child bookmark value only when the child is selected
     if sub_stream_name and Context.is_selected(sub_stream_name):
@@ -1115,7 +1111,8 @@ def write_bookmark_for_event_updates(is_sub_stream, stream_name, sub_stream_name
                               sub_stream_name + '_events',
                               'updates_created',
                               max_created)
-        singer.write_state(Context.state)
+
+    singer.write_state(Context.state)
 
 
 def sync():

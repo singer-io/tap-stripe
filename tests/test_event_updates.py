@@ -28,7 +28,7 @@ class TestEventUpdatesSyncStart(BaseTapTest):
 
         # AS it takes more than an hour to sync all the event_updates streams,
         # we are taking given three streams for sync
-        event_update_streams = {"subscriptions", "customers", "events"}
+        expected_event_update_streams = {"subscriptions", "customers", "events"}
 
         found_catalogs = self.run_and_verify_check_mode(conn_id)
         our_catalogs = [catalog for catalog in found_catalogs
@@ -54,7 +54,7 @@ class TestEventUpdatesSyncStart(BaseTapTest):
                                     message.get('data').get('updated_by_event_type', None)]
 
                 for record in events_records_data:
-                    self.assertGreaterEqual(record.get('updated'), events_start_date)
+                    self.assertGreaterEqual(record.get('updated'), expected_event_update_streams)
 
 
 class EventUpdatesTest(BaseTapTest):

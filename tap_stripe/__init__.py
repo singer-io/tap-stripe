@@ -643,7 +643,7 @@ def sync_stream(stream_name, is_sub_stream=False):
                 # bookmark/start_date is older than 30 days.
                 start_window = int(max(bookmark, (singer.utils.now() - timedelta(days=30)).timestamp()))
                 if start_window != bookmark:
-                    LOGGER.warning("Provided start_date or current bookmark for newly created event records is older than 30 days")
+                    LOGGER.warning("Provided start_date or current bookmark for newly created event records is older than 30 days.")
                     LOGGER.warning("The Stripe Event API returns data for the last 30 days only. So, syncing event data from 30 days only.")
 
             # pylint:disable=fixme

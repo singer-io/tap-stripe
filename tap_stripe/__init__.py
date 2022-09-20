@@ -388,10 +388,8 @@ def reduce_foreign_keys(rec, stream_name):
 def new_request(self, method, url, params=None, headers=None):
     '''The new request function to overwrite the request() function of the APIRequestor class of SDK.'''
     rbody, rcode, rheaders, my_api_key = self.request_raw(
-        method.lower(), url, params, headers, is_streaming=False
-    )
+        method.lower(), url, params, headers)
     resp = self.interpret_response(rbody, rcode, rheaders)
-    LOGGER.debug('request id : %s', resp.request_id)
     return resp, my_api_key
 
 

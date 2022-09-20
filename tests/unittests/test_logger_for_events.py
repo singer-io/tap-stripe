@@ -21,7 +21,6 @@ BOOKMARK_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 @mock.patch("singer.write_record")
 @mock.patch('singer.utils.now', return_value = datetime.strptime("2022-05-01T08:30:50Z", BOOKMARK_FORMAT))
 @mock.patch("tap_stripe.reduce_foreign_keys", return_value = {"created": 16452804585})
-@mock.patch("tap_stripe.convert_dict_to_stripe_object", return_value = {"created": "2022-02-17T00:00:00"})
 @mock.patch("tap_stripe.paginate", return_value = [MockClass()])
 @mock.patch("tap_stripe.Context.get_catalog_entry")
 @mock.patch("tap_stripe.singer.metadata.to_map")
@@ -33,7 +32,7 @@ BOOKMARK_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 class TestLoggerWarningForEvents(unittest.TestCase):
 
     def test_date_window_logger(self, mock_get_bookmark_for_stream, mock_sync_substream, mock_dt_to_epoch, mock_epoch_to_dt, mock_get, mock_metadata_map,
-                                mock_get_catalog_entry, mock_paginate, mock_convert_dict_to_stripe_object, mock_reduce_foreign_keys,
+                                mock_get_catalog_entry, mock_paginate, mock_reduce_foreign_keys,
                                 mock_utils_now, mock_write_record, mock_logger):
         """
         Test that tap prints expected warning message when bookmark value of before 30 days is passed in the state.
@@ -43,6 +42,9 @@ class TestLoggerWarningForEvents(unittest.TestCase):
         Context.new_counts['events'] = 1
         sync_stream("events")
 
+        expected_logger_warning = [
+            mock.call("Provided start_date or current bookmark for newly created event records is older than 30 days."),
+            mock.call("The Stripe Event API returns data for the last 30 days only. So, syncing event data from 30 days only.")
+        ]
         # Verify warning message for bookmark of less than last 30 days.
-        mock_logger.assert_called_with("Provided current bookmark/start_date for newly created event records is older than the last 30 days."\
-            " So, starting sync for the last 30 days as Stripe Event API returns data for the last 30 days only.")
+        self.assertEqual(mock_logger.mock_calls, expected_logger_warning)

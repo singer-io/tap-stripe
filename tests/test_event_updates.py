@@ -33,7 +33,7 @@ class TestEventUpdatesSyncStart(BaseTapTest):
         found_catalogs = self.run_and_verify_check_mode(conn_id)
         our_catalogs = [catalog for catalog in found_catalogs
                         if catalog.get('tap_stream_id') in
-                        event_update_streams]
+                        expected_event_update_streams]
         self.select_all_streams_and_fields(conn_id, our_catalogs, select_all_fields=True)
 
         # Getting a date before 30 days of current date-time
@@ -45,7 +45,7 @@ class TestEventUpdatesSyncStart(BaseTapTest):
         # Get the set of records from the sync
         synced_records = runner.get_records_from_target_output()
         
-        for stream in event_update_streams:
+        for stream in expected_event_update_streams:
             with self.subTest(stream=stream):
 
                 # Get event-based records based on the newly added field `updated_by_event_type`
@@ -54,7 +54,7 @@ class TestEventUpdatesSyncStart(BaseTapTest):
                                     message.get('data').get('updated_by_event_type', None)]
 
                 for record in events_records_data:
-                    self.assertGreaterEqual(record.get('updated'), expected_event_update_streams)
+                    self.assertGreaterEqual(record.get('updated'), events_start_date)
 
 
 class EventUpdatesTest(BaseTapTest):

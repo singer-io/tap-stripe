@@ -21,7 +21,7 @@ class TestEventUpdatesSyncStart(BaseTapTest):
         """Configuration properties required for the tap."""
 
         props = super().get_properties(*args)
-        props['event_date_window_size'] = 35
+        props['event_date_window_size'] = 35 # An optional config param to collect data in specified date window.
         return props
 
     def test_run(self):

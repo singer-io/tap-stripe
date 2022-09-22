@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.5.3
+  * Reduce API calls [#152](https://github.com/singer-io/tap-stripe/pull/152)
+    * Added support of config parameter event_date_date_window.
+    * Default event_date_date_window is 7 days and maximum possible value of it is 30 days.
+    * Make API call of event_updates for last 30 days only.
+    * If start_date or last saved bookmark value is before 30 days, then start the sync from the last 30 days only.
+    * Write maximum of replication key value or sync_start_time - event_date_window as bookmark for event_updates.
+    * Retry 429 error 7 times with exponential factor 2.
+
 ## 1.5.2
   * Event date window reduced from one week to one day [#120](https://github.com/singer-io/tap-stripe/pull/120)
 

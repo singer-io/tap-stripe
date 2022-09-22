@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.1
+  * Reduce API calls to stripe [#150](https://github.com/singer-io/tap-stripe/pull/150)
+    * Added support of config parameter event_date_date_window.
+    * Default event_date_date_window is 7 days and maximum possible value of it is 30 days.
+    * Make API call of event_updates for last 30 days only. If start_date or last saved bookmark value is before 30 days, then start the sync from the last 30 days only.
+    * Write maximum of replication key value or sync_start_time - event_date_window as bookmark for event_updates.
+    * Retry 429 error 7 times with exponential factor 2.
+
 ## 2.0.0
   * Upgraded SDK and API version[#105](https://github.com/singer-io/tap-stripe/pull/105)
   * Added event_type in all the schemas [#123](https://github.com/singer-io/tap-stripe/pull/123)

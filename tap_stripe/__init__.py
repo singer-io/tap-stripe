@@ -7,10 +7,12 @@ import re
 from datetime import datetime, timedelta
 import stripe
 import stripe.error
+from stripe.api_requestor import APIRequestor
 from stripe.stripe_object import StripeObject
 import singer
 from singer import utils, Transformer, metrics
 from singer import metadata
+import backoff
 
 REQUIRED_CONFIG_KEYS = [
     "start_date",
@@ -96,7 +98,8 @@ IMMUTABLE_STREAM_LOOKBACK = 300 # 5 min in epoch time, Stripe accuracy is to the
 
 LOGGER = singer.get_logger()
 
-DEFAULT_DATE_WINDOW_SIZE = 30 #days
+DEFAULT_DATE_WINDOW_SIZE = 30 # default date window to fetch newly created records
+DEFAULT_EVENT_UPDATE_DATE_WINDOW_SIZE = 7 # default date window to fetch event updates
 
 class Context():
     config = {}
@@ -106,6 +109,9 @@ class Context():
     stream_map = {}
     new_counts = {}
     updated_counts = {}
+    window_size = DEFAULT_DATE_WINDOW_SIZE # By default fetch data from last 30 days for newly created records.
+    event_update_window_size = DEFAULT_EVENT_UPDATE_DATE_WINDOW_SIZE # By default collect data of 7 days in one API
+                                                       # call for event_updates
 
     @classmethod
     def get_catalog_entry(cls, stream_name):
@@ -374,6 +380,21 @@ def reduce_foreign_keys(rec, stream_name):
                     rec['lines'][k] = [li.to_dict_recursive() for li in val]
     return rec
 
+# Retry 429 RateLimitError 7 times.
+@backoff.on_exception(backoff.expo,
+                        stripe.error.RateLimitError,
+                        max_tries=7,
+                        factor=2)
+def api_request(self, method, url, params=None, headers=None):
+    '''The request function to overwrite the request() function of the APIRequestor class of SDK.'''
+    rbody, rcode, rheaders, my_api_key = self.request_raw(
+        method.lower(), url, params, headers)
+    resp = self.interpret_response(rbody, rcode, rheaders)
+    return resp, my_api_key
+
+
+# To retry RateLimitError, we replaced the request() function of the APIRequestor class.
+APIRequestor.request = api_request
 
 def paginate(sdk_obj, filter_key, start_date, end_date, request_args=None, limit=100):
     yield from sdk_obj.list(
@@ -395,7 +416,7 @@ def dt_to_epoch(dt):
 def epoch_to_dt(epoch_ts):
     return datetime.fromtimestamp(epoch_ts)
 
-# pylint: disable=too-many-locals
+# pylint: disable=too-many-locals, too-many-statements
 def sync_stream(stream_name):
     """
     Sync each stream, looking for newly created records. Updates are captured by events stream.
@@ -432,7 +453,7 @@ def sync_stream(stream_name):
     with Transformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
         end_time = dt_to_epoch(utils.now())
 
-        window_size = float(Context.config.get('date_window_size', DEFAULT_DATE_WINDOW_SIZE))
+        window_size = Context.window_size
 
         if DEFAULT_DATE_WINDOW_SIZE != window_size:
             LOGGER.info('Using non-default date window size of %.2f',window_size)
@@ -443,6 +464,13 @@ def sync_stream(stream_name):
         # when they are available via the API, so these streams will need
         # a short lookback window.
         if stream_name in IMMUTABLE_STREAMS:
+            if stream_name == "events":
+                # Start sync for newly created event records from the last 30 days before if
+                # bookmark/start_date is older than 30 days.
+                start_window = int(max(bookmark, (singer.utils.now() - timedelta(days=30)).timestamp()))
+                if start_window != bookmark:
+                    LOGGER.warning("Provided start_date or current bookmark for newly created event records is older than 30 days.")
+                    LOGGER.warning("The Stripe Event API returns data for the last 30 days only. So, syncing event data from 30 days only.")
             # pylint:disable=fixme
             # TODO: This may be an issue for other streams' created_at
             # entries, but to keep the surface small, doing this only for
@@ -693,15 +721,23 @@ def sync_event_updates(stream_name):
     '''
     LOGGER.info("Started syncing event based updates")
 
-    date_window_size = 60 * 60 * 24 # Seconds in a day
+    event_update_window_size = Context.event_update_window_size
+    events_update_date_window_size = int(60 * 60 * 24 * event_update_window_size) # event_update_window_size in seconds
+    sync_start_time = dt_to_epoch(utils.now())
 
     bookmark_value = singer.get_bookmark(Context.state,
                                          stream_name + '_events',
                                          'updates_created') or \
                      int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
-    max_created = bookmark_value
+
+    # Start sync for event updates record from the last 30 days before if bookmark/start_date is older than 30 days.
+    max_created = int(max(bookmark_value, (epoch_to_dt(sync_start_time) - timedelta(days=30)).timestamp()))
+    if max_created != bookmark_value:
+        LOGGER.warning("Provided start_date or current bookmark for event updates is older than 30 days.")
+        LOGGER.warning("The Stripe Event API returns data for the last 30 days only. So, syncing event data from 30 days only.")
+
     date_window_start = max_created
-    date_window_end = max_created + date_window_size
+    date_window_end = max_created + events_update_date_window_size
 
     stop_paging = False
 
@@ -785,12 +821,24 @@ def sync_event_updates(stream_name):
         # The events stream returns results in descending order, so we
         # cannot bookmark until the entire page is processed
         date_window_start = date_window_end
-        date_window_end = date_window_end + date_window_size
+        date_window_end = date_window_end + events_update_date_window_size
         singer.write_bookmark(Context.state,
                               stream_name + '_events',
                               'updates_created',
                               max_created)
         singer.write_state(Context.state)
+
+    # max_created is the maximum replication key value among all records.
+    # sync_start_time is epoch time when tap started to sync event updates.
+    # events_update_date_window_size is the size of date_window to make API requests for event updates.
+    # Take back sync_start_time events_update_date_window_size(default 7, maximum 30) days behind to compare
+    # with max_created value. Save a maximum of max_created and sync_start_time because stripe returns
+    # records of the last 30 days for event updates.
+    max_created = max(max_created, sync_start_time - events_update_date_window_size)
+    singer.write_bookmark(Context.state,
+                          stream_name + '_events',
+                          'updates_created',
+                          max_created)
 
     singer.write_state(Context.state)
 
@@ -816,6 +864,29 @@ def sync():
             if STREAM_TO_TYPE_FILTER.get(stream_name):
                 sync_event_updates(stream_name)
 
+def get_date_window_size(param, default_value):
+    """
+    Get date_window value from config, if the value is passed.
+    Else return the default value.
+    param: Name of param to fetch from the config. (e.g. date_window_size)
+    default_value: Default value to return for the given param.
+    """
+    window_size = Context.config.get(param)
+
+    # If window_size is not passed in the config then set it to the default(30 days)
+    if window_size is None:
+        return default_value
+
+    # Return float of window_size which is passed in the config and is in the valid format of int, float or string.
+    if ((type(window_size) in [int, float]) or
+        (isinstance(window_size, str) and window_size.replace('.', '', 1).isdigit())) and \
+            float(window_size) > 0:
+        return float(window_size)
+    else:
+        # Raise Exception if window_size value is 0, "0" or invalid string.
+        raise Exception("The entered window size '{}' is invalid, it should"\
+            " be a valid non-zero integer.".format(window_size))
+
 @utils.handle_top_exception(LOGGER)
 def main():
     # Parse command line arguments
@@ -835,6 +906,14 @@ def main():
 
         Context.config = args.config
         Context.state = args.state
+        Context.window_size = get_date_window_size('date_window_size', DEFAULT_DATE_WINDOW_SIZE)
+        Context.event_update_window_size = get_date_window_size('event_date_window_size', DEFAULT_EVENT_UPDATE_DATE_WINDOW_SIZE)
+        # Reset event_update_window_size to 30 days if it is greater than 30 because Stripe Event API returns data of
+        # the last 30 days only.
+        if Context.event_update_window_size > 30:
+            Context.event_update_window_size = 30
+            LOGGER.warning("Using a default window size of 30 days as Stripe Event API returns data of the last 30 days only.")
+
         configure_stripe_client()
         validate_dependencies()
         try:

@@ -44,7 +44,7 @@ class BaseTapTest(unittest.TestCase):
 
         return_value = {
             'start_date': dt.strftime(dt.today(), self.START_DATE_FORMAT),
-            'account_id': os.getenv('TAP_STRIPE_ACCOUNT_ID'),
+            'account_id': os.getenv('TAP_STRIPE_ACCOUNT_ID')
         }
 
         if original:

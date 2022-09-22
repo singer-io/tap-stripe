@@ -2,7 +2,6 @@ version: 2.1
 
 orbs:
   slack: circleci/slack@3.4.2
-
 executors:
   tap_tester:
     docker:
@@ -71,7 +70,13 @@ jobs:
           name: 'Unit Tests'
           command: |
             source /usr/local/share/virtualenvs/tap-stripe/bin/activate
-            nosetests tests/unittests
+            pip install coverage parameterized
+            nosetests --with-coverage --cover-erase --cover-package=tap_stripe --cover-html-dir=htmlcov tests/unittests
+            coverage html
+      - store_test_results:
+          path: test_output/report.xml
+      - store_artifacts:
+          path: htmlcov
   run_integration_test:
     parameters:
       file:

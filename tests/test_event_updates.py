@@ -17,6 +17,13 @@ class TestEventUpdatesSyncStart(BaseTapTest):
     def name():
         return "tt_stripe_event_sync_start"
 
+    def get_properties(self, *args):
+        """Configuration properties required for the tap."""
+
+        props = super().get_properties(*args)
+        props['event_date_window_size'] = 35 # An optional config param to collect data in specified date window.
+        return props
+
     def test_run(self):
         """
         Verify that each record is from the last 30 days.

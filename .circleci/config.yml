@@ -71,7 +71,7 @@ jobs:
           name: 'Unit Tests'
           command: |
             source /usr/local/share/virtualenvs/tap-stripe/bin/activate
-            pip install coverage
+            pip install coverage parameterized
             nosetests --with-coverage --cover-erase --cover-package=tap_stripe --cover-html-dir=htmlcov tests/unittests
             coverage html
       - store_test_results:

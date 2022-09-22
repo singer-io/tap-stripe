@@ -25,7 +25,9 @@ Create a config file containing the stripe credentials, e.g.:
   "account_id": "acct_xxxxxxxxxxxxxxxx",
   "start_date": "2017-01-01T00:00:00Z",
   "request_timeout": 300,
-  "lookback_window": 600
+  "lookback_window": 600,
+  "event_date_window_size": 7,
+  "date_window_size": 30
 }
 ```
 

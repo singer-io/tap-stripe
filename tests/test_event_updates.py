@@ -22,6 +22,7 @@ class TestEventUpdatesSyncStart(BaseTapTest):
 
         props = super().get_properties(*args)
         props['event_date_window_size'] = 35 # An optional config param to collect data in specified date window.
+        props['date_window_size'] = 30 # An optional config param to collect data of newly created records in specified date window.
         return props
 
     def test_run(self):

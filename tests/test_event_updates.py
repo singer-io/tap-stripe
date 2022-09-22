@@ -2,7 +2,7 @@
 Test tap gets all updates for streams with updates published to the events stream
 """
 from datetime import datetime, timedelta
-
+import os
 from tap_tester import runner, connections
 from base import BaseTapTest
 from utils import update_object, create_object, delete_object
@@ -16,6 +16,13 @@ class TestEventUpdatesSyncStart(BaseTapTest):
     @staticmethod
     def name():
         return "tt_stripe_event_sync_start"
+
+    def get_properties(self, *args):
+        """Configuration properties required for the tap."""
+
+        props = super().get_properties(*args)
+        props['event_date_window_size'] = 35
+        return props
 
     def test_run(self):
         """

@@ -1,7 +1,7 @@
 # Changelog
 
 ## 1.5.3
-  * [#152](https://github.com/singer-io/tap-stripe/pull/152) Reduce API calls
+  * Reduce API calls [#152](https://github.com/singer-io/tap-stripe/pull/152)
     * Added support of config parameter event_date_date_window.
     * Default event_date_date_window is 7 days and maximum possible value of it is 30 days.
     * Make API call of event_updates for last 30 days only.

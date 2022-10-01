@@ -25,6 +25,7 @@ KNOWN_MISSING_FIELDS = {
         'default_tax_rates',
         'pending_update',
         'automatic_tax',
+        'currency',  # 7/26/2022 nested in plan, missing from top level
     },
     'products':set(),
     'invoice_items':{

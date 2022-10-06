@@ -40,6 +40,7 @@ class MinimumSelectionTest(BaseTapTest):
             "products",
             "subscription_items",
             "subscriptions", # this will create a new plan and payment method
+            "transfers",
          }
         untested_streams = {
             "payout_transactions"

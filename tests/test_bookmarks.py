@@ -1,6 +1,7 @@
 """
 Test tap sets a bookmark and respects it for the next sync of a stream
 """
+import math
 import json
 from pathlib import Path
 from random import random
@@ -84,6 +85,7 @@ class BookmarkTest(BaseTapTest):
         for _ in range(2): # create 3 records for each stream but only expect the 3rd
             for stream in self.streams_to_create:
                 self.new_objects[stream].append(create_object(stream))
+        # Why are we only expecting the last one?
         for stream in self.streams_to_create:
             new_object = create_object(stream)
             self.new_objects[stream].append(stripe_obj_to_dict(new_object))
@@ -127,9 +129,12 @@ class BookmarkTest(BaseTapTest):
 
 
         # Update one record from each stream prior to 2nd sync
-        first_sync_created, _ = self.split_records_into_created_and_updated(first_sync_records)
+        first_sync_created, first_sync_updated = self.split_records_into_created_and_updated(first_sync_records)
+        assert not first_sync_updated
         for stream in self.streams_to_create.difference(cannot_update_streams):
             # There needs to be some test data for each stream, otherwise this will break
+            # TODO - first sync expected records is only the last record which would be synced no matter what
+            #   we should actually do the first or second created record which should not be synced unless updated
             record = expected_records_first_sync[stream][0]
             if stream == 'payment_intents':
                 # updating the PaymentIntent object may require multiple attempts
@@ -171,6 +176,8 @@ class BookmarkTest(BaseTapTest):
                     len(expected_records_first_sync.get(stream)) + len(created_records[stream]),
                     msg="Expectations are invalid for full table stream {}".format(stream)
                 )
+            else:
+                raise NotImplementedError("The replication method has no tests")
 
             # created_records[stream] = self.records_data_type_conversions(created_records.get(stream))
             # updated_records[stream] = self.records_data_type_conversions(updated_records.get(stream))
@@ -193,6 +200,7 @@ class BookmarkTest(BaseTapTest):
 
                 second_sync_data = [record.get("data") for record
                                     in second_sync_records.get(stream, {}).get("messages", [])]
+                # TODO - this nameing is bad, this is all replication and primary keys, we get stream specific later
                 stream_replication_keys = self.expected_replication_keys()
                 stream_primary_keys = self.expected_primary_keys()
 
@@ -220,13 +228,21 @@ class BookmarkTest(BaseTapTest):
                             updates_replication_key = "updates_created"
                             updates_stream = stream + "_events"
 
-                            # Verify second sync's bookmarks move past the first sync's
+                            # Verify second sync's bookmarks move past the first sync's for update events
                             self.assertGreater(
                                 second_sync_state.get('bookmarks', {updates_stream: {}}).get(
-                                    updates_stream, {replication_key: -1}).get(updates_replication_key),
+                                    updates_stream, {updates_replication_key: -1}).get(updates_replication_key),
                                 first_sync_state.get('bookmarks', {updates_stream: {}}).get(
                                     updates_stream, {updates_replication_key: -1}).get(updates_replication_key)
                             )
+
+                            # Verify second sync's bookmarks move past the first sync's for create data
+                            self.assertGreater(
+                                    second_sync_state.get('bookmarks', {stream: {replication_key: -1}}).get(
+                                    stream, {replication_key: -1}).get(replication_key),
+                                    first_sync_state.get('bookmarks', {stream: {replication_key: math.inf}}).get(
+                                    stream, {replication_key: math.inf}).get(replication_key))
+
 
                             # Verify that all data of the 2nd sync is >= the bookmark from the first sync
                             first_sync_bookmark = dt.fromtimestamp(
@@ -235,6 +251,12 @@ class BookmarkTest(BaseTapTest):
                             # This assertion would fail for the child streams as it is replicated based on the parent i.e. it would fetch the parents based on
                             # the bookmark and retrieve all the child records for th parent.
                             # Hence skipping this assertion for child streams.
+
+                            # TODO - it appears from first glance that updated=created for new records
+                            #   and doesn't for updated records. we need to look at the events bookmark for updated 
+                            #   records and the regular bookmark for newly created records.
+                            #   We noticed there is a split function to attempt to split data out this way, but
+                            #   it isn't used here for some reason
                             if stream not in self.child_streams().union({'payout_transactions'}):
                                 for record in second_sync_data:
                                     date_value = record["updated"]
@@ -244,6 +266,8 @@ class BookmarkTest(BaseTapTest):
 
                 elif stream in self.expected_full_table_streams():
                     raise Exception("Expectations changed, but this test was not updated to reflect them.")
+                else:
+                    raise Exception("Replication method changed, but this test was not updated to reflect.")
 
                 # TESTING APPLICABLE TO ALL STREAMS
 

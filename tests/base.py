@@ -305,6 +305,7 @@ class BaseTapTest(BaseCase):
         updated = {}
         for stream, batch in records.items():
             bookmark_key = self.expected_replication_keys().get(stream, set())
+            assert len(bookmark_key) <= 1
             bookmark_key = bookmark_key.pop() if bookmark_key else None
             if stream not in created:
                 created[stream] = {'messages': [],

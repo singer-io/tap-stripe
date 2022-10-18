@@ -193,12 +193,14 @@ class BookmarkTest(BaseTapTest):
 
         # Get the set of records from a second sync
         second_sync_records = runner.get_records_from_target_output()
-        second_sync_created, second_sync_updated = self.split_records_into_created_and_updated(second_sync_records)
+        second_sync_created, second_sync_updated = self.split_records_into_created_and_updated(
+            second_sync_records)
 
         # Loop first_sync_records and compare against second_sync_records
         for stream in self.streams_to_create.difference(untested_streams):
             with self.subTest(stream=stream):
-                # TODO - We should test the bookmark value is correct, i.e. it is the value of the latest record to come back from the sync
+                # TODO - We should assert the bookmark value is correct, i.e. it is the value of
+                #        the latest record to come back from the sync. Add assetions.
                 second_sync_data = [record.get("data") for record
                                     in second_sync_records.get(stream, {}).get("messages", [])]
                 second_sync_created_data = [record.get("data") for record
@@ -206,7 +208,6 @@ class BookmarkTest(BaseTapTest):
                 second_sync_updated_data = [record.get("data") for record
                                             in second_sync_updated.get(stream, {}).get("messages", [])]
 
-                # TODO - this nameing is bad, this is all replication and primary keys, we get stream specific later
                 tap_replication_keys = self.expected_replication_keys()
                 tap_primary_keys = self.expected_primary_keys()
 
@@ -254,10 +255,9 @@ class BookmarkTest(BaseTapTest):
 
                             # Verify that all data of the 2nd sync is >= the bookmark from the first sync
                             first_sync_bookmark_created = dt.fromtimestamp(sync_1_value)
-
                             print(f"*** TEST - 1st sync created: {first_sync_bookmark_created}")
-                            first_sync_bookmark_updated = dt.fromtimestamp(sync_1_updated_value)
 
+                            first_sync_bookmark_updated = dt.fromtimestamp(sync_1_updated_value)
                             print(f"*** TEST - 1st sync updated: {first_sync_bookmark_updated}")
 
                             # TODO - JIRA BUG Remove after bug fix
@@ -267,12 +267,6 @@ class BookmarkTest(BaseTapTest):
                             # This assertion would fail for the child streams as it is replicated based on the parent i.e. it would fetch the parents based on
                             # the bookmark and retrieve all the child records for th parent.
                             # Hence skipping this assertion for child streams.
-
-                            # TODO - it appears from first glance that updated=created for new records
-                            #   and doesn't for updated records. we need to look at the events bookmark for updated
-                            #   records and the regular bookmark for newly created records.
-                            #   We noticed there is a split function to attempt to split data out this way, but
-                            #   it isn't used here for some reason
                             if stream not in self.child_streams().union({'payout_transactions'}):
                                 for record in second_sync_created_data:
                                     print("2nd Sync Created Record Data")

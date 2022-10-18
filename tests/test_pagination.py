@@ -26,6 +26,7 @@ class PaginationTest(BaseTapTest):
         that 251 (or more) records have been posted for that stream.
         """
         conn_id = connections.ensure_connection(self)
+        self.conn_id = conn_id
 
         incremental_streams = {key for key, value in self.expected_replication_method().items()
                                if value == self.INCREMENTAL}

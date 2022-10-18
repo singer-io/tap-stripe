@@ -33,6 +33,7 @@ class StartDateTest(BaseTapTest):
     def test_run(self):
         """Test we get a lot of data back based on the start date configured in base"""
         conn_id = connections.ensure_connection(self)
+        self.conn_id = conn_id
 
         # Select all streams and all fields within streams
         found_catalogs = self.run_and_verify_check_mode(conn_id)
@@ -86,6 +87,7 @@ class StartDateTest(BaseTapTest):
         # create a new connection with the new start_date
 
         conn_id = connections.ensure_connection(self, original_properties=False)
+        self.conn_id = conn_id
 
         # Select all streams and all fields within streams
         found_catalogs = self.run_and_verify_check_mode(conn_id)

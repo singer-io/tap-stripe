@@ -41,6 +41,7 @@ class ConversionWindowBaseTest(BaseTapTest):
         LOGGER.info("Configurable Properties Test (lookback_window)")
 
         conn_id = connections.ensure_connection(self)
+        self.conn_id = conn_id
 
         streams_to_test = {'balance_transactions'}
 

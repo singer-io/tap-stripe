@@ -260,7 +260,8 @@ class BookmarkTest(BaseTapTest):
                             first_sync_bookmark_updated = dt.fromtimestamp(sync_1_updated_value)
                             print(f"*** TEST - 1st sync updated: {first_sync_bookmark_updated}")
 
-                            # TODO - JIRA BUG Remove after bug fix
+                            # BUG - Remove following 2 code lines after bug fix
+                            #       https://jira.talendforge.org/browse/TDL-21007
                             first_sync_bookmark_created = min(first_sync_bookmark_created, first_sync_bookmark_updated)
                             first_sync_bookmark_updated = min(first_sync_bookmark_created, first_sync_bookmark_updated)
 
@@ -270,7 +271,7 @@ class BookmarkTest(BaseTapTest):
                             if stream not in self.child_streams().union({'payout_transactions'}):
                                 for record in second_sync_created_data:
                                     print("2nd Sync Created Record Data")
-                                    print(f"Updated: {record['updated']}\n {replication_key}: {record[replication_key]}")
+                                    print(f" updated: {record['updated']}\n {replication_key}: {record[replication_key]}")
                                     date_value = record["updated"]
                                     self.assertGreaterEqual(date_value,
                                                             dt.strftime(first_sync_bookmark_created, self.TS_COMPARISON_FORMAT),
@@ -279,8 +280,7 @@ class BookmarkTest(BaseTapTest):
                             if stream not in self.child_streams().union({'payout_transactions'}):
                                 for record in second_sync_updated_data:
                                     print("2nd Sync Updated Record Data")
-                                    print(f"Updated: {record['updated']}\n {replication_key}: {record[replication_key]}")
-                                    print(f"updates rep key {updates_replication_key}: {record.get(updates_replication_key)}")
+                                    print(f" updated: {record['updated']}\n {replication_key}: {record[replication_key]}")
                                     date_value = record["updated"]
                                     self.assertGreaterEqual(date_value,
                                                             dt.strftime(first_sync_bookmark_updated, self.TS_COMPARISON_FORMAT),

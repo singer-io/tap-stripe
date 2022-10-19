@@ -304,11 +304,23 @@ class BaseTapTest(BaseCase):
         created = {}
         updated = {}
         current_state = menagerie.get_state(self.conn_id)
+
         for stream, batch in records.items():
-            bookmark_state_items = list(current_state['bookmarks'][stream].items())
-            assert len(bookmark_state_items) <= 1, f"Unexpected compound bookmark_key detected: {bookmark_state_items}"
-            bookmark_key, bookmark_value = bookmark_state_items[0]
-            assert bookmark_key is not None
+            # Getting info from state because replication key isn't the same as what is used in state for each stream
+            if current_state.get('bookmarks', {stream: None}).get(stream):
+                bookmark_state_items = list(current_state['bookmarks'][stream].items())
+                assert len(bookmark_state_items) <= 1, f"Unexpected compound bookmark_key " \
+                    f"detected: {bookmark_state_items}"
+                bookmark_key, bookmark_value = bookmark_state_items[0]
+                assert bookmark_key is not None
+            else:
+                # This will not work for streams where the replications key and state key are different
+                LOGGER.warn("Failed to get replication key from state, using expected replication "
+                            "key from base instead. If key in base does not match key in the tap "
+                            "then the split will fail for this stream")
+                bookmark_key = self.expected_replication_keys().get(stream, set())
+                assert len(bookmark_key) <= 1
+                bookmark_key = bookmark_key.pop() if bookmark_key else None
 
             if stream not in created:
                 created[stream] = {'messages': [],
@@ -381,7 +393,7 @@ class BaseTapTest(BaseCase):
             int_or_float_to_decimal_keys = [
                 'percent_off', 'percent_off_precise', 'height', 'length', 'weight', 'width'
             ]
-            
+
             object_keys = [
                 'discount', 'plan', 'coupon', 'status_transitions', 'period', 'sources', 'source', 'charges', 'refunds',
                 'package_dimensions', 'price' # Convert epoch timestamp value of 'price.created' to standard datetime format. This field is available specific for invoice_line_items stream

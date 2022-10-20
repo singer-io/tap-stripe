@@ -34,6 +34,7 @@ class DiscoveryTest(BaseTapTest):
         • verify there are no duplicate metadata entries
         """
         conn_id = connections.ensure_connection(self)
+        self.conn_id = conn_id
 
         # Verify number of actual streams discovered match expected
         found_catalogs = self.run_and_verify_check_mode(conn_id)

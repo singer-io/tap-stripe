@@ -33,6 +33,7 @@ class StartDateTest(BaseTapTest):
     def test_run(self):
         """Test we get a lot of data back based on the start date configured in base"""
         conn_id = connections.ensure_connection(self)
+        self.conn_id = conn_id
 
         # Select all streams and all fields within streams
         found_catalogs = self.run_and_verify_check_mode(conn_id)
@@ -61,6 +62,7 @@ class StartDateTest(BaseTapTest):
 
         # Count actual rows synced
         first_sync_records = runner.get_records_from_target_output()
+        first_sync_created, _ = self.split_records_into_created_and_updated(first_sync_records)
 
         # set the start date for a new connection based off bookmarks largest value
         first_max_bookmarks = self.max_bookmarks_by_stream(first_sync_records)
@@ -86,6 +88,7 @@ class StartDateTest(BaseTapTest):
         # create a new connection with the new start_date
 
         conn_id = connections.ensure_connection(self, original_properties=False)
+        self.conn_id = conn_id
 
         # Select all streams and all fields within streams
         found_catalogs = self.run_and_verify_check_mode(conn_id)
@@ -95,7 +98,6 @@ class StartDateTest(BaseTapTest):
         self.select_all_streams_and_fields(conn_id, our_catalogs, select_all_fields=True)
 
         # Update a record for each stream under test prior to the 2nd sync
-        first_sync_created, _ = self.split_records_into_created_and_updated(first_sync_records)
         updated = {}  # holds id for updated objects in each stream
         for stream in new_objects:
             if stream == 'payment_intents':

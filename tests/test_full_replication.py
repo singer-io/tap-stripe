@@ -27,6 +27,7 @@ class FullReplicationTest(BaseTapTest):
             different values for the replication key
         """
         conn_id = connections.ensure_connection(self)
+        self.conn_id = conn_id
 
         # Select all streams and no fields within streams
         found_catalogs = self.run_and_verify_check_mode(conn_id)

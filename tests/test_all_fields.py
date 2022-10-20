@@ -395,6 +395,7 @@ class ALlFieldsTest(BaseTapTest):
 
         # instantiate connection
         conn_id = connections.ensure_connection(self)
+        self.conn_id = conn_id
 
         # run check mode
         found_catalogs = self.run_and_verify_check_mode(conn_id)

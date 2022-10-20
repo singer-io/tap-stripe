@@ -27,6 +27,7 @@ class CreateObjectTest(BaseTapTest):
         Verify that the created record was picked up on the second sync
         """
         conn_id = connections.ensure_connection(self)
+        self.conn_id = conn_id
 
         streams_to_create = {
             "balance_transactions",  # should be created implicity with a create in the payouts or charges streams

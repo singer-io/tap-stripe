@@ -53,13 +53,13 @@ class TestEventUpdatesSyncStart(BaseTapTest):
 
         # Get the set of records from the sync
         synced_records = runner.get_records_from_target_output()
-        
+
         for stream in expected_event_update_streams:
             with self.subTest(stream=stream):
 
                 # Get event-based records based on the newly added field `updated_by_event_type`
                 events_records_data = [message['data'] for message in synced_records.get(stream).get('messages')
-                                    if message['action'] == 'upsert' and 
+                                    if message['action'] == 'upsert' and
                                     message.get('data').get('updated_by_event_type', None)]
 
                 for record in events_records_data:
@@ -160,8 +160,12 @@ class EventUpdatesTest(BaseTapTest):
 
         # updating the PaymentIntent object may require multiple attempts
         stream = 'payment_intents'
+        self.assertGreater(len(first_sync_created[stream]["messages"]), 0,
+                           msg='We did not get any new records from '
+                           'the first sync for {}'.format(stream))
+        records = [record["data"] for record in first_sync_created[stream]["messages"]]
         if stream in streams_to_update:
-            updated_obj = update_payment_intent(stream)
+            updated_obj = update_payment_intent(stream, existing_objects=records)
             updated[stream] = updated_obj["id"]
 
         # Run a second sync job using orchestrator

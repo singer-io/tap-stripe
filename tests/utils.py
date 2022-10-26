@@ -591,7 +591,7 @@ def update_object(stream, oid):
 
     return None
 
-def update_payment_intent(stream):
+def update_payment_intent(stream, existing_objects=[]):
     """
     Update a payment_intent object.
 
@@ -604,7 +604,8 @@ def update_payment_intent(stream):
         reduce the risk of altering creates and updates on other streams, we are choosing to iterate
         through all exisitng objects and retry if a given object is already confirmed.
     """
-    existing_objects = list_all_object(stream)
+    if not existing_objects:
+        existing_objects = list_all_object(stream)
     for existing_obj in existing_objects:
         try:
             LOGGER.info("Updating %s object %s", stream, existing_obj["id"])
@@ -629,6 +630,7 @@ def update_payment_intent(stream):
             continue
 
         return updated_object
+    return None
 
 
 def delete_object(stream, oid):

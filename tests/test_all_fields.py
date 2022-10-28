@@ -25,6 +25,7 @@ KNOWN_MISSING_FIELDS = {
         'default_tax_rates',
         'pending_update',
         'automatic_tax',
+        'on_behalf_of'
     },
     'products':set(),
     'invoice_items':{

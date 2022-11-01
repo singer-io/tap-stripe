@@ -10,7 +10,7 @@ from dateutil.parser import parse
 from tap_tester import menagerie, runner, connections
 
 from base import BaseTapTest
-from utils import create_object, update_object, delete_object, get_catalogs
+from utils import create_object, update_object, update_payment_intent, delete_object, get_catalogs
 
 
 class StartDateTest(BaseTapTest):
@@ -23,6 +23,7 @@ class StartDateTest(BaseTapTest):
     • verify all data from later start data has bookmark values >= start_date
     • verify that the minimum bookmark sent to the target for the later start_date sync
       is greater than or equal to the start date
+    • verify by primary key values, that all records in the 1st sync are included in the 2nd sync.
     """
 
     @staticmethod
@@ -32,6 +33,7 @@ class StartDateTest(BaseTapTest):
     def test_run(self):
         """Test we get a lot of data back based on the start date configured in base"""
         conn_id = connections.ensure_connection(self)
+        self.conn_id = conn_id
 
         # Select all streams and all fields within streams
         found_catalogs = self.run_and_verify_check_mode(conn_id)
@@ -41,9 +43,7 @@ class StartDateTest(BaseTapTest):
         # IF THERE ARE STREAMS THAT SHOULD NOT BE TESTED
         # REPLACE THE EMPTY SET BELOW WITH THOSE STREAMS
         untested_streams = self.child_streams().union({
-            'disputes',
             'events',
-            'transfers',
             'payout_transactions'
         })
         our_catalogs = get_catalogs(conn_id, incremental_streams.difference(untested_streams))
@@ -62,6 +62,7 @@ class StartDateTest(BaseTapTest):
 
         # Count actual rows synced
         first_sync_records = runner.get_records_from_target_output()
+        first_sync_created, _ = self.split_records_into_created_and_updated(first_sync_records)
 
         # set the start date for a new connection based off bookmarks largest value
         first_max_bookmarks = self.max_bookmarks_by_stream(first_sync_records)
@@ -87,6 +88,7 @@ class StartDateTest(BaseTapTest):
         # create a new connection with the new start_date
 
         conn_id = connections.ensure_connection(self, original_properties=False)
+        self.conn_id = conn_id
 
         # Select all streams and all fields within streams
         found_catalogs = self.run_and_verify_check_mode(conn_id)
@@ -96,14 +98,17 @@ class StartDateTest(BaseTapTest):
         self.select_all_streams_and_fields(conn_id, our_catalogs, select_all_fields=True)
 
         # Update a record for each stream under test prior to the 2nd sync
-        first_sync_created, _ = self.split_records_into_created_and_updated(first_sync_records)
         updated = {}  # holds id for updated objects in each stream
         for stream in new_objects:
-            # There needs to be some test data for each stream, otherwise this will break
-            record = first_sync_created[stream]["messages"][0]["data"]
-            update_object(stream, record["id"])
+            if stream == 'payment_intents':
+                # updating the PaymentIntent object may require multiple attempts
+                record = update_payment_intent(stream)
+            else:
+                # There needs to be some test data for each stream, otherwise this will break
+                record = first_sync_created[stream]["messages"][0]["data"]
+                update_object(stream, record["id"])
             updated[stream] = record["id"]
-        
+
         # Run a sync job using orchestrator
         second_sync_record_count = self.run_and_verify_sync(conn_id, clear_state=True)
 
@@ -118,6 +123,7 @@ class StartDateTest(BaseTapTest):
         # verify that at least one record synced and less records synced than the 1st connection
         self.assertGreater(second_total_records, 0)
         self.assertLess(first_total_records, second_total_records)
+        stream_primary_keys = self.expected_primary_keys()
 
         # validate that all newly created records are greater than the start_date
         for stream in incremental_streams.difference(untested_streams):
@@ -133,6 +139,21 @@ class StartDateTest(BaseTapTest):
                 target_mark = second_min_bookmarks.get(stream, {"mark": None})
                 target_value = next(iter(target_mark.values()))  # there should be only one
 
+                record_count_1 = first_sync_record_count[stream]
+                record_count_2 = second_sync_record_count[stream]
+                primary_keys_list_1 = [tuple(message.get('data').get(expected_pk) for expected_pk in stream_primary_keys[stream])
+                                       for message in first_sync_records.get(stream).get('messages')
+                                       if message.get('action') == 'upsert']
+                primary_keys_list_2 = [tuple(message.get('data').get(expected_pk) for expected_pk in stream_primary_keys[stream])
+                                       for message in second_sync_records.get(stream).get('messages')
+                                       if message.get('action') == 'upsert']
+                primary_keys_sync_1 = set(primary_keys_list_1)
+                primary_keys_sync_2 = set(primary_keys_list_2)
+
+                # Verify by primary key values, that all records in the 1st sync are included in the 2nd sync.
+                self.assertTrue(
+                        primary_keys_sync_1.issubset(primary_keys_sync_2))
+
                 if target_value:
 
                     # it's okay if there isn't target data for a stream
@@ -141,13 +162,15 @@ class StartDateTest(BaseTapTest):
                         expected_value = self.local_to_utc(parse(self.start_date))
                         # verify that the minimum bookmark sent to the target for the second sync
                         # is greater than or equal to the start date
+
+                        # TODO - BUG https://jira.talendforge.org/browse/TDL-20911
+                        # There is a lookback window being applied to the start_date, but the lookback window should not go beyond the startdate
+                        if stream in ('balance_transactions', 'events'):
+                            expected_value = expected_value - timedelta(minutes=10)
                         self.assertGreaterEqual(target_value, expected_value)
 
                     except (OverflowError, ValueError, TypeError):
-                        print("bookmarks cannot be converted to dates, "
-                              "can't test start_date for {}".format(stream))
+                        LOGGER.warn("bookmarks cannot be converted to dates, can't test start_date for %s", stream)
 
                 if stream in updated:
                     delete_object(stream, updated[stream])
-
-

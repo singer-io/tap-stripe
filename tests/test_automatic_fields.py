@@ -26,6 +26,7 @@ class MinimumSelectionTest(BaseTapTest):
         that 251 (or more) records have been posted for that stream.
         """
         conn_id = connections.ensure_connection(self)
+        self.conn_id = conn_id
         streams_to_create = {
             # "balance_transactions",  # should be created implicity with a create in the payouts or charges streams
             "charges",
@@ -36,13 +37,13 @@ class MinimumSelectionTest(BaseTapTest):
             "invoices", # this will create an invoice_item
             "payouts",
             "plans",
+            "payment_intents",
             "products",
             "subscription_items",
             "subscriptions", # this will create a new plan and payment method
+            "transfers",
          }
         untested_streams = {
-            "disputes",
-            "transfers",
             "payout_transactions"
         }
         new_objects = {

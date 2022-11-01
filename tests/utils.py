@@ -1,7 +1,7 @@
-import logging
 import random
 import json
 import backoff
+import random
 from datetime import datetime as dt
 from datetime import time, timedelta
 from time import sleep
@@ -9,6 +9,7 @@ from time import sleep
 import stripe as stripe_client
 
 from tap_tester import menagerie
+from tap_tester import LOGGER
 from base import BaseTapTest
 
 
@@ -16,6 +17,7 @@ midnight = int(dt.combine(dt.today(), time.min).timestamp())
 NOW = dt.utcnow()
 metadata_value = {"test_value": "senorita_alice_{}@stitchdata.com".format(NOW)}
 
+stripe_client.api_version = '2020-08-27'
 stripe_client.api_key = BaseTapTest.get_credentials()["client_secret"]
 client = {
     'balance_transactions': stripe_client.BalanceTransaction,
@@ -30,6 +32,7 @@ client = {
     'payout_transactions' : None, # not a native stream to Stripe
     'payouts': stripe_client.Payout,
     'plans': stripe_client.Plan,
+    'payment_intents': stripe_client.PaymentIntent,
     'products': stripe_client.Product,
     'subscription_items': stripe_client.SubscriptionItem,
     'subscriptions': stripe_client.Subscription,
@@ -148,6 +151,7 @@ def stripe_obj_to_dict(stripe_obj):
 def list_all_object(stream, max_limit: int = 100, get_invoice_lines: bool = False):
     """Retrieve all records for an object"""
     if stream in client:
+        LOGGER.info("Acquiring all %s records", stream)
 
         if stream == "subscriptions":
             stripe_obj = client[stream].list(limit=max_limit, created={"gte": midnight})
@@ -218,16 +222,17 @@ def list_all_object(stream, max_limit: int = 100, get_invoice_lines: bool = Fals
             return objects
 
         elif stream == "customers":
-            stripe_obj = client[stream].list(limit=max_limit, created={"gte": midnight})
+            stripe_obj = client[stream].list(limit=max_limit, created={"gte": midnight},
+                                             expand=['data.sources', 'data.subscriptions', 'data.tax_ids']) # retrieve fields by passing expand paramater in SDK object
             dict_obj = stripe_obj_to_dict(stripe_obj)
 
             if dict_obj.get('data'):
                 for obj in dict_obj['data']:
 
-                    if obj['sources']:
+                    if obj.get('sources'):
                         sources = obj['sources']['data']
                         obj['sources'] = sources
-                    if obj['subscriptions']:
+                    if obj.get('subscriptions'):
                         subscription_ids = [subscription['id'] for subscription in obj['subscriptions']['data']]
                         obj['subscriptions'] = subscription_ids
 
@@ -237,12 +242,18 @@ def list_all_object(stream, max_limit: int = 100, get_invoice_lines: bool = Fals
                 return [dict_obj]
             return dict_obj
 
-
         stripe_obj = client[stream].list(limit=max_limit, created={"gte": midnight})
         dict_obj = stripe_obj_to_dict(stripe_obj)
         if dict_obj.get('data'):
             if not isinstance(dict_obj['data'], list):
                 return [dict_obj['data']]
+
+            if stream == "payment_intents":
+                for obj in dict_obj['data']:
+                    obj['charges'] = obj['charges'].get('data', [])
+                    for charge in obj['charges']:
+                        if not isinstance(charge.get('refunds'), list):
+                            charge['refunds'] = []
             return dict_obj['data']
 
         if not isinstance(dict_obj, list):
@@ -267,12 +278,31 @@ def standard_create(stream):
             percent_off=66.6,
             max_redemptions=1000000
         )
+    elif stream == 'payment_intents':
+        # Sometime due to insufficient balance, stripe throws error while creating records for other streams like charges.
+        # Create payment intent to add balance in test data with `confirm` param as true. Without `confirm` param stripe does not add balance.
+        # Reference for failure: https://app.circleci.com/pipelines/github/singer-io/tap-stripe/1278/workflows/e1bc336d-a468-4b6d-b8a2-bc2dde0768f6/jobs/4239
+        client[stream].create(
+            amount=random.randint(100, 10000),
+            currency="usd",
+            customer="cus_LAXuu6qTrq8LSf",
+            confirm=True
+        )
+
+        # Creating record for payment_intents without `confirm` param. Because confirmed payment_intents can't be updated later on and
+        # we require to update record for event_updates test case.
+        return client[stream].create(
+            amount=random.randint(100, 10000),
+            currency="usd",
+            customer="cus_LAXuu6qTrq8LSf",
+            statement_descriptor="stitchdata"
+        )
     elif stream == 'customers':
         return client[stream].create(
             address={'city': 'Philadelphia', 'country': 'US', 'line1': 'APT 2R.',
                 'line1': '666 Street Rd.', 'postal_code': '11111', 'state': 'PA'},
             description="Description {}".format(NOW),
-            email="senor_bob_{}@stitchdata.com".format(NOW),
+            email="stitchdata.test@gmail.com", # In the latest API version, it is mandatory to provide a valid email address
             metadata=metadata_value,
             name="Roberto Alicia",
             # pyment_method=, see source explanation
@@ -292,7 +322,7 @@ def standard_create(stream):
         )
     elif stream == 'payouts':
         return client[stream].create(
-            amount=random.randint(0, 10000),
+            amount=random.randint(1, 10),
             currency="usd",
             description="Comfortable cotton t-shirt {}".format(NOW),
             statement_descriptor="desc",
@@ -302,7 +332,7 @@ def standard_create(stream):
     elif stream == 'plans':
         return client[stream].create(
             active=True,
-            amount=random.randint(0, 10000),
+            amount=random.randint(1, 10000),
             currency="usd",
             interval="year",
             metadata=metadata_value,
@@ -338,34 +368,36 @@ def standard_create(stream):
             package_dimensions={"height": 92670.16, "length": 9158.65, "weight": 582.73, "width": 96656496.18},
             shippable=True,
             url='fakeurl.stitch',
+            type='good' # In the latest API version, it is mandatory to provide the value of the `type` field in the body.
         )
 
     return None
 
 @backoff.on_exception(backoff.expo,
-                      (stripe_client.error.InvalidRequestError),
+                      (stripe_client.error.InvalidRequestError,
+                          stripe_client.error.APIError,
+                          stripe_client.error.RateLimitError),
                       max_tries=2,
                       factor=2,
                       jitter=None)
 def create_object(stream):
     """Logic for creating a record for a given  object stream"""
     global NOW
-    NOW = dt.utcnow()  # update NOW time to maintain uniqueness across records
+    NOW = dt.utcnow()  # update NOW time to maintain uniqueness across record
+
+    LOGGER.info("Creating a %s record", stream)
 
     if stream in client:
         global metadata_value
         metadata_value = {"test_value": "senorita_alice_{}@stitchdata.com".format(NOW)}
 
-        if stream in {"disputes", "transfers"}:
-            return None
-
-        elif stream in {'products', 'coupons', 'plans', 'payouts'}:
+        if stream in {'products', 'coupons', 'plans', 'payouts', 'payment_intents'}:
             return standard_create(stream)
 
         elif stream == 'customers':
             customer = standard_create(stream)
             customer_dict = stripe_obj_to_dict(customer)
-            if customer_dict['subscriptions']:
+            if customer_dict.get('subscriptions'):
                 subscription_ids = [subscription['id'] for subscription in customer_dict['subscriptions']['data']]
                 customer_dict['subscriptions'] = subscription_ids
             return customer_dict
@@ -381,7 +413,7 @@ def create_object(stream):
 
         if stream == 'invoice_items':
             return client[stream].create(
-                amount=random.randint(0, 10000),
+                amount=random.randint(1, 10000),
                 currency="usd",
                 customer=cust['id'],
                 description="Comfortable cotton t-shirt {}".format(NOW),
@@ -393,7 +425,7 @@ def create_object(stream):
         elif stream == 'invoices':
             # Invoices requires the customer has an item associated with them
             item = client["{}_items".format(stream[:-1])].create(
-                amount=random.randint(0, 10000),
+                amount=random.randint(1, 10000),
                 currency="usd",
                 customer=cust['id'],
                 description="Comfortable cotton t-shirt {}".format(NOW),
@@ -468,13 +500,19 @@ def create_object(stream):
                 # proration_date= not set ^
                 tax_rates=[],  # TODO tax rates
             )
-
-        if stream == 'charges':
+        # To generate the data for the `disputes` stream, we need to provide wrong card numbers
+        #  in the `charges` API. Hence bifurcated this data creation into two.
+        # Refer documentation: https://stripe.com/docs/testing#disputes
+        if stream == 'charges' or stream == 'disputes':
+            if stream == 'disputes':
+                card_number = str(random.choice(["4000000000001976", "4000000000002685", "4000000000000259"]))
+            else:
+                card_number = "4242424242424242"
             # Create a Source, attach to new customer, then charge them.
             src = stripe_client.Source.create(
                 type='card',
                 card={
-                    "number": "4242424242424242",
+                    "number": card_number,
                     "exp_month": 2,
                     "exp_year": dt.today().year + 2,
                     "cvc": "666",
@@ -489,7 +527,7 @@ def create_object(stream):
                 metadata=metadata_value,
             )
             add_to_hidden('customers', cust['id'])
-            return client[stream].create(
+            return client['charges'].create(
                 amount=50,
                 currency="usd",
                 customer=cust['id'],
@@ -510,6 +548,14 @@ def create_object(stream):
                 # transfer_group=,  # CONNECT only
             )
 
+        if stream == 'transfers':
+            return client[stream].create(
+                amount=1,
+                currency="usd",
+                destination="acct_1DOR67LsKC35uacf",
+                transfer_group="ORDER_95"
+            )
+
     return None
 
 
@@ -519,12 +565,13 @@ def create_object(stream):
 def update_object(stream, oid):
     """
     Update a specific record for a given object.
-
     The update will always change the test_value under the metadata field
     which is found in all object streams.
     """
     global NOW
     NOW = dt.utcnow()
+
+    LOGGER.info("Updating %s object %s", stream, oid)
 
     if stream in client:
         if stream == "balance_transactions":
@@ -536,16 +583,60 @@ def update_object(stream, oid):
             #     return update_object("charges", bt['source'])
 
             return None
-
+        if stream == "payment_intents":
+            raise NotImplementedError("Use update_payment_intent instead.")
         return client[stream].modify(
             oid, metadata={"test_value": "senor_bob_{}@stitchdata.com".format(NOW)},
         )
 
     return None
 
+def update_payment_intent(stream, existing_objects=[]):
+    """
+    Update a payment_intent object.
+
+    NB: The payment_intents object cannot generate `updated` events on the metadata field.
+        Instead, updateing the payment_method will always require you to confirm the PaymentIntent.
+        Reference: https://stripe.com/docs/api/payment_intents/update
+
+        Additionally, we have observed a race condition in which a recently created  payment may
+        have been confirmed either by an `autoconfirm` charge or by actions in another test. To
+        reduce the risk of altering creates and updates on other streams, we are choosing to iterate
+        through all exisitng objects and retry if a given object is already confirmed.
+    """
+    if not existing_objects:
+        existing_objects = list_all_object(stream)
+    for existing_obj in existing_objects:
+        try:
+            LOGGER.info("Updating %s object %s", stream, existing_obj["id"])
+            updated_object = client[stream].confirm(
+                existing_obj['id'], payment_method="pm_card_visa",
+            )
+        except stripe_client.error.InvalidRequestError as err:
+            LOGGER.info("Update failed for %s object %s", stream, existing_obj["id"])
+            is_final_iteration = existing_objects.index(existing_obj) == len(existing_objects) - 1
+            is_previously_confirmed = 'previously confirmed' in err.error['message']
+
+            # throw error if no objects were able to be updated
+            if is_final_iteration and is_previously_confirmed:
+                raise RuntimeError(f"The test client has exhausted the available {stream} objects to update.") from err
+
+            # throw error if it is unrelated to the known race condition
+            elif not is_previously_confirmed:
+                raise err
+
+            # otherwise try the next object
+            LOGGER.info("Will attempt to update a new  %s object", stream)
+            continue
+
+        return updated_object
+    return None
+
 
 def delete_object(stream, oid):
     """Delete a specific record for a given object"""
+    LOGGER.info("Deleting %s object %s", stream, oid)
+
     if stream in client:
         if stream in {"payouts","charges"}:
             return None
@@ -555,9 +646,9 @@ def delete_object(stream, oid):
 
             try:
                 delete = client[stream].delete(oid)
-                logging.info("DELETE SUCCESSFUL of record {} in stream {}".format(oid, stream))
+                LOGGER.info("DELETE SUCCESSFUL of record {} in stream {}".format(oid, stream))
                 return delete
             except:
-                logging.info("DELETE FAILED of record {} in stream {}".format(oid, stream))
+                LOGGER.warn("DELETE FAILED of record {} in stream {}".format(oid, stream))
 
     return None

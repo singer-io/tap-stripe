@@ -2,17 +2,18 @@
 Setup expectations for test sub classes
 Run discovery for as a prerequisite for most tests
 """
-import unittest
 import os
 import json
 import decimal
 from datetime import datetime as dt
 from datetime import timezone as tz
+from dateutil import parser
 
-from tap_tester import connections, menagerie, runner
+from tap_tester import connections, menagerie, runner, LOGGER
+from tap_tester.base_case import BaseCase
 
 
-class BaseTapTest(unittest.TestCase):
+class BaseTapTest(BaseCase):
     """
     Setup expectations for test sub classes
     Run discovery for as a prerequisite for most tests
@@ -44,7 +45,7 @@ class BaseTapTest(unittest.TestCase):
 
         return_value = {
             'start_date': dt.strftime(dt.today(), self.START_DATE_FORMAT),
-            'account_id': os.getenv('TAP_STRIPE_ACCOUNT_ID'),
+            'account_id': os.getenv('TAP_STRIPE_ACCOUNT_ID')
         }
 
         if original:
@@ -79,12 +80,8 @@ class BaseTapTest(unittest.TestCase):
             'events': default,
             'customers': default,
             'plans': default,
-            'invoices': {
-                self.AUTOMATIC_FIELDS: {"updated"},
-                self.REPLICATION_KEYS: {"date"},
-                self.PRIMARY_KEYS: {"id"},
-                self.REPLICATION_METHOD: self.INCREMENTAL,
-            },
+            'payment_intents': default,
+            'invoices': default,
             'invoice_items': {
                 self.AUTOMATIC_FIELDS: {"updated"},
                 self.REPLICATION_KEYS: {"date"},
@@ -300,27 +297,46 @@ class BaseTapTest(unittest.TestCase):
 
                 if bk_value < min_bookmarks[stream][stream_bookmark_key]:
                     min_bookmarks[stream][stream_bookmark_key] = bk_value
-        print(min_bookmarks)
+        LOGGER.info(min_bookmarks)
         return min_bookmarks
 
     def split_records_into_created_and_updated(self, records):
         created = {}
         updated = {}
+        current_state = menagerie.get_state(self.conn_id)
+
         for stream, batch in records.items():
-            bookmark_key = self.expected_replication_keys().get(stream, set())
-            bookmark_key = bookmark_key.pop() if bookmark_key else None
+            # Getting info from state because replication key isn't the same as what is used in state for each stream
+            if current_state.get('bookmarks', {stream: None}).get(stream):
+                bookmark_state_items = list(current_state['bookmarks'][stream].items())
+                assert len(bookmark_state_items) <= 1, f"Unexpected compound bookmark_key " \
+                    f"detected: {bookmark_state_items}"
+                bookmark_key, bookmark_value = bookmark_state_items[0]
+                assert bookmark_key is not None
+            else:
+                # This will not work for streams where the replications key and state key are different
+                LOGGER.warn("Failed to get replication key from state, using expected replication "
+                            "key from base instead. If key in base does not match key in the tap "
+                            "then the split will fail for this stream")
+                bookmark_key = self.expected_replication_keys().get(stream, set())
+                assert len(bookmark_key) <= 1
+                bookmark_key = bookmark_key.pop() if bookmark_key else None
+
             if stream not in created:
                 created[stream] = {'messages': [],
                                    'schema': batch['schema'],
                                    'key_names' : batch.get('key_names'),
                                    'table_version': batch.get('table_version')}
+            # add the records which are created in the created dictionary
             created[stream]['messages'] += [m for m in batch['messages']
                                                 if m['data'].get("updated") == m['data'].get(bookmark_key)]
+
             if stream not in updated:
                 updated[stream] = {'messages': [],
                                    'schema': batch['schema'],
                                    'key_names' : batch.get('key_names'),
                                    'table_version': batch.get('table_version')}
+            # add the records which are updated in the updated dictionary
             updated[stream]['messages'] += [m for m in batch['messages']
                                                 if m['data'].get("updated") != m['data'].get(bookmark_key)]
         return created, updated
@@ -377,9 +393,10 @@ class BaseTapTest(unittest.TestCase):
             int_or_float_to_decimal_keys = [
                 'percent_off', 'percent_off_precise', 'height', 'length', 'weight', 'width'
             ]
+
             object_keys = [
-                'discount', 'plan', 'coupon', 'status_transitions', 'period', 'sources', 'source',
-                'package_dimensions',
+                'discount', 'plan', 'coupon', 'status_transitions', 'period', 'sources', 'source', 'charges', 'refunds',
+                'package_dimensions', 'price' # Convert epoch timestamp value of 'price.created' to standard datetime format. This field is available specific for invoice_line_items stream
             ]
 
             # timestamp to datetime
@@ -429,7 +446,7 @@ class BaseTapTest(unittest.TestCase):
         found_catalog_names = set(map(lambda c: c['tap_stream_id'], found_catalogs))
         diff = self.expected_streams().symmetric_difference(found_catalog_names)
         self.assertEqual(len(diff), 0, msg="discovered schemas do not match: {}".format(diff))
-        print("discovered schemas are OK")
+        LOGGER.info("discovered schemas are OK")
 
         return found_catalogs
 
@@ -476,7 +493,7 @@ class BaseTapTest(unittest.TestCase):
             catalog_entry = menagerie.get_annotated_schema(conn_id, cat['stream_id'])
             # Verify all testable streams are selected
             selected = catalog_entry.get('annotated-schema').get('selected')
-            print("Validating selection on {}: {}".format(cat['stream_name'], selected))
+            LOGGER.info("Validating selection on %s: %s", cat['stream_name'], selected)
             if cat['stream_name'] not in streams_to_select:
                 self.assertFalse(selected, msg="Stream selected, but not testable.")
                 continue # Skip remaining assertions if we aren't selecting this stream
@@ -486,7 +503,7 @@ class BaseTapTest(unittest.TestCase):
                 # Verify all fields within each selected stream are selected
                 for field, field_props in catalog_entry.get('annotated-schema').get('properties').items():
                     field_selected = field_props.get('selected')
-                    print("\tValidating selection on {}.{}: {}".format(cat['stream_name'], field, field_selected))
+                    LOGGER.info("\tValidating selection on %s.%s: %s", cat['stream_name'], field, field_selected)
                     self.assertTrue(field_selected, msg="Field not selected.")
             else:
                 # Verify only automatic fields are selected
@@ -523,3 +540,7 @@ class BaseTapTest(unittest.TestCase):
         super().__init__(*args, **kwargs)
         self.start_date = self.get_properties().get('start_date')
         self.maxDiff=None
+
+
+    def dt_to_ts(self, dtime):
+        return parser.parse(dtime).timestamp()

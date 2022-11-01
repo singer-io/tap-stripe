@@ -1,15 +1,69 @@
 """
 Test tap gets all updates for streams with updates published to the events stream
 """
-import json
-from time import sleep
-from random import random
+from datetime import datetime, timedelta
 
-import requests
-from tap_tester import menagerie, runner, connections
+from tap_tester import runner, connections, LOGGER
 from base import BaseTapTest
-from utils import \
-    get_catalogs, update_object, create_object, delete_object
+from utils import update_object, update_payment_intent, create_object, delete_object
+
+
+class TestEventUpdatesSyncStart(BaseTapTest):
+    """
+    Test for event update and event creation records of streams.
+    Even if the start date is set before 30 days, no record before 30 days will be received.
+    """
+    @staticmethod
+    def name():
+        return "tt_stripe_event_sync_start"
+
+    def get_properties(self, *args):
+        """Configuration properties required for the tap."""
+
+        props = super().get_properties(*args)
+        props['event_date_window_size'] = 35 # An optional config param to collect data of event_updates in specified date window.
+        props['date_window_size'] = 30 # An optional config param to collect data of newly created records in specified date window.
+        return props
+
+    def test_run(self):
+        """
+        Verify that each record is from the last 30 days.
+        """
+
+        # Setting start_date to 32 days before today
+        self.start_date = datetime.strftime(datetime.today() - timedelta(days=32), self.START_DATE_FORMAT)
+        conn_id = connections.ensure_connection(self, original_properties=False)
+        self.conn_id = conn_id
+
+        # AS it takes more than an hour to sync all the event_updates streams,
+        # we are taking given three streams for sync
+        expected_event_update_streams = {"subscriptions", "customers", "events"}
+
+        found_catalogs = self.run_and_verify_check_mode(conn_id)
+        our_catalogs = [catalog for catalog in found_catalogs
+                        if catalog.get('tap_stream_id') in
+                        expected_event_update_streams]
+        self.select_all_streams_and_fields(conn_id, our_catalogs, select_all_fields=True)
+
+        # Getting a date before 30 days of current date-time
+        events_start_date = datetime.strftime(datetime.now() - timedelta(days=30), self.START_DATE_FORMAT)
+
+        # Run a sync job using orchestrator
+        self.run_and_verify_sync(conn_id)
+
+        # Get the set of records from the sync
+        synced_records = runner.get_records_from_target_output()
+
+        for stream in expected_event_update_streams:
+            with self.subTest(stream=stream):
+
+                # Get event-based records based on the newly added field `updated_by_event_type`
+                events_records_data = [message['data'] for message in synced_records.get(stream).get('messages')
+                                    if message['action'] == 'upsert' and
+                                    message.get('data').get('updated_by_event_type', None)]
+
+                for record in events_records_data:
+                    self.assertGreaterEqual(record.get('updated'), events_start_date)
 
 
 class EventUpdatesTest(BaseTapTest):
@@ -28,12 +82,14 @@ class EventUpdatesTest(BaseTapTest):
         Verify that the second sync includes at least one update for each stream
         Verify that the second sync includes less records than the first sync
         Verify that the updated metadata was picked up on the second sync
+        Verify that the `updated_by_event_type` field is available in all records emitted by event_updates
 
         PREREQUISITE
         For EACH stream that gets updates through events stream, there's at least 1 row
             of data
         """
         conn_id = connections.ensure_connection(self)
+        self.conn_id = conn_id
 
         event_update_streams = {
             # "balance_transactions"  # Cannot be directly updated
@@ -47,6 +103,7 @@ class EventUpdatesTest(BaseTapTest):
             # "payout_transactions",  # See bug in create_test
             "payouts",
             "plans",
+            "payment_intents",
             "products",
             # "subscription_items", # BUG_9916 | https://jira.talendforge.org/browse/TDL-9916
             "subscriptions",
@@ -87,7 +144,7 @@ class EventUpdatesTest(BaseTapTest):
         )
 
         updated = {}  # holds id for updated objects in each stream
-        for stream in streams_to_update:
+        for stream in streams_to_update - {'payment_intents'}:
 
             # There needs to be some test data for each stream, otherwise this will break
             self.assertGreater(len(first_sync_created[stream]["messages"]), 0,
@@ -97,8 +154,19 @@ class EventUpdatesTest(BaseTapTest):
 
             # We need to make sure the data actually changes, otherwise no event update
             # will get created
+            LOGGER.info("Updating %s object %s", stream, record["id"])
             update_object(stream, record["id"])
             updated[stream] = record["id"]
+
+        # updating the PaymentIntent object may require multiple attempts
+        stream = 'payment_intents'
+        self.assertGreater(len(first_sync_created[stream]["messages"]), 0,
+                           msg='We did not get any new records from '
+                           'the first sync for {}'.format(stream))
+        records = [record["data"] for record in first_sync_created[stream]["messages"]]
+        if stream in streams_to_update:
+            updated_obj = update_payment_intent(stream, existing_objects=records)
+            updated[stream] = updated_obj["id"]
 
         # Run a second sync job using orchestrator
         second_sync_record_count = self.run_and_verify_sync(conn_id)
@@ -159,12 +227,36 @@ class EventUpdatesTest(BaseTapTest):
                     "updated timestamp for second sync is not greater than first sync",
                 )
 
-                # verify the metadata[test] value actually changed
-                self.assertNotEqual(
-                    second_data["metadata"].get("test_value", 0),
-                    first_data["metadata"].get("test_value", 0),
-                    "the test metadata should be different",
-                )
+                if stream == "payment_intents":
+                    # verify the payment_method value actually changed
+                    self.assertNotEqual(
+                        second_data["payment_method"],
+                        first_data["payment_method"],
+                        "the payment_method should be different",
+                    )
+                else:
+                    # verify the metadata[test] value actually changed
+                    self.assertNotEqual(
+                        second_data["metadata"].get("test_value", 0),
+                        first_data["metadata"].get("test_value", 0),
+                        "the test metadata should be different",
+                    )
+
+                # Verify that the `updated_by_event_type` field is available in all records emitted by event_updates
+                for message in second_sync_updated.get(stream, {}).get("messages", []):
+                    if message['action'] == 'upsert':
+                        self.assertIn(
+                            'updated_by_event_type',
+                            message['data'].keys(),
+                            "updated_by_event_type field is missing in event_updates records")
+
+                # Verify that the `updated_by_event_type` field is available in all records emitted by event_updates
+                for message in second_sync_updated.get(stream, {}).get("messages", []):
+                    if message['action'] == 'upsert':
+                        self.assertIn(
+                            'updated_by_event_type',
+                            message['data'].keys(),
+                            "updated_by_event_type field is missing in event_updates records")
 
                 if stream in new_objects:
                     delete_object(stream, new_objects[stream]["id"])

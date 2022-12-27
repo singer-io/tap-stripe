@@ -10,7 +10,7 @@ setup(
     classifiers=["Programming Language :: Python :: 3 :: Only"],
     py_modules=["tap_stripe"],
     install_requires=[
-        "singer-python==5.5.1",
+        "singer-python==5.13.0",
         "stripe==2.64.0",
     ],
     extras_require={

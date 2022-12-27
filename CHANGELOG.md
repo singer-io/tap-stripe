@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.5.4
+  * Upgrade singer-python to 5.13.0 [#164](https://github.com/singer-io/tap-stripe/pull/164)
+
 ## 1.5.3
   * Reduce API calls [#152](https://github.com/singer-io/tap-stripe/pull/152)
     * Added support of config parameter event_date_date_window.

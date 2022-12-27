@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.0.3
+  * Reverts singer-python from 5.13.0 to 5.5.1 [#165](https://github.com/singer-io/tap-stripe/pull/165)
+
 ## 2.0.2
   * Upgrade singer-python to 5.13.0 [#161](https://github.com/singer-io/tap-stripe/pull/161)
 

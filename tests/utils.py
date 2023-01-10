@@ -12,6 +12,8 @@ from tap_tester import menagerie
 from tap_tester import LOGGER
 from base import BaseTapTest
 
+# # uncomment line below for debug logging
+# stripe_client.log = 'info'
 
 midnight = int(dt.combine(dt.today(), time.min).timestamp())
 NOW = dt.utcnow()
@@ -214,6 +216,8 @@ def list_all_object(stream, max_limit: int = 100, get_invoice_lines: bool = Fals
                     for item in invoice_line_dict:
                         item.update({'invoice': invoice['id']})
 
+                    # only returns line items associated with the single newest invoice object that
+                    # has at least 1 line item
                     return invoice_line_dict
 
                 else:

@@ -1,15 +1,10 @@
 """
 Test tap gets all creates for streams (as long as we can create an object)
 """
-import json
-from pathlib import Path
-from random import random
 
-import requests
-from tap_tester import menagerie, runner, connections
+from tap_tester import menagerie, runner, connections, LOGGER
 from base import BaseTapTest
-from utils import \
-    create_object, delete_object, get_catalogs
+from utils import create_object, delete_object
 
 
 class CreateObjectTest(BaseTapTest):
@@ -92,12 +87,12 @@ class CreateObjectTest(BaseTapTest):
         # # THIS MAKES AN ASSUMPTION THAT CHILD STREAMS DO NOT NEED TESTING.
         # # ADJUST IF NECESSARY
         for stream in streams_to_create.difference(self.child_streams()):
-            with self.subTest(stream=stream):                    
+            with self.subTest(stream=stream):
 
                 second_sync_created_objects = second_sync_created.get(stream, {}).get(
                     "messages", []
                 )
-                    
+
                 # verify that you get at least one new record on the second sync
                 self.assertGreaterEqual(
                     len(second_sync_created_objects),
@@ -108,11 +103,37 @@ class CreateObjectTest(BaseTapTest):
                 if stream == "balance_transactions":
                     sources = [record.get("data", {}).get("source")
                                for record in second_sync_created_objects]
-                    
+
                     self.assertTrue(new_objects['payouts']['id'] in sources)
                     self.assertTrue(new_objects['charges']['id'] in sources)
 
                     continue
+
+                # TODO START DEBUG
+                # remove debug after BUG https://jira.talendforge.org/browse/TDL-21614 is resolved
+                if stream == 'invoices':
+                    null_date_invoices = []
+                    masking_invoices = []
+                    for rec in second_sync_records[stream]['messages']:
+                        # detect old failures by comparing record dates using both replication keys
+                        # it is believed that the created invoices never have 'date' and should
+                        # always fail verification due to the old split logic
+                        if not rec['data'].get('date'):
+                            if rec['data'].get('created') == rec['data'].get('updated'):
+                                null_date_invoices += [rec['data']['id']]
+                        # date key was found for records in the else clause.  It is believed that
+                        # these are all updated records. Check to see if failure would be masked
+                        # by the split logic
+                        else:
+                            if rec['data'].get('date') == rec['data'].get('updated'):
+                                masking_invoices += [rec['data']['id']]
+                    LOGGER.info(f"null_date_invoices: {null_date_invoices}, "
+                                f"masking_invoices: {masking_invoices}, "
+                                f"new_id: {new_objects[stream]['id']}")
+                    self.assertTrue(new_objects[stream]['id'] in null_date_invoices)
+                    if new_objects[stream]['id'] not in masking_invoices:
+                        LOGGER.warn(f"########## Previous error scenario detected (un-masked failure) ##########")
+                # TODO END DEBUG
 
                 # verify the new object is in the list of created objects
                 # from the second sync
@@ -125,4 +146,3 @@ class CreateObjectTest(BaseTapTest):
 
                 if stream in streams_to_create:
                     delete_object(stream, new_objects[stream]["id"])
-

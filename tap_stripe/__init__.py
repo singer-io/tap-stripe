@@ -93,7 +93,7 @@ STREAM_TO_TYPE_FILTER = {
     'payout_transactions': {'type': 'payout.*', 'object': ['transfer', 'payout']},
     # Cannot find evidence of these streams having events associated:
     # balance_transactions - seems to be immutable
-    'refunds': {'type': 'refund.*', 'object': ['refund']},
+    'refunds': {'type': 'charge.refund.*', 'object': ['refund']},
 }
 
 # Some fields are not available by default with latest API version so

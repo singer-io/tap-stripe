@@ -75,7 +75,8 @@ SCHEMA_MISSING_FIELDS = {
         'total_excluding_tax'
     },
     'payment_intents': {
-        'amount_details'
+        'amount_details',
+        'latest_charge'
     }
 }
 

@@ -306,18 +306,25 @@ class BaseTapTest(BaseCase):
         current_state = menagerie.get_state(self.conn_id)
 
         for stream, batch in records.items():
-            # Getting info from state because replication key isn't the same as what is used in state for each stream
-            if current_state.get('bookmarks', {stream: None}).get(stream):
+            # Get key from state since rep key found in stripe docs & base.py may not match state
+            if current_state.get('bookmarks', {stream: None}).get(stream) and stream != 'invoices':
                 bookmark_state_items = list(current_state['bookmarks'][stream].items())
                 assert len(bookmark_state_items) <= 1, f"Unexpected compound bookmark_key " \
                     f"detected: {bookmark_state_items}"
                 bookmark_key, bookmark_value = bookmark_state_items[0]
                 assert bookmark_key is not None
             else:
-                # This will not work for streams where the replications key and state key are different
-                LOGGER.warn("Failed to get replication key from state, using expected replication "
-                            "key from base instead. If key in base does not match key in the tap "
-                            "then the split will fail for this stream")
+                if stream == 'invoices':
+                    LOGGER.info("Replicaiton key in state is 'date'.  Key in stripe documentation "
+                                "and base.py is 'created'. Not all invoice records have a 'date' "
+                                f"key defined so over-ride state for stream: {stream} to allow the "
+                                "split method to work as intended. See JIRA BUG TDL-21614")
+                else:
+                    # This may not work for streams where the replication key and state key are different
+                    LOGGER.warn("Failed to get replication key from state, using expected replication "
+                                "key from base.py instead. If key in base does not match key in the "
+                                f"tap then the split method may fail for this stream: {stream}")
+
                 bookmark_key = self.expected_replication_keys().get(stream, set())
                 assert len(bookmark_key) <= 1
                 bookmark_key = bookmark_key.pop() if bookmark_key else None

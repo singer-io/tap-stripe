@@ -21,22 +21,29 @@ KNOWN_MISSING_FIELDS = {
         'default_currency',
     },
     'subscriptions':{
-        'payment_settings',
-        'default_tax_rates',
-        'pending_update',
         'automatic_tax',
-        'on_behalf_of'
+        'default_tax_rates',
+        'on_behalf_of',
+        'payment_settings',
+        'pending_update',
+        'trial_settings',
     },
-    'products':set(),
+    'products': set(),
     'invoice_items':{
         'price',
     },
-    'payouts':set(),
+    'payouts': set(),
     'charges': set(),
     'subscription_items': set(),
     'plans': set(),
     'invoice_line_items': set(),
-    'invoices': {'latest_revision', 'from_invoice'},
+    'invoices': {
+        'amount_shipping',
+        'from_invoice',
+        'latest_revision',
+        'shipping_cost',
+        'shipping_details',
+    },
     'payment_intents': set()
 }
 
@@ -46,10 +53,10 @@ SCHEMA_MISSING_FIELDS = {
         'test_clock'
     },
     'subscriptions': {
-        'test_clock',
-        'description',
         'application',
-        'currency'
+        'currency',
+        'description',
+        'test_clock',
     },
     'products': {
         'default_price'
@@ -57,7 +64,7 @@ SCHEMA_MISSING_FIELDS = {
     'invoice_items':{
         'test_clock',
     },
-    'payouts':set(),
+    'payouts': set(),
     'charges': {
         'failure_balance_transaction'
     },
@@ -68,10 +75,10 @@ SCHEMA_MISSING_FIELDS = {
         'amount_excluding_tax'
     },
     'invoices': {
-        'test_clock',
         'application',
         'rendering_options',
         'subtotal_excluding_tax',
+        'test_clock',
         'total_excluding_tax'
     },
     'payment_intents': {
@@ -435,7 +442,7 @@ class ALlFieldsTest(BaseTapTest):
 
                 # collect actual values
                 actual_records = synced_records.get(stream)
-                # Get the actual stream records based on the newly added field `updated_by_event_type` 
+                # Get the actual stream records based on the newly added field `updated_by_event_type`
                 # as the events endpoints is not the latest version and hence returns deprecated fields also.
                 actual_record_message = actual_records.get('messages')
                 actual_records_data = [message['data'] for message in actual_record_message
@@ -497,7 +504,7 @@ class ALlFieldsTest(BaseTapTest):
                 expected_pks_set = set(expected_pks)
                 self.assertEqual(len(expected_pks_set), len(expected_pks))
 
-                # Get event-based pks based on the newly added field `updated_by_event_type` and verify 
+                # Get event-based pks based on the newly added field `updated_by_event_type` and verify
                 # there are no duplicate pks in our expectations
                 events_based_actual_pks = [tuple(event_record.get(pk) for pk in primary_keys) for event_record in events_records_data]
                 events_based_actual_pks_set = set(events_based_actual_pks)

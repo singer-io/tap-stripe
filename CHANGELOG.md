@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.0.4
+  * Updates `payment_intents` stream to accomodate lists for `payment_method_options.card.available_plans` field [#172](https://github.com/singer-io/tap-stripe/pull/172)
+
 ## 2.0.3
   * Reverts singer-python from 5.13.0 to 5.5.1 [#165](https://github.com/singer-io/tap-stripe/pull/165)
 

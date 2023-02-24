@@ -764,19 +764,24 @@
                             "available_plans": {
                               "type": [
                                 "null",
-                                "object"
+                                "array"
                               ],
-                              "properties": {
+                              "items": {
+                                "type": [
+                                  "null",
+                                  "object"
+                                ],
+                                "properties": {
                                   "count": {
-                                      "type": [
-                                        "null",
-                                        "integer"
-                                      ]
+                                    "type": [
+                                      "null",
+                                      "integer"
+                                    ]
                                   },
                                   "interval": {
-                                      "type": [
-                                        "null",
-                                        "string"
+                                    "type": [
+                                      "null",
+                                      "string"
                                       ]
                                   },
                                   "type": {
@@ -784,6 +789,7 @@
                                       "null",
                                       "string"
                                     ]
+                                  }
                                 }
                               }
                             },

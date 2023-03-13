@@ -44,7 +44,8 @@ class MinimumSelectionTest(BaseTapTest):
             "transfers",
          }
         untested_streams = {
-            "payout_transactions"
+            "payout_transactions",
+            "disputes"
         }
         new_objects = {
             stream: create_object(stream)

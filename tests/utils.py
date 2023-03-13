@@ -286,10 +286,44 @@ def standard_create(stream):
         # Sometime due to insufficient balance, stripe throws error while creating records for other streams like charges.
         # Create payment intent to add balance in test data with `confirm` param as true. Without `confirm` param stripe does not add balance.
         # Reference for failure: https://app.circleci.com/pipelines/github/singer-io/tap-stripe/1278/workflows/e1bc336d-a468-4b6d-b8a2-bc2dde0768f6/jobs/4239
+
+        # march 2023 refactor
+        currency="usd"
+        customer="cus_LAXuu6qTrq8LSf"
+        # sources have been deprecated, starting to implement payment_method instead
+        pm_id = stripe_client.Customer.retrieve(customer)['invoice_settings']['default_payment_method']
+        payment_method = stripe_client.PaymentMethod.retrieve(pm_id)
+        pm_exp_month = payment_method['card']['exp_month']
+        pm_exp_year = payment_method['card']['exp_year']
+
+        # keep card from ever expiring in the future if pm is used instead of source
+        if NOW.year >= pm_exp_year and NOW.month >= pm_exp_month:
+            stripe_client.PaymentMethod.modify(
+                payment_method_id,
+                card = {
+                    "exp_year": dt.today().year + 2
+                },
+            )
+
+        # keep stripe account balance from getting too low to create payout objects
+        current_balances = stripe_client.Balance.retrieve()['available']
+        # if available balance goes below $5,000 usd add another $5,000.
+        for balance in current_balances:
+            if balance.get('currency') == 'usd' and balance.get('amount') <= 500000:
+                # added balance converts from pending to available in 7 days
+                stripe_client.PaymentIntent.create(
+                    amount=500000,
+                    currency="usd",
+                    customer="cus_LAXuu6qTrq8LSf",
+                    #payment_method=pm_id,
+                    confirm=True,
+                )
+
         client[stream].create(
             amount=random.randint(100, 10000),
-            currency="usd",
-            customer="cus_LAXuu6qTrq8LSf",
+            currency=currency,
+            customer=customer,
+            #payment_method=pm_id,
             confirm=True
         )
 
@@ -297,8 +331,9 @@ def standard_create(stream):
         # we require to update record for event_updates test case.
         return client[stream].create(
             amount=random.randint(100, 10000),
-            currency="usd",
-            customer="cus_LAXuu6qTrq8LSf",
+            currency=currency,
+            customer=customer,
+            #payment_method=pm_id,
             statement_descriptor="stitchdata"
         )
     elif stream == 'customers':
@@ -325,6 +360,10 @@ def standard_create(stream):
             tax_id_data=[],
         )
     elif stream == 'payouts':
+        # this stream sometimes complains about insufficient card funds, added code to refresh
+        # the corresponding stripe account balance in the payment_intents object creation section
+        # to keep object sections grouped together
+
         return client[stream].create(
             amount=random.randint(1, 10),
             currency="usd",

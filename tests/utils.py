@@ -309,11 +309,11 @@ def standard_create(stream):
         current_balances = stripe_client.Balance.retrieve()['available']
         # if available balance goes below $5,000 usd add another $5,000.
         for balance in current_balances:
-            if balance.get('currency') == 'usd' and balance.get('amount') <= 500000:
+            if balance.get(currency) == 'usd' and balance.get('amount') <= 500000:
                 # added balance converts from pending to available in 7 days
                 stripe_client.PaymentIntent.create(
                     amount=500000,
-                    currency="usd",
+                    currency=currency,
                     customer="cus_LAXuu6qTrq8LSf",
                     #payment_method=pm_id,
                     confirm=True,

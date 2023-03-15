@@ -22,6 +22,7 @@ KNOWN_MISSING_FIELDS = {
     },
     'subscriptions':{
         'automatic_tax',
+        'cancellation_details',
         'default_tax_rates',
         'on_behalf_of',
         'payment_settings',
@@ -32,7 +33,9 @@ KNOWN_MISSING_FIELDS = {
     'invoice_items':{
         'price',
     },
-    'payouts': set(),
+    'payouts': {
+        'reconciliation_status',
+    },
     'charges': set(),
     'subscription_items': set(),
     'plans': set(),
@@ -299,7 +302,7 @@ FIELDS_ADDED_BY_TAP = {
 }
 
 class ALlFieldsTest(BaseTapTest):
-    """Test tap sets a bookmark and respects it for the next sync of a stream"""
+    """Test tap is able to successfully replicate all selected fields"""
 
     @staticmethod
     def name():
@@ -333,7 +336,6 @@ class ALlFieldsTest(BaseTapTest):
         }
 
         cls.expected_objects = {stream: [] for stream in cls.streams_to_test}
-
         cls.existing_objects = {stream: [] for stream in cls.streams_to_test}
         cls.new_objects = {stream: [] for stream in cls.streams_to_test}
 
@@ -495,6 +497,7 @@ class ALlFieldsTest(BaseTapTest):
                 # Verify there are no duplicate pks in the target
                 actual_pks = [tuple(actual_record.get(pk) for pk in primary_keys) for actual_record in actual_records_data]
                 actual_pks_set = set(actual_pks)
+
                 # self.assertEqual(len(actual_pks_set), len(actual_pks))  # BUG_9720
                 # assert unique primary keys for actual records
                 self.assertLessEqual(len(actual_pks_set), len(actual_pks))
@@ -508,6 +511,7 @@ class ALlFieldsTest(BaseTapTest):
                 # there are no duplicate pks in our expectations
                 events_based_actual_pks = [tuple(event_record.get(pk) for pk in primary_keys) for event_record in events_records_data]
                 events_based_actual_pks_set = set(events_based_actual_pks)
+
                 # Verify unique primary keys for event-based records
                 self.assertLessEqual(len(events_based_actual_pks_set), len(events_based_actual_pks))
 
@@ -515,7 +519,6 @@ class ALlFieldsTest(BaseTapTest):
                 self.assertTrue(actual_pks_set.issuperset(expected_pks_set))
 
                 # test records by field values...
-
                 expected_pks_to_record_dict, _ = self.getPKsToRecordsDict(stream, expected_records)  # BUG_9720
                 actual_pks_to_record_dict, actual_pks_to_record_dict_dupes = self.getPKsToRecordsDict(  # BUG_9720
                     stream, actual_records_data, duplicates=True

@@ -283,11 +283,11 @@ def standard_create(stream):
             max_redemptions=1000000
         )
     elif stream == 'payment_intents':
-        # Sometimes due to insufficient balance, stripe throws error while creating records for
-        # other streams like charges or payouts. Create payment intent using the deprecated source
-        # object with type = card and card number = 4000 0000 0000 0077 to allow the payment to
-        # bypass pending and go straight to avaialble balance in test data with `confirm` param as
-        # true. Without `confirm` param stripe does not add balance.
+        # Sometimes due to insufficient balance, stripe throws an error while creating records for
+        # other streams like charges or payouts. Create a payment intent using card, source,
+        # or payment_mehtod with type = card and card number = 4000 0000 0000 0077 to allow the
+        # payment to bypass pending and go straight to avaialble balance in test data with `confirm`
+        # param as true. Without `confirm` param stripe does not add balance.
         # Reference for failure: https://app.circleci.com/pipelines/github/singer-io/tap-stripe/1278/workflows/e1bc336d-a468-4b6d-b8a2-bc2dde0768f6/jobs/4239
 
         currency="usd"

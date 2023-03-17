@@ -283,47 +283,33 @@ def standard_create(stream):
             max_redemptions=1000000
         )
     elif stream == 'payment_intents':
-        # Sometime due to insufficient balance, stripe throws error while creating records for other streams like charges.
-        # Create payment intent to add balance in test data with `confirm` param as true. Without `confirm` param stripe does not add balance.
+        # Sometimes due to insufficient balance, stripe throws an error while creating records for
+        # other streams like charges or payouts. Create a payment intent using card, source,
+        # or payment_mehtod with type = card and card number = 4000 0000 0000 0077 to allow the
+        # payment to bypass pending and go straight to avaialble balance in test data with `confirm`
+        # param as true. Without `confirm` param stripe does not add balance.
         # Reference for failure: https://app.circleci.com/pipelines/github/singer-io/tap-stripe/1278/workflows/e1bc336d-a468-4b6d-b8a2-bc2dde0768f6/jobs/4239
 
-        # march 2023 refactor
         currency="usd"
         customer="cus_LAXuu6qTrq8LSf"
-        # sources have been deprecated, starting to implement payment_method instead
-        pm_id = stripe_client.Customer.retrieve(customer)['invoice_settings']['default_payment_method']
-        payment_method = stripe_client.PaymentMethod.retrieve(pm_id)
-        pm_exp_month = payment_method['card']['exp_month']
-        pm_exp_year = payment_method['card']['exp_year']
+        # sources have been deprecated, switched to defualt_source = card instead
+        card_id = stripe_client.Customer.retrieve(customer)['default_source']
+        card_object = stripe_client.Customer.retrieve_source(customer, card_id)
+        card_exp_month = card_object['exp_month']
+        card_exp_year = card_object['exp_year']
 
-        # keep card from ever expiring in the future if pm is used instead of source
-        if NOW.year >= pm_exp_year and NOW.month >= pm_exp_month:
-            stripe_client.PaymentMethod.modify(
-                payment_method_id,
-                card = {
-                    "exp_year": dt.today().year + 2
-                },
+        # keep card from ever expiring in the future
+        if NOW.year >= card_exp_year and NOW.month >= card_exp_month:
+            stripe_client.Customer.modify_source(
+                customer,
+                card_id,
+                exp_year = dt.today().year + 2
             )
-
-        # keep stripe account balance from getting too low to create payout objects
-        current_balances = stripe_client.Balance.retrieve()['available']
-        # if available balance goes below $5,000 usd add another $5,000.
-        for balance in current_balances:
-            if balance.get(currency) == 'usd' and balance.get('amount') <= 500000:
-                # added balance converts from pending to available in 7 days
-                stripe_client.PaymentIntent.create(
-                    amount=500000,
-                    currency=currency,
-                    customer="cus_LAXuu6qTrq8LSf",
-                    #payment_method=pm_id,
-                    confirm=True,
-                )
 
         client[stream].create(
             amount=random.randint(100, 10000),
             currency=currency,
             customer=customer,
-            #payment_method=pm_id,
             confirm=True
         )
 
@@ -333,7 +319,6 @@ def standard_create(stream):
             amount=random.randint(100, 10000),
             currency=currency,
             customer=customer,
-            #payment_method=pm_id,
             statement_descriptor="stitchdata"
         )
     elif stream == 'customers':
@@ -360,9 +345,20 @@ def standard_create(stream):
             tax_id_data=[],
         )
     elif stream == 'payouts':
-        # this stream sometimes complains about insufficient card funds, added code to refresh
-        # the corresponding stripe account balance in the payment_intents object creation section
-        # to keep object sections grouped together
+        # stream order is random so we may need this payment_intent to keep the stripe account
+        # balance from getting too low to create payout objects
+
+        current_balances = stripe_client.Balance.retrieve()['available']
+        # if available balance goes below $100 usd add another $100.
+        for balance in current_balances:
+            if balance.get('currency') == 'usd' and balance.get('amount') <= 10000:
+                # added balance bypasses pending if card 0077 is used
+                stripe_client.PaymentIntent.create(
+                    amount=10000,
+                    currency="usd",
+                    customer="cus_LAXuu6qTrq8LSf",
+                    confirm=True,
+                )
 
         return client[stream].create(
             amount=random.randint(1, 10),

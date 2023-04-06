@@ -20,7 +20,7 @@ KNOWN_MISSING_FIELDS = {
     'customers': {
         'default_currency',
     },
-    'subscriptions':{
+    'subscriptions': {
         'automatic_tax',
         'cancellation_details',
         'default_tax_rates',
@@ -30,7 +30,7 @@ KNOWN_MISSING_FIELDS = {
         'trial_settings',
     },
     'products': set(),
-    'invoice_items':{
+    'invoice_items': {
         'price',
     },
     'payouts': {
@@ -64,7 +64,7 @@ SCHEMA_MISSING_FIELDS = {
     'products': {
         'default_price'
     },
-    'invoice_items':{
+    'invoice_items': {
         'test_clock',
     },
     'payouts': set(),
@@ -101,7 +101,7 @@ FIELDS_TO_NOT_CHECK = {
         'default_card',
         'updated_by_event_type'
     },
-    'subscriptions':{
+    'subscriptions': {
         # Below fields are deprecated or renamed.(https://stripe.com/docs/upgrades#2019-10-17, https://stripe.com/docs/upgrades#2019-12-03, https://stripe.com/docs/upgrades#2020-08-27)
         'billing',
         'start',
@@ -109,22 +109,22 @@ FIELDS_TO_NOT_CHECK = {
         'invoice_customer_balance_settings',
         'updated_by_event_type'
     },
-    'products':{
+    'products': {
         # Below fields are available in the product record only if the value of the type field is `service`.
         # But, currently, during crud operation in all_fields test case, it creates product records of type `good`.
         'statement_descriptor',
         'unit_label',
         'updated_by_event_type'
     },
-    'coupons':{
+    'coupons': {
         # Field is not available in stripe documentation and also not returned by API response.(https://stripe.com/docs/api/coupons/object)
         'percent_off_precise',
         'updated_by_event_type'
     },
-    'invoice_items':{
+    'invoice_items': {
         'updated_by_event_type'
     },
-    'payouts':{
+    'payouts': {
 
         # Following fields are not mentioned in the documentation and also not returned by API (https://stripe.com/docs/api/payouts/object)
         'statement_description',
@@ -142,7 +142,7 @@ FIELDS_TO_NOT_CHECK = {
         'statement_description',
         'updated_by_event_type'
     },
-    'subscription_items':{
+    'subscription_items': {
         # Field is not available in stripe documentation and also not returned by API response. (https://stripe.com/docs/api/subscription_items/object)
       'current_period_end',
       'customer',
@@ -159,7 +159,7 @@ FIELDS_TO_NOT_CHECK = {
       'canceled_at',
       'cancel_at_period_end'
     },
-    'invoices':{
+    'invoices': {
         # Below fields are deprecated or renamed.(https://stripe.com/docs/upgrades#2019-03-14, https://stripe.com/docs/upgrades#2019-10-17, https://stripe.com/docs/upgrades#2018-08-11
         # https://stripe.com/docs/upgrades#2020-08-27)
         'application_fee',
@@ -262,17 +262,18 @@ FICKLE_FIELDS = {
     'invoice_items': set(),
     'payment_intents': set(),
     'payouts': {
-        'object', # expect 'transfer', get 'payout'
+        'object',      # expect 'transfer', get 'payout'
     },
     'charges': {
-        'status', # expect 'paid', get 'succeeded'
-        'receipt_url' # keeps changing with every request
+        'status',      # expect 'paid', get 'succeeded'
+        'receipt_url', # keeps changing with every request
+        'source',      # changes depending on source type
     },
     'subscription_items': set(),
     'invoices': {
         'hosted_invoice_url', # expect https://invoice.stripe.com/i/acct_14zvmQDcBSxinnbL/test...zcy0200wBekbjGw?s=ap
         'invoice_pdf',        # get    https://invoice.stripe.com/i/acct_14zvmQDcBSxinnbL/test...DE102006vZ98t5I?s=ap
-        'payment_settings',  # 'default_mandate' subfield unexpectedly present
+        'payment_settings',   # 'default_mandate' subfield unexpectedly present
     },
     'plans': set(),
     'invoice_line_items': set()

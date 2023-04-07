@@ -402,8 +402,10 @@ class BaseTapTest(BaseCase):
             ]
 
             object_keys = [
-                'discount', 'plan', 'coupon', 'status_transitions', 'period', 'sources', 'source', 'charges', 'refunds',
-                'package_dimensions', 'price' # Convert epoch timestamp value of 'price.created' to standard datetime format. This field is available specific for invoice_line_items stream
+                'charges', 'coupon', 'discount', 'package_dimensions', 'period', 'plan', 'price',
+                'refunds', 'source', 'sources', 'status_transitions'
+                # Convert epoch timestamp value of 'price.created' to standard datetime format.
+                # This field is available specific for invoice_line_items stream
             ]
 
             # timestamp to datetime

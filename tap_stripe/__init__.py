@@ -992,10 +992,11 @@ def sync_event_updates(stream_name, is_sub_stream):
     max_created = int(max(bookmark_value, max_event_start_date))
     start_date = int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
 
-    if max_created != bookmark_value and bookmark_value != start_date:
-        reset_bookmark_for_event_updates(is_sub_stream, stream_name, sub_stream_name, start_date, max_event_start_date)
-        raise Exception("Provided current bookmark date for event updates is older than 30 days. Hence, resetting the bookmark date of respective parent/child stream to start date.")
-    
+    if bookmark_value not in (max_created, start_date):
+        reset_bookmark_for_event_updates(is_sub_stream, stream_name, sub_stream_name, start_date)
+        raise Exception("Provided current bookmark date for event updates is older than 30 days. \
+            Hence, resetting the bookmark date of respective parent/child stream to start date.")
+
     date_window_start = max_created
     date_window_end = max_created + events_update_date_window_size
     stop_paging = False
@@ -1117,7 +1118,7 @@ def write_bookmark_for_event_updates(is_sub_stream, stream_name, sub_stream_name
 
     singer.write_state(Context.state)
 
-def reset_bookmark_for_event_updates(is_sub_stream, stream_name, sub_stream_name, start_date, max_event_start_date):
+def reset_bookmark_for_event_updates(is_sub_stream, stream_name, sub_stream_name, start_date):
     """
     Reset bookmark for parent and child streams to start date and clear the bookmark date for event updates.
     """

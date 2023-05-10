@@ -952,9 +952,11 @@ def sync_event_updates(stream_name, is_sub_stream):
                     or when called through only child stream i.e. when parent is not selected.
     '''
     LOGGER.info("Started syncing event based updates")
+    flag_value = False
     event_update_window_size = Context.event_update_window_size
     events_update_date_window_size = int(60 * 60 * 24 * event_update_window_size) # event_update_window_size in seconds
     sync_start_time = dt_to_epoch(utils.now())
+    start_date = int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
 
     if is_sub_stream:
         # We need to get the parent data first for syncing the child streams. Hence,
@@ -983,6 +985,9 @@ def sync_event_updates(stream_name, is_sub_stream):
         # Get the minimum bookmark value from parent and child streams if both are selected.
         bookmark_value = min(parent_bookmark_value, sub_stream_bookmark_value)
 
+        if parent_bookmark_value != sub_stream_bookmark_value and bookmark_value == start_date:
+            flag_value = True
+
     # Update the bookmark to parent bookmark value, if child is not selected
     else:
         bookmark_value = parent_bookmark_value
@@ -990,12 +995,11 @@ def sync_event_updates(stream_name, is_sub_stream):
     # Start sync for event updates record from the last 30 days before if bookmark/start_date is older than 30 days.
     max_event_start_date = (epoch_to_dt(sync_start_time) - timedelta(days=30)).timestamp()
     max_created = int(max(bookmark_value, max_event_start_date))
-    start_date = int(utils.strptime_to_utc(Context.config["start_date"]).timestamp())
 
-    if bookmark_value not in (max_created, start_date):
+    if max_created != bookmark_value and (bookmark_value != start_date or flag_value == True):
         reset_bookmark_for_event_updates(is_sub_stream, stream_name, sub_stream_name, start_date)
-        raise Exception("Provided current bookmark date for event updates is older than 30 days. \
-            Hence, resetting the bookmark date of respective parent/child stream to start date.")
+        raise Exception(f"Provided current bookmark date for event updates is older than 30 days."\
+            " Hence, resetting the bookmark date of respective parent/child stream to start date.")
 
     date_window_start = max_created
     date_window_end = max_created + events_update_date_window_size

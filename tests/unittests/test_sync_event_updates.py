@@ -41,30 +41,18 @@ class TestSyncEventUpdates(unittest.TestCase):
         mock_write_bookmark.assert_called_with(False, 'charges', None, 1645056000)
 
     @mock.patch('stripe.Event.list')
-    @mock.patch('singer.utils.now', side_effect = [MOCK_CURRENT_TIME, MOCK_CURRENT_TIME, MOCK_DATE_TIME])
-    @mock.patch('tap_stripe.write_bookmark_for_event_updates')
-    @mock.patch('tap_stripe.LOGGER.warning')
-    def test_sync_event_updates_bookmark_before_last_7_days(self, mock_logger, mock_write_bookmark, mock_stripe_event, mock_utils_now):
+    @mock.patch('singer.utils.now', return_value = datetime.datetime.strptime("2023-05-10T08:30:50Z", "%Y-%m-%dT%H:%M:%SZ"))
+    def test_sync_event_updates_bookmark_before_last_30_days(self, mock_utils_now, mock_stripe_event):
         """
-        Test that sync_event_updates write the expected bookmark value(events_date_window_size days less than the current date) in the state when maximum
-        bookmark value is before the last events_date_window_size(7 days default) days of current date.
+        Test that sync_event_updates throws the exception if bookmark value is older than 30 days
         """
         config = {"client_secret": "test_secret", "account_id": "test_account", "start_date": "2022-02-17T00:00:00"}
         Context.config = config
-        Context.state = {'bookmarks': {'charges_events': {'created': 1698739554}}}
+        Context.state = {'bookmarks': {'charges_events': {'updates_created': 1675251000}}}
 
         mock_stripe_event.return_value = ""
-        sync_event_updates('charges', False)
-
-        # Verify that tap writes maximum of bookmark/start_date value and sync_start_time.
-        mock_write_bookmark.assert_called_with(False, 'charges', None, 1648197050)
-
-        expected_logger_warning = [
-            mock.call("Provided start_date or current bookmark for event updates is older than 30 days."),
-            mock.call("The Stripe Event API returns data for the last 30 days only. So, syncing event data from 30 days only.")
-        ]
-        # Verify warning message for bookmark of less than last 30 days.
-        self.assertEqual(mock_logger.mock_calls, expected_logger_warning)
+        with self.assertRaises(Exception) as e:
+            sync_event_updates('charges', False)
 
     @mock.patch("singer.write_state")
     def test_write_bookmark_event_updates_for_non_sub_streams(self, mock_state):

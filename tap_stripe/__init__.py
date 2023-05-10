@@ -996,9 +996,9 @@ def sync_event_updates(stream_name, is_sub_stream):
     max_event_start_date = (epoch_to_dt(sync_start_time) - timedelta(days=30)).timestamp()
     max_created = int(max(bookmark_value, max_event_start_date))
 
-    if max_created != bookmark_value and (bookmark_value != start_date or flag_value == True):
+    if max_created != bookmark_value and (bookmark_value != start_date or flag_value is True):
         reset_bookmark_for_event_updates(is_sub_stream, stream_name, sub_stream_name, start_date)
-        raise Exception(f"Provided current bookmark date for event updates is older than 30 days."\
+        raise Exception("Provided current bookmark date for event updates is older than 30 days."\
             " Hence, resetting the bookmark date of respective parent/child stream to start date.")
 
     date_window_start = max_created

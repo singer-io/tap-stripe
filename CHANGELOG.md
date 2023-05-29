@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.0.5
+  * Resets the respective parent bookmark to start_date when event update bookmark date is older than 30 days [#178](https://github.com/singer-io/tap-stripe/pull/178)
+
 ## 2.0.4
   * Updates `payment_intents` stream to accomodate lists for `payment_method_options.card.available_plans` field [#172](https://github.com/singer-io/tap-stripe/pull/172)
 

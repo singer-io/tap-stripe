@@ -42,6 +42,7 @@ KNOWN_MISSING_FIELDS = {
     'invoice_line_items': set(),
     'invoices': {
         'amount_shipping',
+        'effective_at',
         'from_invoice',
         'latest_revision',
         'shipping_cost',

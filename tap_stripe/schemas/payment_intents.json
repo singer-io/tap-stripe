@@ -46,22 +46,12 @@
               "string"
             ]
         },
-        "charges": {
-            "anyOf": [
-              {
-                "type": [
-                  "null",
-                  "array"
-                ],
-                "items": {
-                  "$ref": "shared/charge.json#/"
-                }
-              },
-              {
-                "$ref": "shared/charge.json#/"
-              }
-            ]
-        },
+        "latest_charge": {
+          "type": [
+            "null",
+            "string"
+          ]
+      },
         "currency": {
             "type": [
               "null",

@@ -11,7 +11,7 @@ setup(
     py_modules=["tap_stripe"],
     install_requires=[
         "singer-python==5.5.1",
-        "stripe==2.64.0",
+        "stripe==5.5.0",
     ],
     extras_require={
         'test': [

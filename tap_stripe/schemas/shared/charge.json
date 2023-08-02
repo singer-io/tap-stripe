@@ -361,13 +361,6 @@
         "string"
       ]
     },
-    "refunds": {
-      "type": [
-        "null",
-        "array"
-      ],
-      "items": {}
-    },
     "application_fee": {
       "type": [
         "null",

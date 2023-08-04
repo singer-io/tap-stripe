@@ -98,7 +98,7 @@ STREAM_TO_TYPE_FILTER = {
 STREAM_TO_EXPAND_FIELDS = {
     # `tax_ids` field is not included in API response by default. To include it in the response, pass it in expand paramater.
     # Reference: https://stripe.com/docs/api/customers/object#customer_object-tax_ids
-
+    'charges': ['data.refunds'],
     'customers': ['data.sources', 'data.subscriptions', 'data.tax_ids'],
     'plans': ['data.tiers'],
     'invoice_items': ['data.plan.tiers'],

@@ -19,7 +19,7 @@ midnight = int(dt.combine(dt.today(), time.min).timestamp())
 NOW = dt.utcnow()
 metadata_value = {"test_value": "senorita_alice_{}@stitchdata.com".format(NOW)}
 
-stripe_client.api_version = '2020-08-27'
+stripe_client.api_version = '2022-11-15'
 stripe_client.api_key = BaseTapTest.get_credentials()["client_secret"]
 client = {
     'balance_transactions': stripe_client.BalanceTransaction,
@@ -224,6 +224,18 @@ def list_all_object(stream, max_limit: int = 100, get_invoice_lines: bool = Fals
                     raise AssertionError(f"invoice['lines']['data'] is not a list {invoice_line_dict}")
 
             return objects
+
+        elif stream == "charges":
+            stripe_obj = client[stream].list(limit=max_limit, created={"gte": midnight},
+                                             expand=['data.refunds']) # retrieve fields by passing expand paramater in SDK object
+            dict_obj = stripe_obj_to_dict(stripe_obj)
+            if dict_obj.get('data'):
+                for obj in dict_obj['data']:
+                    if obj.get('refunds'):
+                        refunds = obj['refunds']['data'] 
+                        obj['refunds'] = refunds
+                
+                return dict_obj['data']
 
         elif stream == "customers":
             stripe_obj = client[stream].list(limit=max_limit, created={"gte": midnight},

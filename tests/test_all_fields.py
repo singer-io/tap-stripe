@@ -54,9 +54,6 @@ KNOWN_MISSING_FIELDS = {
 
 # Fields which are deprecated and no longer will come in the response of api
 deprecated_fields =  {
-    'charges': {
-        'refunds'
-    },
     'payment_intents': {
         'charges'
     }

@@ -475,6 +475,9 @@ def create_object(stream):
             )
         elif stream == 'invoices':
             # Invoices requires the customer has an item associated with them
+            # Creating invoice record using olderversion because it generates invoice.lines data 
+            # at the time of record creation itself
+            stripe_client.api_version = '2020-08-27'
             item = client["{}_items".format(stream[:-1])].create(
                 amount=random.randint(1, 10000),
                 currency="usd",

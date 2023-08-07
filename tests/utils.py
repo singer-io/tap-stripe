@@ -1,4 +1,3 @@
-import random
 import json
 import backoff
 import random
@@ -12,6 +11,7 @@ from tap_tester import menagerie
 from tap_tester import LOGGER
 from base import BaseTapTest
 
+from utils_invoices import create_invoice_items, create_invoices
 # # uncomment line below for debug logging
 # stripe_client.log = 'info'
 
@@ -234,7 +234,7 @@ def list_all_object(stream, max_limit: int = 100, get_invoice_lines: bool = Fals
                     if obj.get('refunds'):
                         refunds = obj['refunds']['data'] 
                         obj['refunds'] = refunds
-                
+
                 return dict_obj['data']
 
         elif stream == "customers":
@@ -264,13 +264,8 @@ def list_all_object(stream, max_limit: int = 100, get_invoice_lines: bool = Fals
             if not isinstance(dict_obj['data'], list):
                 return [dict_obj['data']]
 
-            if stream == "payment_intents":
-                for obj in dict_obj['data']:
-                    obj['charges'] = obj['charges'].get('data', [])
-                    for charge in obj['charges']:
-                        if not isinstance(charge.get('refunds'), list):
-                            charge['refunds'] = []
-            return dict_obj['data']
+            if stream in ["payment_intents", "payouts", "products", "coupons", "plans", "invoice_items"]:
+                return dict_obj['data']
 
         if not isinstance(dict_obj, list):
             return [dict_obj]
@@ -477,33 +472,15 @@ def create_object(stream):
             # Invoices requires the customer has an item associated with them
             # Creating invoice record using olderversion because it generates invoice.lines data 
             # at the time of record creation itself
-            stripe_client.api_version = '2020-08-27'
-            item = client["{}_items".format(stream[:-1])].create(
-                amount=random.randint(1, 10000),
-                currency="usd",
-                customer=cust['id'],
-                description="Comfortable cotton t-shirt {}".format(NOW),
-                metadata=metadata_value,
-                discountable=True,
-                subscription_item=None,
-                tax_rates=[],  # TODO enter the child attributes
-            )
+            customer_id = cust['id']
+            customer_default_source = cust['default_source']
+
+            item = create_invoice_items(stream, customer_id, metadata_value, now_value = NOW)
+
             add_to_hidden('invoice_items', item['id'])
-            return client[stream].create(
-                customer=cust['id'],
-                auto_advance=False,
-                collection_method='charge_automatically',
-                description="Comfortable cotton t-shirt {}".format(NOW),
-                metadata=metadata_value,
-                # custom_fields={
-                #     'name': 'CustomName',
-                #     'value': 'CustomValue',
-                # },
-                footer='footer',
-                statement_descriptor='desc',
-                default_source=cust['default_source'],
-                default_tax_rates=[],
-            )
+
+            invoices_response = create_invoices(stream, customer_id, customer_default_source, metadata_value, now_value = NOW)
+            return invoices_response
 
         plan = get_a_record('plans')
 

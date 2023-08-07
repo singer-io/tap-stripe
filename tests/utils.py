@@ -475,11 +475,11 @@ def create_object(stream):
             customer_id = cust['id']
             customer_default_source = cust['default_source']
 
-            item = create_invoice_items(stream, customer_id, metadata_value, now_value = NOW)
+            item = create_invoice_items(customer_id, metadata_value, now_value = NOW)
 
             add_to_hidden('invoice_items', item['id'])
 
-            invoices_response = create_invoices(stream, customer_id, customer_default_source, metadata_value, now_value = NOW)
+            invoices_response = create_invoices(customer_id, customer_default_source, metadata_value, now_value = NOW)
             return invoices_response
 
         plan = get_a_record('plans')

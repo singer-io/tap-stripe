@@ -47,6 +47,7 @@ KNOWN_MISSING_FIELDS = {
         'latest_revision',
         'shipping_cost',
         'shipping_details',
+        'subscription_details',
     },
     'payment_intents': set()
 }

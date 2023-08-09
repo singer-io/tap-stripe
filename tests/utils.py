@@ -264,7 +264,7 @@ def list_all_object(stream, max_limit: int = 100, get_invoice_lines: bool = Fals
             if not isinstance(dict_obj['data'], list):
                 return [dict_obj['data']]
 
-            if stream in ["payment_intents", "payouts", "products", "coupons", "plans", "invoice_items"]:
+            if stream in ["payment_intents", "payouts", "products", "coupons", "plans", "invoice_items", "disputes", "transfers"]:
                 return dict_obj['data']
 
         if not isinstance(dict_obj, list):

@@ -51,13 +51,6 @@ KNOWN_MISSING_FIELDS = {
     'payment_intents': set()
 }
 
-# Fields which are deprecated and no longer will come in the response of api
-deprecated_fields =  {
-    'payment_intents': {
-        'charges'
-    }
-}
-
 # we have observed that the SDK object creation returns some new fields intermittently, which are not present in the schema
 SCHEMA_MISSING_FIELDS = {
     'customers': {
@@ -200,7 +193,9 @@ FIELDS_TO_NOT_CHECK = {
         # 'invoice_item' is id of invoice item associated wih this line if any. # So, due to uncertainty of this field, skipped it.
         'invoice_item'
     },
-    'payment_intents': set()
+    'payment_intents': {
+        'charges'
+    }
 }
 
 KNOWN_FAILING_FIELDS = {
@@ -476,9 +471,9 @@ class ALlFieldsTest(BaseTapTest):
                 actual_records_keys = actual_records_keys - FIELDS_TO_NOT_CHECK[stream]
                 expected_records_keys = expected_records_keys - FIELDS_TO_NOT_CHECK[stream]
 
-                # Append fields which are added by tap to expectation - deprecated_fields
+                # Append fields which are added by tap to expectation
                 adjusted_expected_keys = expected_records_keys.union(
-                    FIELDS_ADDED_BY_TAP.get(stream, set())) - deprecated_fields.get(stream, set())
+                    FIELDS_ADDED_BY_TAP.get(stream, set()))
 
                 # Log the fields that are included in the schema but not in the expectations.
                 # These are fields we should strive to get data for in our test data set

@@ -473,7 +473,8 @@ class ALlFieldsTest(BaseTapTest):
 
                 # Append fields which are added by tap to expectation
                 adjusted_expected_keys = expected_records_keys.union(
-                    FIELDS_ADDED_BY_TAP.get(stream, set()))
+                    FIELDS_ADDED_BY_TAP.get(stream, set())
+                )
 
                 # Log the fields that are included in the schema but not in the expectations.
                 # These are fields we should strive to get data for in our test data set

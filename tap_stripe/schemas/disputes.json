@@ -187,6 +187,12 @@
       ],
       "properties": {}
     },
+    "payment_intent": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
     "reason": {
       "type": [
         "null",

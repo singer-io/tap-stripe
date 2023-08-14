@@ -271,6 +271,13 @@
               "string"
             ]
           },
+          "effective_percentage": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "singer.decimal"
+          },
           "inclusive": {
             "type": [
               "null",
@@ -303,6 +310,12 @@
             "format": "singer.decimal"
           },
           "state": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "tax_type": {
             "type": [
               "null",
               "string"
@@ -941,6 +954,77 @@
       ],
       "properties": {}
     },
+    "amount_shipping": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "effective_at": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "date-time"
+    },
+    "from_invoice": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {
+        "action": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "state": {
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      }
+    },
+    "shipping_details": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {
+        "address": {
+          "type": [
+            "null",
+            "string" #change to object
+          ]
+        },
+        "name": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "phone": {
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      }
+    },
+    "subtotal_excluding_tax": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
+    "total_excluding_tax": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
     "updated": {
       "type": [
         "null",
@@ -950,3 +1034,6 @@
     }
   }
 }
+
+invoices.subscription_details #hash
+invoices.total_discount_amounts #array of hashes

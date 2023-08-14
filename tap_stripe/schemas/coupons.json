@@ -109,6 +109,20 @@
         "number"
       ]
     },
+  "applies_to": {
+    "type": [
+      "null",
+      "object"
+    ],
+    "properties": {
+      "products": {
+        "type": [
+          "null",
+          "array"
+        ]
+      }
+    }
+  },
     "updated": {
       "type": [
         "null",

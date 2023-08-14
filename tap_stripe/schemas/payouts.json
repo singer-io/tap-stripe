@@ -265,6 +265,12 @@
         "string"
       ]
     },
+    "reconciliation_status": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
     "updated": {
       "type": [
         "null",

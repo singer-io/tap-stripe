@@ -27,92 +27,7 @@
       "$ref": "shared/plan.json#/"
     },
     "tax_rates": {
-      "type": [
-        "null",
-        "array"
-      ],
-      "items": {
-        "type": [
-          "null",
-          "object"
-        ],
-        "properties": {
-          "id": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "object": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "active": {
-            "type": [
-              "null",
-              "boolean"
-            ]
-          },
-          "country": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "created": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
-          },
-          "description": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "display_name": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "inclusive": {
-            "type": [
-              "null",
-              "boolean"
-            ]
-          },
-          "jurisdiction": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "livemode": {
-            "type": [
-              "null",
-              "boolean"
-            ]
-          },
-          "percentage": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "singer.decimal"
-          },
-          "state": {
-            "type": [
-              "null",
-              "string"
-            ]
-          }
-        }
-      }
+      "$ref": "shared/tax_rates.json#/"
     },
     "invoice": {
       "type": [
@@ -249,3 +164,5 @@
     }
   }
 }
+
+invoiceitems.price

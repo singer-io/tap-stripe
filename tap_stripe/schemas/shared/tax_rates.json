@@ -1,0 +1,102 @@
+{
+    "type": [
+      "null",
+      "object"
+    ],
+    "properties": {
+      "id": {
+        "type": [
+          "null",
+          "string"
+        ]
+      },
+      "object": {
+        "type": [
+          "null",
+          "string"
+        ]
+      },
+      "active": {
+        "type": [
+          "null",
+          "boolean"
+        ]
+      },
+      "country": {
+        "type": [
+          "null",
+          "string"
+        ]
+      },
+      "created": {
+        "type": [
+          "null",
+          "string"
+        ],
+        "format": "date-time"
+      },
+      "description": {
+        "type": [
+          "null",
+          "string"
+        ]
+      },
+      "display_name": {
+        "type": [
+          "null",
+          "string"
+        ]
+      },
+      "effective_percentage": {
+        "type": [
+          "null",
+          "boolean"
+        ],
+        "format": "singer.decimal"
+      },
+      "inclusive": {
+        "type": [
+          "null",
+          "boolean"
+        ]
+      },
+      "jurisdiction": {
+        "type": [
+          "null",
+          "string"
+        ]
+      },
+      "livemode": {
+        "type": [
+          "null",
+          "boolean"
+        ]
+      },
+      "metadata": {
+        "type": [
+          "null",
+          "object"
+        ],
+        "properties": {}
+      },
+      "percentage": {
+        "type": [
+            "null",
+            "string"
+        ],
+        "format": "date-time"
+      },
+      "state": {
+        "type": [
+          "null",
+          "string"
+        ]
+      },
+      "tax_type": {
+        "type": [
+          "null",
+          "string"
+        ]
+      }
+    }
+  }

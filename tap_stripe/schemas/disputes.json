@@ -188,6 +188,7 @@
       "properties": {}
     },
     "payment_intent": {
+      "description": "ID of the PaymentIntent that was disputed.",
       "type": [
         "null",
         "string"

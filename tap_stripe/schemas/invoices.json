@@ -892,8 +892,46 @@
         "address": {
           "type": [
             "null",
-            "string" #change to object
-          ]
+            "object"
+          ],
+          "properties": {
+            "line2": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "state": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "city": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "postal_code": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "country": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "line1": {
+              "type": [
+                "null",
+                "string"
+              ]
+            }
+          }
         },
         "name": {
           "type": [
@@ -906,6 +944,21 @@
             "null",
             "string"
           ]
+        }
+      }
+    },
+    "subscription_details": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {
+        "metadata": {
+          "type": [
+            "null",
+            "object"
+          ],
+          "properties": {}
         }
       }
     },
@@ -930,6 +983,3 @@
     }
   }
 }
-
-invoices.subscription_details #hash
-invoices.total_discount_amounts #array of hashes

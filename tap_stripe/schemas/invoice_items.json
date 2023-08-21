@@ -26,6 +26,9 @@
     "plan": {
       "$ref": "shared/plan.json#/"
     },
+    "price": {
+      "$ref": "shared/price.json#/"
+    },
     "tax_rates": {
       "$ref": "shared/tax_rates.json#/"
     },

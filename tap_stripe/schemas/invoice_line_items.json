@@ -199,6 +199,13 @@
         "null",
         "string"
       ]
+    },
+    "unit_amount_decimal": {
+      "type": [
+        "null",
+        "string"
+      ],
+      "format": "singer.decimal"
     }
   }
 }

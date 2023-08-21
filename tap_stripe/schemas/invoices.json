@@ -624,6 +624,12 @@
         "integer"
       ]
     },
+    "application":{
+      "type":[
+         "null",
+         "string"
+      ]
+   },
     "application_fee_amount": {
       "type": [
         "null",

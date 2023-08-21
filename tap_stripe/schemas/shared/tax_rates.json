@@ -1,102 +1,104 @@
 {
-    "type": [
-      "null",
-      "object"
-    ],
-    "properties": {
-      "id": {
-        "type": [
-          "null",
-          "string"
+  "type":[
+     "null",
+     "object"
+  ],
+  "properties":{
+     "id":{
+        "type":[
+           "null",
+           "string"
         ]
-      },
-      "object": {
-        "type": [
-          "null",
-          "string"
+     },
+     "object":{
+        "type":[
+           "null",
+           "string"
         ]
-      },
-      "active": {
-        "type": [
-          "null",
-          "boolean"
+     },
+     "active":{
+        "type":[
+           "null",
+           "boolean"
         ]
-      },
-      "country": {
-        "type": [
-          "null",
-          "string"
+     },
+     "country":{
+        "type":[
+           "null",
+           "string"
         ]
-      },
-      "created": {
-        "type": [
-          "null",
-          "string"
+     },
+     "created":{
+        "type":[
+           "null",
+           "string"
         ],
-        "format": "date-time"
-      },
-      "description": {
-        "type": [
-          "null",
-          "string"
+        "format":"date-time"
+     },
+     "description":{
+        "type":[
+           "null",
+           "string"
         ]
-      },
-      "display_name": {
-        "type": [
-          "null",
-          "string"
+     },
+     "display_name":{
+        "type":[
+           "null",
+           "string"
         ]
-      },
-      "effective_percentage": {
-        "type": [
-          "null",
-          "boolean"
+     },
+     "effective_percentage":{
+        "type":[
+           "null",
+           "string"
         ],
-        "format": "singer.decimal"
-      },
-      "inclusive": {
-        "type": [
-          "null",
-          "boolean"
+        "format":"singer.decimal"
+     },
+     "inclusive":{
+        "type":[
+           "null",
+           "boolean"
         ]
-      },
-      "jurisdiction": {
-        "type": [
-          "null",
-          "string"
+     },
+     "jurisdiction":{
+        "type":[
+           "null",
+           "string"
         ]
-      },
-      "livemode": {
-        "type": [
-          "null",
-          "boolean"
+     },
+     "livemode":{
+        "type":[
+           "null",
+           "boolean"
         ]
-      },
-      "metadata": {
-        "type": [
-          "null",
-          "object"
+     },
+     "metadata":{
+        "type":[
+           "null",
+           "object"
         ],
-        "properties": {}
-      },
-      "percentage": {
-        "type": [
-            "null",
-            "string"
+        "properties":{
+           
+        }
+     },
+     "percentage":{
+        "type":[
+           "null",
+           "string"
         ],
-        "format": "date-time"
-      },
-      "state": {
-        "type": [
-          "null",
-          "string"
+        "format":"date-time"
+     },
+     "state":{
+        "type":[
+           "null",
+           "string"
         ]
-      },
-      "tax_type": {
-        "type": [
-          "null",
-          "string"
+     },
+     "tax_type":{
+        "type":[
+           "null",
+           "string"
         ]
-      }
-    }
+     }
   }
+}

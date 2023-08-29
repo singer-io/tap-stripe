@@ -47,7 +47,6 @@ KNOWN_MISSING_FIELDS = {
         'latest_revision',
         'shipping_cost',
         'shipping_details',
-        'subscription_details',
     },
     'payment_intents': set()
 }
@@ -194,7 +193,9 @@ FIELDS_TO_NOT_CHECK = {
         # 'invoice_item' is id of invoice item associated wih this line if any. # So, due to uncertainty of this field, skipped it.
         'invoice_item'
     },
-    'payment_intents': set()
+    'payment_intents': {
+        'charges'
+    }
 }
 
 KNOWN_FAILING_FIELDS = {
@@ -276,6 +277,7 @@ FICKLE_FIELDS = {
         'hosted_invoice_url', # expect https://invoice.stripe.com/i/acct_14zvmQDcBSxinnbL/test...zcy0200wBekbjGw?s=ap
         'invoice_pdf',        # get    https://invoice.stripe.com/i/acct_14zvmQDcBSxinnbL/test...DE102006vZ98t5I?s=ap
         'payment_settings',   # 'default_mandate' subfield unexpectedly present
+        'subscription_details'
     },
     'plans': set(),
     'invoice_line_items': set()

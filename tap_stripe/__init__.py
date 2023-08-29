@@ -98,7 +98,7 @@ STREAM_TO_TYPE_FILTER = {
 STREAM_TO_EXPAND_FIELDS = {
     # `tax_ids` field is not included in API response by default. To include it in the response, pass it in expand paramater.
     # Reference: https://stripe.com/docs/api/customers/object#customer_object-tax_ids
-
+    'charges': ['data.refunds'],
     'customers': ['data.sources', 'data.subscriptions', 'data.tax_ids'],
     'plans': ['data.tiers'],
     'invoice_items': ['data.plan.tiers'],
@@ -152,7 +152,7 @@ def new_list(self, api_key=None, stripe_version=None, stripe_account=None, **par
             api_key=api_key,
             stripe_version=stripe_version,
             stripe_account=stripe_account,
-            **params
+            params=params
         )
         stripe_object._retrieve_params = params  # pylint: disable=protected-access
         return stripe_object
@@ -247,7 +247,7 @@ def configure_stripe_client():
     # https://github.com/stripe/stripe-python/tree/a9a8d754b73ad47bdece6ac4b4850822fa19db4e#usage
     stripe.api_key = Context.config.get('client_secret')
     # Override the Stripe API Version for consistent access
-    stripe.api_version = '2020-08-27'
+    stripe.api_version = '2022-11-15'
     # Allow ourselves to retry retryable network errors 15 times
     # https://github.com/stripe/stripe-python/tree/a9a8d754b73ad47bdece6ac4b4850822fa19db4e#configuring-automatic-retries
     stripe.max_network_retries = 15

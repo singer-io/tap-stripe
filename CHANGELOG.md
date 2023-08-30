@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.0.0
+  * Upgraded SDK and API version [#181](https://github.com/singer-io/tap-stripe/pull/181)
+  * Schema changes
+
 ## 2.0.5
   * Resets the respective parent bookmark to start_date when event update bookmark date is older than 30 days [#178](https://github.com/singer-io/tap-stripe/pull/178)
 

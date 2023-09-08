@@ -29,7 +29,9 @@ KNOWN_MISSING_FIELDS = {
         'pending_update',
         'trial_settings',
     },
-    'products': set(),
+    'products': {
+        'features',
+    },
     'invoice_items': {
         'price',
     },

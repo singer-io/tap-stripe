@@ -11,6 +11,10 @@ from dateutil import parser
 
 from tap_tester import connections, menagerie, runner, LOGGER
 from tap_tester.base_case import BaseCase
+from tap_tester.jira_client import JiraClient as jira_client
+from tap_tester.jira_client import CONFIGURATION_ENVIRONMENT as jira_config
+
+JIRA_CLIENT = jira_client({ **jira_config })
 
 
 class BaseTapTest(BaseCase):
@@ -550,6 +554,13 @@ class BaseTapTest(BaseCase):
         self.start_date = self.get_properties().get('start_date')
         self.maxDiff=None
 
-
     def dt_to_ts(self, dtime):
         return parser.parse(dtime).timestamp()
+
+    def skipUntilDone(jira_ticket):
+        def wrap(test_method):
+            # statusCategory keys https://jira.talendforge.org/rest/api/2/statuscategory/
+            is_done = JIRA_CLIENT.get_status_category(jira_ticket) == "done"
+            return BaseCase.skipUnless(is_done, jira_ticket)(test_method)
+
+        return wrap

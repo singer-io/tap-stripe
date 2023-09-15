@@ -1,6 +1,7 @@
 """
 Test tap sets a bookmark and respects it for the next sync of a stream
 """
+import base
 import math
 import json
 from pathlib import Path
@@ -334,7 +335,7 @@ class BookmarkTest(BaseTapTest):
                         )
                         self.assertIn(expected_pk_value, sync_pk_values)
                     else:
-                        is_done = BaseTapTest.JIRA_CLIENT.get_status_category("TDL-24065") == 'done'
+                        is_done = base.JIRA_CLIENT.get_status_category("TDL-24065") == 'done'
                         assert_message = ("JIRA ticket has moved to done, remove the "
                                           "if stream != 'invoice_items' line above.")
                         assert is_done == False, assert_message
@@ -360,7 +361,7 @@ class BookmarkTest(BaseTapTest):
                                                 if sync_record.get('id') == updated_pk_value]
                         self.assertTrue(len(sync_records_metadata) == 1)
 
-                        if BaseTapTest.JIRA_CLIENT.get_status_category("TDL-24065") == 'done':
+                        if base.JIRA_CLIENT.get_status_category("TDL-24065") == 'done':
                             assert_message = ("JIRA ticket has moved to done, uncomment the "
                                               "assertion below.")
                             assert True == False, assert_message

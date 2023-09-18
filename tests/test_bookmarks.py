@@ -353,6 +353,14 @@ class BookmarkTest(BaseTapTest):
                         self.assertIsNotNone(sync_records_payment_method[0])
                 else:
                     for updated_record in updated_records[stream]:
+                        if stream == 'invoice_items':
+                            is_done = base.JIRA_CLIENT.get_status_category("TDL-24065") == 'done'
+                            assert_message = ("JIRA ticket has moved to done, remove the "
+                                              "if stream != 'invoice_items' line above.")
+                            assert is_done == False, assert_message
+
+                            continue
+
                         expected_updated_key = 'metadata'
                         expected_updated_value_substring = 'bob'
                         updated_pk_value = updated_record.get('id')

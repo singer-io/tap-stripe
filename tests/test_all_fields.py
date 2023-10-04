@@ -41,7 +41,9 @@ KNOWN_MISSING_FIELDS = {
     'charges': set(),
     'subscription_items': set(),
     'plans': set(),
-    'invoice_line_items': set(),
+    'invoice_line_items': {
+        'margins',
+    },
     'invoices': {
         'amount_shipping',
         'effective_at',

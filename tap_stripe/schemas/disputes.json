@@ -205,12 +205,6 @@
         "string"
       ],
       "format": "date-time"
-    },
-    "payment_intent": {
-      "type": [
-        "null",
-        "string"
-      ]
     }
   }
 }

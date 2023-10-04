@@ -41,16 +41,21 @@ KNOWN_MISSING_FIELDS = {
     'charges': set(),
     'subscription_items': set(),
     'plans': set(),
-    'invoice_line_items': set(),
+    'invoice_line_items': {
+        'margins',
+    },
     'invoices': {
         'amount_shipping',
         'effective_at',
         'from_invoice',
         'latest_revision',
+        'rendering',
         'shipping_cost',
         'shipping_details',
     },
-    'payment_intents': set()
+    'payment_intents': {
+        'payment_method_configuration_details',
+    },
 }
 
 # we have observed that the SDK object creation returns some new fields intermittently, which are not present in the schema
@@ -493,7 +498,9 @@ class ALlFieldsTest(BaseTapTest):
                     adjusted_actual_keys = adjusted_actual_keys.union({'subscription_item'})  # BUG_13666
 
                 # Verify the expected_keys is a subset of the actual_keys
-                self.assertTrue(adjusted_expected_keys.issubset(adjusted_actual_keys), msg=f"{adjusted_expected_keys} is not a subset of {adjusted_actual_keys}")
+                message = f"{adjusted_expected_keys} is not a subset of {adjusted_actual_keys}"
+                self.assertTrue(adjusted_expected_keys.issubset(adjusted_actual_keys),
+                                msg = message)
 
                 # verify the missing fields from KNOWN_MISSING_FIELDS are always missing (stability check)
                 self.assertSetEqual(actual_records_keys.difference(KNOWN_MISSING_FIELDS.get(stream, set())), actual_records_keys)

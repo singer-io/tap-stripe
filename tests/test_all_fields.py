@@ -77,7 +77,8 @@ SCHEMA_MISSING_FIELDS = {
     },
     'payouts': set(),
     'charges': {
-        'failure_balance_transaction'
+        'failure_balance_transaction',
+        'radar_options'
     },
     'subscription_items': set(),
     'plans': set(),

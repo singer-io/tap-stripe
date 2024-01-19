@@ -65,8 +65,10 @@ SCHEMA_MISSING_FIELDS = {
     },
     'subscriptions': {
         'application',
+        'billing_cycle_anchor_config',
         'currency',
         'description',
+        'invoice_settings',
         'test_clock',
     },
     'products': {
@@ -88,6 +90,7 @@ SCHEMA_MISSING_FIELDS = {
     },
     'invoices': {
         'application',
+        'issuer',
         'rendering_options',
         'subtotal_excluding_tax',
         'test_clock',
@@ -237,6 +240,7 @@ KNOWN_FAILING_FIELDS = {
         'price'
     },
     'invoices': {
+        'automatic_tax',
         'plans', # BUG_12478 | missing subfields
     },
     'plans': set(),

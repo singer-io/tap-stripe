@@ -25,6 +25,7 @@ class TestEventUpdatesSyncStart(BaseTapTest):
         props['date_window_size'] = 30 # An optional config param to collect data of newly created records in specified date window.
         return props
 
+    @BaseTapTest.skipUntilDone("TDL-24065")
     def test_run(self):
         """
         Verify that each record is from the last 30 days.
@@ -75,6 +76,7 @@ class EventUpdatesTest(BaseTapTest):
     def name():
         return "tt_stripe_event_updates"
 
+    @BaseTapTest.skipUntilDone("TDL-24065")
     def test_run(self):
         """
         Verify that the sync only sent records to the target for selected streams

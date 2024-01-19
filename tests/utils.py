@@ -1,4 +1,3 @@
-import random
 import json
 import backoff
 import random
@@ -12,6 +11,7 @@ from tap_tester import menagerie
 from tap_tester import LOGGER
 from base import BaseTapTest
 
+from utils_invoices import create_invoice_items, create_invoices
 # # uncomment line below for debug logging
 # stripe_client.log = 'info'
 
@@ -19,7 +19,7 @@ midnight = int(dt.combine(dt.today(), time.min).timestamp())
 NOW = dt.utcnow()
 metadata_value = {"test_value": "senorita_alice_{}@stitchdata.com".format(NOW)}
 
-stripe_client.api_version = '2020-08-27'
+stripe_client.api_version = '2022-11-15'
 stripe_client.api_key = BaseTapTest.get_credentials()["client_secret"]
 client = {
     'balance_transactions': stripe_client.BalanceTransaction,
@@ -225,6 +225,18 @@ def list_all_object(stream, max_limit: int = 100, get_invoice_lines: bool = Fals
 
             return objects
 
+        elif stream == "charges":
+            stripe_obj = client[stream].list(limit=max_limit, created={"gte": midnight},
+                                             expand=['data.refunds']) # retrieve fields by passing expand paramater in SDK object
+            dict_obj = stripe_obj_to_dict(stripe_obj)
+            if dict_obj.get('data'):
+                for obj in dict_obj['data']:
+                    if obj.get('refunds'):
+                        refunds = obj['refunds']['data'] 
+                        obj['refunds'] = refunds
+
+                return dict_obj['data']
+
         elif stream == "customers":
             stripe_obj = client[stream].list(limit=max_limit, created={"gte": midnight},
                                              expand=['data.sources', 'data.subscriptions', 'data.tax_ids']) # retrieve fields by passing expand paramater in SDK object
@@ -252,13 +264,8 @@ def list_all_object(stream, max_limit: int = 100, get_invoice_lines: bool = Fals
             if not isinstance(dict_obj['data'], list):
                 return [dict_obj['data']]
 
-            if stream == "payment_intents":
-                for obj in dict_obj['data']:
-                    obj['charges'] = obj['charges'].get('data', [])
-                    for charge in obj['charges']:
-                        if not isinstance(charge.get('refunds'), list):
-                            charge['refunds'] = []
-            return dict_obj['data']
+            if stream in ["payment_intents", "payouts", "products", "coupons", "plans", "invoice_items", "disputes", "transfers"]:
+                return dict_obj['data']
 
         if not isinstance(dict_obj, list):
             return [dict_obj]
@@ -463,32 +470,17 @@ def create_object(stream):
             )
         elif stream == 'invoices':
             # Invoices requires the customer has an item associated with them
-            item = client["{}_items".format(stream[:-1])].create(
-                amount=random.randint(1, 10000),
-                currency="usd",
-                customer=cust['id'],
-                description="Comfortable cotton t-shirt {}".format(NOW),
-                metadata=metadata_value,
-                discountable=True,
-                subscription_item=None,
-                tax_rates=[],  # TODO enter the child attributes
-            )
+            # Creating invoice record using olderversion because it generates invoice.lines data 
+            # at the time of record creation itself
+            customer_id = cust['id']
+            customer_default_source = cust['default_source']
+
+            item = create_invoice_items(customer_id, metadata_value, now_value = NOW)
+
             add_to_hidden('invoice_items', item['id'])
-            return client[stream].create(
-                customer=cust['id'],
-                auto_advance=False,
-                collection_method='charge_automatically',
-                description="Comfortable cotton t-shirt {}".format(NOW),
-                metadata=metadata_value,
-                # custom_fields={
-                #     'name': 'CustomName',
-                #     'value': 'CustomValue',
-                # },
-                footer='footer',
-                statement_descriptor='desc',
-                default_source=cust['default_source'],
-                default_tax_rates=[],
-            )
+
+            invoices_response = create_invoices(customer_id, customer_default_source, metadata_value, now_value = NOW)
+            return invoices_response
 
         plan = get_a_record('plans')
 

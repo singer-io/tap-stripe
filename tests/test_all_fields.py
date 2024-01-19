@@ -29,7 +29,9 @@ KNOWN_MISSING_FIELDS = {
         'pending_update',
         'trial_settings',
     },
-    'products': set(),
+    'products': {
+        'features',
+    },
     'invoice_items': {
         'price',
     },
@@ -39,16 +41,21 @@ KNOWN_MISSING_FIELDS = {
     'charges': set(),
     'subscription_items': set(),
     'plans': set(),
-    'invoice_line_items': set(),
+    'invoice_line_items': {
+        'margins',
+    },
     'invoices': {
         'amount_shipping',
         'effective_at',
         'from_invoice',
         'latest_revision',
+        'rendering',
         'shipping_cost',
         'shipping_details',
     },
-    'payment_intents': set()
+    'payment_intents': {
+        'payment_method_configuration_details',
+    },
 }
 
 # we have observed that the SDK object creation returns some new fields intermittently, which are not present in the schema
@@ -70,7 +77,8 @@ SCHEMA_MISSING_FIELDS = {
     },
     'payouts': set(),
     'charges': {
-        'failure_balance_transaction'
+        'failure_balance_transaction',
+        'radar_options'
     },
     'subscription_items': set(),
     'plans': set(),
@@ -193,7 +201,9 @@ FIELDS_TO_NOT_CHECK = {
         # 'invoice_item' is id of invoice item associated wih this line if any. # So, due to uncertainty of this field, skipped it.
         'invoice_item'
     },
-    'payment_intents': set()
+    'payment_intents': {
+        'charges'
+    }
 }
 
 KNOWN_FAILING_FIELDS = {
@@ -275,6 +285,7 @@ FICKLE_FIELDS = {
         'hosted_invoice_url', # expect https://invoice.stripe.com/i/acct_14zvmQDcBSxinnbL/test...zcy0200wBekbjGw?s=ap
         'invoice_pdf',        # get    https://invoice.stripe.com/i/acct_14zvmQDcBSxinnbL/test...DE102006vZ98t5I?s=ap
         'payment_settings',   # 'default_mandate' subfield unexpectedly present
+        'subscription_details'
     },
     'plans': set(),
     'invoice_line_items': set()
@@ -488,7 +499,9 @@ class ALlFieldsTest(BaseTapTest):
                     adjusted_actual_keys = adjusted_actual_keys.union({'subscription_item'})  # BUG_13666
 
                 # Verify the expected_keys is a subset of the actual_keys
-                self.assertTrue(adjusted_expected_keys.issubset(adjusted_actual_keys), msg=f"{adjusted_expected_keys} is not a subset of {adjusted_actual_keys}")
+                message = f"{adjusted_expected_keys} is not a subset of {adjusted_actual_keys}"
+                self.assertTrue(adjusted_expected_keys.issubset(adjusted_actual_keys),
+                                msg = message)
 
                 # verify the missing fields from KNOWN_MISSING_FIELDS are always missing (stability check)
                 self.assertSetEqual(actual_records_keys.difference(KNOWN_MISSING_FIELDS.get(stream, set())), actual_records_keys)

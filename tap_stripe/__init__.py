@@ -318,7 +318,7 @@ def load_shared_schema_refs():
 
     shared_schema_refs = {}
     for shared_file in shared_file_names:
-        with open(os.path.join(shared_schemas_path, shared_file)) as data_file:
+        with open(os.path.join(shared_schemas_path, shared_file), encoding='UTF-8') as data_file:
             shared_schema_refs['shared/' + shared_file] = json.load(data_file)
 
     return shared_schema_refs
@@ -334,7 +334,7 @@ def load_schemas():
     for filename in files:
         path = get_abs_path('schemas') + '/' + filename
         file_raw = filename.replace('.json', '')
-        with open(path) as file:
+        with open(path, encoding='UTF-8') as file:
             schemas[file_raw] = {'path': filename, 'schema': json.load(file)}
 
     return schemas
@@ -669,8 +669,7 @@ def sync_stream(stream_name, is_sub_stream=False):
         while start_window < end_time:
             stop_window = dt_to_epoch(epoch_to_dt(start_window) + timedelta(days=window_size))
             # cut off the last window at the end time
-            if stop_window > end_time:
-                stop_window = end_time
+            stop_window = min(stop_window, end_time)
             for stream_obj in paginate(
                     STREAM_SDK_OBJECTS[stream_name]['sdk_object'],
                     filter_key,

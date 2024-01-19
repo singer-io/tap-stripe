@@ -15,15 +15,15 @@ setup(
     ],
     extras_require={
         'test': [
-            'pylint==2.7.2',
-            'nose==1.3.7',
+            'pylint',
+            'nose2',
             'coverage'
         ],
         'dev': [
             'ipdb',
-            'pylint==2.7.2',
+            'pylint',
             'astroid==2.5.1',
-            'nose==1.3.7'
+            'nose2',
         ]
     },
     entry_points="""

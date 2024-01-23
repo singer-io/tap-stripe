@@ -3,27 +3,27 @@ from setuptools import setup
 
 setup(
     name="tap-stripe",
-    version="3.0.0",
+    version="3.1.0",
     description="Singer.io tap for extracting data",
     author="Stitch",
     url="http://singer.io",
     classifiers=["Programming Language :: Python :: 3 :: Only"],
     py_modules=["tap_stripe"],
     install_requires=[
-        "singer-python==5.5.1",
+        "singer-python==6.0.0",
         "stripe==5.5.0",
     ],
     extras_require={
         'test': [
-            'pylint==2.7.2',
-            'nose==1.3.7',
+            'pylint',
+            'nose2',
             'coverage'
         ],
         'dev': [
             'ipdb',
-            'pylint==2.7.2',
+            'pylint',
             'astroid==2.5.1',
-            'nose==1.3.7'
+            'nose2',
         ]
     },
     entry_points="""

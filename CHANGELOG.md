@@ -1,5 +1,8 @@
 # Changelog
 
+## 3.1.0
+  * Upgrades to run on python 3.11.7 [#193](https://github.com/singer-io/tap-stripe/pull/193)
+
 ## 3.0.0
   * Upgraded SDK and API version [#181](https://github.com/singer-io/tap-stripe/pull/181)
   * Schema changes

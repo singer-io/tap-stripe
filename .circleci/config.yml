@@ -71,9 +71,8 @@ jobs:
           name: 'Unit Tests'
           command: |
             source /usr/local/share/virtualenvs/tap-stripe/bin/activate
-            pip install coverage parameterized
-            nosetests --with-coverage --cover-erase --cover-package=tap_stripe --cover-html-dir=htmlcov tests/unittests
-            coverage html
+            pip install nose2 parameterized nose2[coverage_plugin]>=0.6.5
+            nose2 --with-coverage -v -s tests/unittests
       - store_test_results:
           path: test_output/report.xml
       - store_artifacts:

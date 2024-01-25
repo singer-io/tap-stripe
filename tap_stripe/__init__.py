@@ -555,25 +555,6 @@ def write_bookmark_for_stream(stream_name, replication_key, stream_bookmark):
                               stream_bookmark)
 
 
-def convert_dict_to_stripe_object(record):
-    """
-    Convert field datatype of dict object to `stripe.stripe_object.StripeObject`.
-    Example:
-    record = {'id': 'dummy_id', 'tiers':  [{"flat_amount": 4578"unit_amount": 7241350}]}
-    This function convert datatype of each record of 'tiers' field to `stripe.stripe_object.StripeObject`.
-    """
-    # Loop through each fields of `record` object
-    for key, val in record.items():
-        # Check type of field
-        if isinstance(val, list):
-            # Loop through each records of list
-            for index, field_val in enumerate(val):
-                if isinstance(field_val, dict):
-                    # Convert datatype of dict to `stripe.stripe_object.StripeObject`
-                    record[key][index] = convert_to_stripe_object(record[key][index])
-
-    return record
-
 # pylint: disable=too-many-locals
 # pylint: disable=too-many-statements
 

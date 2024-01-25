@@ -134,12 +134,12 @@ REQUEST_TIMEOUT = 300  # 5 minutes
 
 
 class StripeTransformer(Transformer):
-    def stripe_filter_data_by_metadata(self, data, metadata, parent=()):
-        if isinstance(data, dict) and metadata:
+    def stripe_filter_data_by_metadata(self, data, mdata, parent=()):
+        if isinstance(data, dict) and mdata:
             for field_name in list(data.keys()):
                 breadcrumb = parent + ('properties', field_name)
-                selected = singer.metadata.get(metadata, breadcrumb, 'selected')
-                inclusion = singer.metadata.get(metadata, breadcrumb, 'inclusion')
+                selected = singer.metadata.get(mdata, breadcrumb, 'selected')
+                inclusion = singer.metadata.get(mdata, breadcrumb, 'inclusion')
                 if inclusion == 'automatic':
                     continue
 
@@ -152,16 +152,16 @@ class StripeTransformer(Transformer):
                     if data[field_name] == "":
                         data[field_name] = None
                     data[field_name] = self.stripe_filter_data_by_metadata(
-                        data[field_name], metadata, breadcrumb)
+                        data[field_name], mdata, breadcrumb)
 
-        if isinstance(data, list) and metadata:
+        if isinstance(data, list) and mdata:
             breadcrumb = parent + ('items',)
-            data = [self.stripe_filter_data_by_metadata(d, metadata, breadcrumb) for d in data]
+            data = [self.stripe_filter_data_by_metadata(d, mdata, breadcrumb) for d in data]
 
         return data
 
-    def stripe_transform(self, data, schema, metadata=None):
-        data = self.stripe_filter_data_by_metadata(data, metadata)
+    def stripe_transform(self, data, schema, mdata=None):
+        data = self.stripe_filter_data_by_metadata(data, mdata)
 
         success, transformed_data = self.transform_recur(data, schema, [])
         if not success:

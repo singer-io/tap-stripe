@@ -15,7 +15,6 @@ from stripe.util import convert_to_stripe_object
 import singer
 from singer import utils, Transformer, metrics
 from singer import metadata
-from singer.transform import breadcrumb_path, SchemaMismatch
 import backoff
 
 REQUIRED_CONFIG_KEYS = [
@@ -131,43 +130,6 @@ DEFAULT_EVENT_UPDATE_DATE_WINDOW = 7  # default date window to fetch event updat
 
 # default request timeout
 REQUEST_TIMEOUT = 300  # 5 minutes
-
-
-class StripeTransformer(Transformer):
-    def stripe_filter_data_by_metadata(self, data, mdata, parent=()):
-        if isinstance(data, dict) and mdata:
-            for field_name in list(data.keys()):
-                breadcrumb = parent + ('properties', field_name)
-                selected = singer.metadata.get(mdata, breadcrumb, 'selected')
-                inclusion = singer.metadata.get(mdata, breadcrumb, 'inclusion')
-                if inclusion == 'automatic':
-                    continue
-
-                if (selected is False) or (inclusion == 'unsupported'):
-                    data.pop(field_name, None)
-                    # Track that a field was filtered because the customer
-                    # didn't select it or the tap declared it as unsupported.
-                    self.filtered.add(breadcrumb_path(breadcrumb))
-                else:
-                    if data[field_name] == "":
-                        data[field_name] = None
-                    data[field_name] = self.stripe_filter_data_by_metadata(
-                        data[field_name], mdata, breadcrumb)
-
-        if isinstance(data, list) and mdata:
-            breadcrumb = parent + ('items',)
-            data = [self.stripe_filter_data_by_metadata(d, mdata, breadcrumb) for d in data]
-
-        return data
-
-    def stripe_transform(self, data, schema, mdata=None):
-        data = self.stripe_filter_data_by_metadata(data, mdata)
-
-        success, transformed_data = self.transform_recur(data, schema, [])
-        if not success:
-            raise SchemaMismatch(self.errors)
-
-        return transformed_data
 
 
 def new_list(self, api_key=None, stripe_version=None, stripe_account=None, **params):
@@ -662,7 +624,7 @@ def sync_stream(stream_name, is_sub_stream=False):
     else:
         sub_stream_bookmark = None
 
-    with StripeTransformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
+    with Transformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
         end_time = dt_to_epoch(utils.now())
 
         window_size = Context.window_size
@@ -719,15 +681,13 @@ def sync_stream(stream_name, is_sub_stream=False):
 
                 # get the replication key value from the object
                 rec = unwrap_data_objects(stream_obj.to_dict_recursive())
-                # convert field datatype of dict object to `stripe.stripe_object.StripeObject`
-                rec = convert_dict_to_stripe_object(rec)
                 rec = reduce_foreign_keys(rec, stream_name)
                 stream_obj_created = rec[replication_key]
                 rec['updated'] = stream_obj_created
 
                 # sync stream if object is greater than or equal to the bookmark and if parent is selected
                 if stream_obj_created >= stream_bookmark and not is_sub_stream:
-                    rec = transformer.stripe_transform(rec,
+                    rec = transformer.transform(rec,
                                                 Context.get_catalog_entry(stream_name)['schema'],
                                                 stream_metadata)
 

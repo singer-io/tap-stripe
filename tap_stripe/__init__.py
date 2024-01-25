@@ -15,6 +15,7 @@ from stripe.util import convert_to_stripe_object
 import singer
 from singer import utils, Transformer, metrics
 from singer import metadata
+from singer.transform import breadcrumb_path, SchemaMismatch
 import backoff
 
 REQUIRED_CONFIG_KEYS = [
@@ -130,6 +131,43 @@ DEFAULT_EVENT_UPDATE_DATE_WINDOW = 7  # default date window to fetch event updat
 
 # default request timeout
 REQUEST_TIMEOUT = 300  # 5 minutes
+
+
+class StripeTransformer(Transformer):
+    def stripe_filter_data_by_metadata(self, data, metadata, parent=()):
+        if isinstance(data, dict) and metadata:
+            for field_name in list(data.keys()):
+                breadcrumb = parent + ('properties', field_name)
+                selected = singer.metadata.get(metadata, breadcrumb, 'selected')
+                inclusion = singer.metadata.get(metadata, breadcrumb, 'inclusion')
+                if inclusion == 'automatic':
+                    continue
+
+                if (selected is False) or (inclusion == 'unsupported'):
+                    data.pop(field_name, None)
+                    # Track that a field was filtered because the customer
+                    # didn't select it or the tap declared it as unsupported.
+                    self.filtered.add(breadcrumb_path(breadcrumb))
+                else:
+                    if data[field_name] == "":
+                        data[field_name] = None
+                    data[field_name] = self.stripe_filter_data_by_metadata(
+                        data[field_name], metadata, breadcrumb)
+
+        if isinstance(data, list) and metadata:
+            breadcrumb = parent + ('items',)
+            data = [self.stripe_filter_data_by_metadata(d, metadata, breadcrumb) for d in data]
+
+        return data
+
+    def stripe_transform(self, data, schema, metadata=None):
+        data = self.stripe_filter_data_by_metadata(data, metadata)
+
+        success, transformed_data = self.transform_recur(data, schema, [])
+        if not success:
+            raise SchemaMismatch(self.errors)
+
+        return transformed_data
 
 
 def new_list(self, api_key=None, stripe_version=None, stripe_account=None, **params):
@@ -624,7 +662,7 @@ def sync_stream(stream_name, is_sub_stream=False):
     else:
         sub_stream_bookmark = None
 
-    with Transformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
+    with StripeTransformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
         end_time = dt_to_epoch(utils.now())
 
         window_size = Context.window_size
@@ -689,7 +727,7 @@ def sync_stream(stream_name, is_sub_stream=False):
 
                 # sync stream if object is greater than or equal to the bookmark and if parent is selected
                 if stream_obj_created >= stream_bookmark and not is_sub_stream:
-                    rec = transformer.transform(rec,
+                    rec = transformer.stripe_transform(rec,
                                                 Context.get_catalog_entry(stream_name)['schema'],
                                                 stream_metadata)
 

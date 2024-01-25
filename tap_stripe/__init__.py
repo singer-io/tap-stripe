@@ -11,7 +11,6 @@ from stripe.stripe_object import StripeObject
 from stripe.api_resources.list_object import ListObject
 from stripe.error import InvalidRequestError
 from stripe.api_requestor import APIRequestor
-from stripe.util import convert_to_stripe_object
 import singer
 from singer import utils, Transformer, metrics
 from singer import metadata

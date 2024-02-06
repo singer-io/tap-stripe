@@ -24,7 +24,6 @@ BOOKMARK_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 @mock.patch("singer.write_record")
 @mock.patch('singer.utils.now', return_value=datetime.strptime("2022-01-01T08:30:50Z", BOOKMARK_FORMAT))
 @mock.patch("tap_stripe.reduce_foreign_keys", return_value={"created": 16452804585})
-@mock.patch("tap_stripe.convert_dict_to_stripe_object", return_value={"created": "2022-02-17T00:00:00"})
 @mock.patch("tap_stripe.paginate", return_value=[MockClass()])
 @mock.patch("tap_stripe.Context.get_catalog_entry")
 @mock.patch("tap_stripe.singer.metadata.to_map")
@@ -37,7 +36,7 @@ class TestLookbackWindow(unittest.TestCase):
 
     def test_default_value_lookback(
             self, mock_get_bookmark_for_stream, mock_sync_substream, mock_dt_to_epoch, mock_epoch_to_dt, mock_get,
-            mock_metadata_map, mock_get_catalog_entry, mock_paginate, mock_convert_dict_to_stripe_object,
+            mock_metadata_map, mock_get_catalog_entry, mock_paginate,
             mock_reduce_foreign_keys, mock_utils_now, mock_write_record):
         '''Verify that the lookback window is 600 by default if nothing is provided in the config.'''
         config = {"client_secret": "test_secret", "account_id": "test_account", "start_date": "2022-02-17T00:00:00"}
@@ -50,7 +49,7 @@ class TestLookbackWindow(unittest.TestCase):
 
     def test_config_provided_value_lookback(
             self, mock_get_bookmark_for_stream, mock_sync_substream, mock_dt_to_epoch, mock_epoch_to_dt, mock_get,
-            mock_metadata_map, mock_get_catalog_entry, mock_paginate, mock_convert_dict_to_stripe_object,
+            mock_metadata_map, mock_get_catalog_entry, mock_paginate,
             mock_reduce_foreign_keys, mock_utils_now, mock_write_record):
         '''Verify that the lookback window is correctly passed when mentioned in the config.'''
         config = {"client_secret": "test_secret", "account_id": "test_account",
@@ -64,7 +63,7 @@ class TestLookbackWindow(unittest.TestCase):
 
     def test_empty_string_in_config_lookback(
             self, mock_get_bookmark_for_stream, mock_sync_substream, mock_dt_to_epoch, mock_epoch_to_dt, mock_get,
-            mock_metadata_map, mock_get_catalog_entry, mock_paginate, mock_convert_dict_to_stripe_object,
+            mock_metadata_map, mock_get_catalog_entry, mock_paginate,
             mock_reduce_foreign_keys, mock_utils_now, mock_write_record):
         '''Verify that the lookback window is correctly passed when empty string is passed in the config.'''
         config = {"client_secret": "test_secret", "account_id": "test_account",
@@ -78,7 +77,7 @@ class TestLookbackWindow(unittest.TestCase):
 
     def test_default_value_lookback_events(
             self, mock_get_bookmark_for_stream, mock_sync_substream, mock_dt_to_epoch, mock_epoch_to_dt, mock_get,
-            mock_metadata_map, mock_get_catalog_entry, mock_paginate, mock_convert_dict_to_stripe_object,
+            mock_metadata_map, mock_get_catalog_entry, mock_paginate,
             mock_reduce_foreign_keys, mock_utils_now, mock_write_record):
         '''Verify that the lookback window is 600 by default if nothing is provided in the config.'''
         config = {"client_secret": "test_secret", "account_id": "test_account", "start_date": "2022-02-17T00:00:00"}
@@ -91,7 +90,7 @@ class TestLookbackWindow(unittest.TestCase):
 
     def test_config_provided_value_lookback_events(
             self, mock_get_bookmark_for_stream, mock_sync_substream, mock_dt_to_epoch, mock_epoch_to_dt, mock_get,
-            mock_metadata_map, mock_get_catalog_entry, mock_paginate, mock_convert_dict_to_stripe_object,
+            mock_metadata_map, mock_get_catalog_entry, mock_paginate,
             mock_reduce_foreign_keys, mock_utils_now, mock_write_record):
         '''Verify that the lookback window is correctly passed when mentioned in the config.'''
         config = {"client_secret": "test_secret", "account_id": "test_account",
@@ -105,7 +104,7 @@ class TestLookbackWindow(unittest.TestCase):
 
     def test_empty_string_in_config_lookback_events(
             self, mock_get_bookmark_for_stream, mock_sync_substream, mock_dt_to_epoch, mock_epoch_to_dt, mock_get,
-            mock_metadata_map, mock_get_catalog_entry, mock_paginate, mock_convert_dict_to_stripe_object,
+            mock_metadata_map, mock_get_catalog_entry, mock_paginate,
             mock_reduce_foreign_keys, mock_utils_now, mock_write_record):
         '''Verify that the lookback window is correctly passed when empty string is passed in the config.'''
         config = {"client_secret": "test_secret", "account_id": "test_account",
@@ -119,7 +118,7 @@ class TestLookbackWindow(unittest.TestCase):
 
     def test_invalid_value_string_in_config_lookback_events(
             self, mock_get_bookmark_for_stream, mock_sync_substream, mock_dt_to_epoch, mock_epoch_to_dt, mock_get,
-            mock_metadata_map, mock_get_catalog_entry, mock_paginate, mock_convert_dict_to_stripe_object,
+            mock_metadata_map, mock_get_catalog_entry, mock_paginate,
             mock_reduce_foreign_keys, mock_utils_now, mock_write_record):
         '''Verify that the lookback window is correctly passed when empty string is passed in the config.'''
         config = {"client_secret": "test_secret", "account_id": "test_account",
@@ -134,7 +133,7 @@ class TestLookbackWindow(unittest.TestCase):
 
     def test_invalid_value_string_in_config_lookback_balance_transactions(
             self, mock_get_bookmark_for_stream, mock_sync_substream, mock_dt_to_epoch, mock_epoch_to_dt, mock_get,
-            mock_metadata_map, mock_get_catalog_entry, mock_paginate, mock_convert_dict_to_stripe_object,
+            mock_metadata_map, mock_get_catalog_entry, mock_paginate,
             mock_reduce_foreign_keys, mock_utils_now, mock_write_record):
         '''Verify that the lookback window is correctly passed when empty string is passed in the config.'''
         config = {"client_secret": "test_secret", "account_id": "test_account",
@@ -149,7 +148,7 @@ class TestLookbackWindow(unittest.TestCase):
 
     def test_0_in_config_lookback_events(
             self, mock_get_bookmark_for_stream, mock_sync_substream, mock_dt_to_epoch, mock_epoch_to_dt, mock_get,
-            mock_metadata_map, mock_get_catalog_entry, mock_paginate, mock_convert_dict_to_stripe_object,
+            mock_metadata_map, mock_get_catalog_entry, mock_paginate,
             mock_reduce_foreign_keys, mock_utils_now, mock_write_record):
         '''Verify that the lookback window is correctly passed when empty string is passed in the config.'''
         config = {"client_secret": "test_secret", "account_id": "test_account",
@@ -163,7 +162,7 @@ class TestLookbackWindow(unittest.TestCase):
 
     def test_0_in_config_lookback_balance_transactions(
             self, mock_get_bookmark_for_stream, mock_sync_substream, mock_dt_to_epoch, mock_epoch_to_dt, mock_get,
-            mock_metadata_map, mock_get_catalog_entry, mock_paginate, mock_convert_dict_to_stripe_object,
+            mock_metadata_map, mock_get_catalog_entry, mock_paginate,
             mock_reduce_foreign_keys, mock_utils_now, mock_write_record):
         '''Verify that the lookback window is correctly passed when empty string is passed in the config.'''
         config = {"client_secret": "test_secret", "account_id": "test_account",
@@ -177,7 +176,7 @@ class TestLookbackWindow(unittest.TestCase):
 
     def test_string_0_in_config_lookback_balance_transactions(
             self, mock_get_bookmark_for_stream, mock_sync_substream, mock_dt_to_epoch, mock_epoch_to_dt, mock_get,
-            mock_metadata_map, mock_get_catalog_entry, mock_paginate, mock_convert_dict_to_stripe_object,
+            mock_metadata_map, mock_get_catalog_entry, mock_paginate,
             mock_reduce_foreign_keys, mock_utils_now, mock_write_record):
         '''Verify that the lookback window is correctly passed when '0' is passed in the config.'''
         config = {"client_secret": "test_secret", "account_id": "test_account",
@@ -191,7 +190,7 @@ class TestLookbackWindow(unittest.TestCase):
 
     def test_string_0_in_config_lookback_events(
             self, mock_get_bookmark_for_stream, mock_sync_substream, mock_dt_to_epoch, mock_epoch_to_dt, mock_get,
-            mock_metadata_map, mock_get_catalog_entry, mock_paginate, mock_convert_dict_to_stripe_object,
+            mock_metadata_map, mock_get_catalog_entry, mock_paginate,
             mock_reduce_foreign_keys, mock_utils_now, mock_write_record):
         '''Verify that the lookback window is correctly passed when '0' is passed in the config.'''
         config = {"client_secret": "test_secret", "account_id": "test_account",

@@ -11,7 +11,6 @@ from stripe.stripe_object import StripeObject
 from stripe.api_resources.list_object import ListObject
 from stripe.error import InvalidRequestError
 from stripe.api_requestor import APIRequestor
-from stripe.util import convert_to_stripe_object
 import singer
 from singer import utils, Transformer, metrics
 from singer import metadata
@@ -555,25 +554,6 @@ def write_bookmark_for_stream(stream_name, replication_key, stream_bookmark):
                               stream_bookmark)
 
 
-def convert_dict_to_stripe_object(record):
-    """
-    Convert field datatype of dict object to `stripe.stripe_object.StripeObject`.
-    Example:
-    record = {'id': 'dummy_id', 'tiers':  [{"flat_amount": 4578"unit_amount": 7241350}]}
-    This function convert datatype of each record of 'tiers' field to `stripe.stripe_object.StripeObject`.
-    """
-    # Loop through each fields of `record` object
-    for key, val in record.items():
-        # Check type of field
-        if isinstance(val, list):
-            # Loop through each records of list
-            for index, field_val in enumerate(val):
-                if isinstance(field_val, dict):
-                    # Convert datatype of dict to `stripe.stripe_object.StripeObject`
-                    record[key][index] = convert_to_stripe_object(record[key][index])
-
-    return record
-
 # pylint: disable=too-many-locals
 # pylint: disable=too-many-statements
 
@@ -681,8 +661,6 @@ def sync_stream(stream_name, is_sub_stream=False):
 
                 # get the replication key value from the object
                 rec = unwrap_data_objects(stream_obj.to_dict_recursive())
-                # convert field datatype of dict object to `stripe.stripe_object.StripeObject`
-                rec = convert_dict_to_stripe_object(rec)
                 rec = reduce_foreign_keys(rec, stream_name)
                 stream_obj_created = rec[replication_key]
                 rec['updated'] = stream_obj_created

@@ -103,7 +103,6 @@ class TestParentChildBookmarking(unittest.TestCase):
         mock_get_bookmark_for_sub_stream.assert_called_with("invoice_line_items")
     
     @mock.patch('tap_stripe.reduce_foreign_keys', return_value = {"created": 1561047480})
-    @mock.patch('tap_stripe.convert_dict_to_stripe_object')
     @mock.patch('tap_stripe.is_parent_selected', return_value=False)
     @mock.patch('tap_stripe.paginate', return_value = [mock.Mock()])
     @mock.patch('tap_stripe.Context.is_sub_stream', return_value=False)
@@ -121,7 +120,7 @@ class TestParentChildBookmarking(unittest.TestCase):
                                                                 mock_now, mock_get_catalog_entry, 
                                                                 mock_to_map, mock_is_selected, mock_write_schema, 
                                                                 mock_is_sub_stream, mock_paginate, mock_is_parent_selected, 
-                                                                mock_convert_dict, mock_reduce_foreign_keys):
+                                                                mock_reduce_foreign_keys):
         '''
             Verify that when only the parent stream is selected, write_record() is called for the parent stream.
         '''

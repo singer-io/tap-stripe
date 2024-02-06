@@ -1,5 +1,8 @@
 # Changelog
 
+## 3.2.0
+  * Makes tap compatible with singer-python 6.0.0 [#195](https://github.com/singer-io/tap-stripe/pull/195)
+
 ## 3.1.0
   * Upgrades to run on python 3.11.7 [#193](https://github.com/singer-io/tap-stripe/pull/193)
 

@@ -1055,8 +1055,7 @@ def sync_event_updates(stream_name, is_sub_stream):
                                 sync_sub_stream(sub_stream_name,
                                                 event_resource_obj,
                                                 updates=True)
-            if events_obj.created > max_created:
-                max_created = events_obj.created
+            max_created = max(events_obj.created, max_created)
 
         # The events stream returns results in descending order, so we
         # cannot bookmark until the entire page is processed

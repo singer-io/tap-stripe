@@ -15,7 +15,7 @@ setup(
     ],
     extras_require={
         'test': [
-            'pylint',
+            'pylint==3.0.3',
             'nose2',
             'coverage'
         ],

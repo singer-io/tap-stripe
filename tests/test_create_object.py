@@ -25,12 +25,14 @@ class CreateObjectTest(BaseTapTest):
         self.conn_id = conn_id
 
         streams_to_create = {
-            "balance_transactions",  # should be created implicity with a create in the payouts or charges streams
+            "balance_transactions",  # should be created implicity with create in payouts or charges
             "charges",
             "coupons",
             "customers",
             "invoice_items",
-            "invoice_line_items", # this is created implicity by invoices, it just creates another invoice TODO get this outa here
+            # invoice_line_items are created implicity by invoices, this creates another invoice
+            # TODO update test to remove invoice_line_items from here
+            "invoice_line_items",
             "invoices", # this will create an invoice_item
             "payouts",
             "plans",
@@ -41,7 +43,7 @@ class CreateObjectTest(BaseTapTest):
          }
 
         missing_streams_to_create = {
-            "disputes",  # can be created by simulating a dispute transaction with a specific card number
+            "disputes",  # create by simulating a dispute transaction with a specific card number
             # no way to create directly, see: https://stripe.com/docs/testing#disputes
             "payout_transactions",  # BUG_9703 | https://jira.talendforge.org/browse/TDL-9703
             # depends on payouts and transactions
@@ -132,7 +134,7 @@ class CreateObjectTest(BaseTapTest):
                                 f"new_id: {new_objects[stream]['id']}")
                     self.assertTrue(new_objects[stream]['id'] in null_date_invoices)
                     if new_objects[stream]['id'] not in masking_invoices:
-                        LOGGER.warn(f"########## Previous error scenario detected (un-masked failure) ##########")
+                        LOGGER.warn(f"### Previous error scenario detected (un-masked failure) ###")
                 # TODO END DEBUG
 
                 # verify the new object is in the list of created objects

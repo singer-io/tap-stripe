@@ -87,7 +87,9 @@ SCHEMA_MISSING_FIELDS = {
         'radar_options'
     },
     'subscription_items': set(),
-    'plans': set(),
+    'plans': {
+        'meter',
+    },
     'invoice_line_items': {
         'unit_amount_excluding_tax',
         'amount_excluding_tax'

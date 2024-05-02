@@ -1,0 +1,30 @@
+on:
+  push:
+    branches:
+      - "**"
+    tags-ignore:
+      - "*.*.*"
+
+name: tests
+
+concurrency:
+  group: tests
+
+jobs:
+  tests:
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11"]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        name: Checkout
+
+      - uses: actions/setup-python@v4
+        name: Setup Python
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - run: pip install -e .[test]
+      - name: Run tests
+        run: nose2 --with-coverage -v -s tests/unittests

@@ -1,0 +1,17 @@
+{
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": "string"
+        },
+        "object": {
+            "type": "string"
+        },
+        "description": {
+            "type": "string"
+        },
+        "name": {
+            "type": "string"
+        }
+    }
+}

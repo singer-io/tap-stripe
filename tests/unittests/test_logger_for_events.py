@@ -39,6 +39,7 @@ class TestLoggerWarningForEvents(unittest.TestCase):
         """
         config = {"client_secret": "test_secret", "account_id": "test_account", "start_date": "2022-02-17T00:00:00", "lookback_window": "0"}
         Context.config = config
+        Context.state = {}
         Context.new_counts['events'] = 1
         sync_stream("events")
 

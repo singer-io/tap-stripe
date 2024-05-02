@@ -17,13 +17,15 @@ setup(
         'test': [
             'pylint==3.0.3',
             'nose2',
-            'coverage'
+            'coverage',
+            'parameterized==0.9.0',
         ],
         'dev': [
             'ipdb',
             'pylint',
             'astroid==2.5.1',
             'nose2',
+            'parameterized==0.9.0',
         ]
     },
     entry_points="""

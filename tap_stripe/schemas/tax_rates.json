@@ -1,0 +1,77 @@
+{
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": "string"
+        },
+        "object": {
+            "type": "string"
+        },
+        "active": {
+            "type": "boolean"
+        },
+        "country": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "created": {
+            "type": "integer"
+        },
+        "description": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "display_name": {
+            "type": "string"
+        },
+        "effective_percentage": {
+            "type": [
+                "null",
+                "float"
+            ]
+        },
+        "inclusive": {
+            "type": "boolean"
+        },
+        "jurisdiction": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "jurisdiction_level": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "livemode": {
+            "type": "boolean"
+        },
+        "metadata": {
+            "type": [
+                "null",
+                "object"
+            ]
+        },
+        "percentage": {
+            "type": "float"
+        },
+        "state": {
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        "tax_type": {
+            "type": [
+                "null",
+                "string"
+            ]
+        }
+    }
+}

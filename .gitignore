@@ -101,3 +101,4 @@ rsa-key
 tags
 singer-check-tap-data
 state.json
+.vscode/settings.json

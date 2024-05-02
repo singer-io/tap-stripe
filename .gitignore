@@ -102,3 +102,6 @@ tags
 singer-check-tap-data
 state.json
 .vscode/settings.json
+.tool-versions
+.venv
+catalog.json

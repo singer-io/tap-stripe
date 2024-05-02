@@ -47,6 +47,7 @@ STREAM_SDK_OBJECTS = {
     'payout_transactions': {'sdk_object': stripe.BalanceTransaction, 'key_properties': ['id']},
     'disputes': {'sdk_object': stripe.Dispute, 'key_properties': ['id']},
     'products': {'sdk_object': stripe.Product, 'key_properties': ['id']},
+    "tax_codes": {"sdk_object": stripe.TaxCode, "key_properties": ["id"]},
 }
 
 # I think this can be merged into the above structure
@@ -470,6 +471,11 @@ APIRequestor.request = new_request
 
 
 def paginate(sdk_obj, filter_key, start_date, end_date, stream_name, request_args=None, limit=100):
+    if filter_key is not None: 
+        filters = {filter_key + "[gte]": start_date,
+        filter_key + "[lt]": end_date}
+    else: 
+        filters = {} 
     yield from sdk_obj.list(
         limit=limit,
         stripe_account=Context.config.get('account_id'),
@@ -478,8 +484,7 @@ def paginate(sdk_obj, filter_key, start_date, end_date, stream_name, request_arg
         expand=STREAM_TO_EXPAND_FIELDS.get(stream_name, []),
         # None passed to starting_after appears to retrieve
         # all of them so this should always be safe.
-        **{filter_key + "[gte]": start_date,
-           filter_key + "[lt]": end_date},
+        **filters,
         **request_args or {}
     ).auto_paging_iter()
 
@@ -542,6 +547,8 @@ def write_bookmark_for_stream(stream_name, replication_key, stream_bookmark):
     # Invoices's replication key changed from `date` to `created` in latest API version.
     # Invoice line Items write bookmark with Invoice's replication key but it changed to `created`
     # so kept `date` in bookmarking for Invoices and Invoice line Items as it has to respect bookmark of active connection too.
+    if stream_name in ['tax_codes']: 
+        return 
     if stream_name in ['invoices', 'invoice_line_items']:
         singer.write_bookmark(Context.state,
                               stream_name,
@@ -662,11 +669,11 @@ def sync_stream(stream_name, is_sub_stream=False):
                 # get the replication key value from the object
                 rec = unwrap_data_objects(stream_obj.to_dict_recursive())
                 rec = reduce_foreign_keys(rec, stream_name)
-                stream_obj_created = rec[replication_key]
+                stream_obj_created = rec.get(replication_key)
                 rec['updated'] = stream_obj_created
 
                 # sync stream if object is greater than or equal to the bookmark and if parent is selected
-                if stream_obj_created >= stream_bookmark and not is_sub_stream:
+                if stream_obj_created is None or stream_obj_created >= stream_bookmark and not is_sub_stream:
                     rec = transformer.transform(rec,
                                                 Context.get_catalog_entry(stream_name)['schema'],
                                                 stream_metadata)
@@ -700,7 +707,10 @@ def sync_stream(stream_name, is_sub_stream=False):
             singer.write_state(Context.state)
 
             # update window for next iteration
-            start_window = stop_window
+            if stream_name == 'tax_codes':
+                start_window = end_time
+            else: 
+                start_window = stop_window
 
     singer.write_state(Context.state)
 

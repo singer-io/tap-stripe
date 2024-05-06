@@ -102,7 +102,7 @@ STREAM_TO_EXPAND_FIELDS = {
     'customers': ['data.sources', 'data.subscriptions', 'data.tax_ids'],
     'plans': ['data.tiers'],
     'invoice_items': ['data.plan.tiers'],
-    'invoice_line_items': ['data.plan.tiers'],
+    'invoice_line_items': ['data.plan.tiers', 'data.tax_amounts.tax_rate'],
     'subscriptions': ['data.plan.tiers'],
     'subscription_items': ['data.plan.tiers']
 }

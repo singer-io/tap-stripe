@@ -85,7 +85,12 @@ class BaseTapTest(BaseCase):
             'customers': default,
             'plans': default,
             'payment_intents': default,
-            'invoices': default,
+            'invoices': {
+                self.AUTOMATIC_FIELDS: {"updated"},
+                self.REPLICATION_KEYS: {"created"},
+                self.PRIMARY_KEYS: {"id", "billing_reason"},
+                self.REPLICATION_METHOD: self.INCREMENTAL,
+            },
             'invoice_items': {
                 self.AUTOMATIC_FIELDS: {"updated"},
                 self.REPLICATION_KEYS: {"date"},

@@ -363,8 +363,9 @@
     },
     "refunds": {
       "type": [
+        "array",
         "null",
-        "array"
+        "object"
       ],
       "items": {
         "type": [

@@ -176,6 +176,12 @@
         "null",
         "string"
       ]
+    },
+    "default_price": {
+      "type": [
+        "null",
+        "string"
+      ]
     }
   }
 }

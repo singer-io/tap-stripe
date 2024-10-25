@@ -36,24 +36,141 @@
           ]
         },
         "card": {
-        "properties": {
-          "*": {
-            "type": [
-              "null",
-              "object"
-            ]
-          },
+          "type": [
+            "object",
+             "null"
+            ],
           "properties": {
-            "*": {
+            "brand": {
               "type": [
-                "null",
-                "string"
+                "string",
+                 "null"
+                ]
+            },
+            "checks": {
+              "type": [
+                "object",
+                 "null"
+                ],
+              "properties": {
+                "address_line1_check": {
+                  "type": [
+                    "string",
+                     "null"
+                    ]
+                },
+                "address_postal_code_check": {
+                  "type": [
+                    "string",
+                     "null"
+                    ]
+                },
+                "cvc_check": {
+                  "type": [
+                    "string",
+                     "null"
+                    ]
+                }
+              }
+            },
+            "country": {
+              "type": [
+                "string",
+                 "null"
+                ]
+            },
+            "display_brand": {
+              "type": [
+                "string",
+                 "null"
+                ]
+            },
+            "exp_month": {
+              "type": [
+                "integer",
+                 "null"
+                ]
+            },
+            "exp_year": {
+              "type": [
+                "integer",
+                 "null"
+                ]
+            },
+            "fingerprint": {
+              "type": [
+                "string",
+                 "null"
+                ]
+            },
+            "funding": {
+              "type": [
+                "string",
+                 "null"
+                ]
+            },
+            "generated_from": {
+              "type": [
+                "string",
+                 "null"
+                ]
+            },
+            "last4": {
+              "type": [
+                "string",
+                 "null"
+                ]
+            },
+            "networks": {
+              "type": [
+                "object",
+                 "null"
+                ],
+              "properties": {
+                "available": {
+                  "type": [
+                    "array",
+                     "null"
+                    ],
+                  "items": {
+                    "type": [
+                      "string",
+                       "null"
+                      ]
+                  }
+                },
+                "preferred": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+
+                }
+              }
+            },
+            "three_d_secure_usage": {
+              "type": [
+                "object",
+                 "null"
+                ],
+              "properties": {
+                "supported": {
+                  "type": [
+                    "boolean",
+                     "null"
+                    ]
+                }
+              }
+            },
+            "wallet": {
+              "type": [
+                "string",
+                "null"
               ]
+
             }
           }
-        }
-      },
-        
+        },
         "metadata": {
           "type": [
             "null",

@@ -1,0 +1,67 @@
+{
+    "type": [
+      "null",
+      "object"
+    ],
+      "properties": {
+        "id": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "created": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "format": "date-time"
+        },
+        "type": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "livemode": {
+          "type": [
+            "null",
+            "boolean"
+          ]
+        },
+        "customer": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "card": {
+        "properties": {
+          "*": {
+            "type": [
+              "null",
+              "object"
+            ]
+          },
+          "properties": {
+            "*": {
+              "type": [
+                "null",
+                "string"
+              ]
+            }
+          }
+        }
+      },
+        
+        "metadata": {
+          "type": [
+            "null",
+            "object"
+          ],
+          "properties": {}
+        }
+    
+      }
+}
+  

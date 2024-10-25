@@ -27,6 +27,7 @@ STREAM_SDK_OBJECTS = {
     'customers': {'sdk_object': stripe.Customer, 'key_properties': ['id']},
     'plans': {'sdk_object': stripe.Plan, 'key_properties': ['id']},
     'payment_intents': {'sdk_object': stripe.PaymentIntent, 'key_properties': ['id']},
+    'payment_methods': {'sdk_object': stripe.PaymentMethod, 'key_properties': ['id']},
     'invoices': {'sdk_object': stripe.Invoice, 'key_properties': ['id']},
     'invoice_items': {'sdk_object': stripe.InvoiceItem, 'key_properties': ['id']},
     'invoice_line_items': {'sdk_object': stripe.InvoiceLineItem,
@@ -56,6 +57,7 @@ STREAM_REPLICATION_KEY = {
     'customers': 'created',
     'plans': 'created',
     'payment_intents': 'created',
+    'payment_methods': None,
     'invoices': 'created',
     'invoice_items': 'date',
     'transfers': 'created',
@@ -77,6 +79,7 @@ STREAM_TO_TYPE_FILTER = {
     'customers': {'type': 'customer.*', 'object': ['customer']},
     'plans': {'type': 'plan.*', 'object': ['plan']},
     'payment_intents': {'type': 'payment_intent.*', 'object': ['payment_intent']},
+    'payment_methods': {'type': 'customer.payment_method.*', 'object': ['payment_method']},
     'invoices': {'type': 'invoice.*', 'object': ['invoice']},
     'invoice_items': {'type': 'invoiceitem.*', 'object': ['invoiceitem']},
     'coupons': {'type': 'coupon.*', 'object': ['coupon']},
@@ -108,12 +111,14 @@ STREAM_TO_EXPAND_FIELDS = {
 
 SUB_STREAMS = {
     'subscriptions': 'subscription_items',
+    'customers': 'payment_methods',
     'invoices': 'invoice_line_items',
     'payouts': 'payout_transactions'
 }
 
 PARENT_STREAM_MAP = {
     'subscription_items': 'subscriptions',
+    'payment_methods': 'customers',
     'invoice_line_items': 'invoices',
     'payout_transactions': 'payouts'
 }
@@ -376,6 +381,8 @@ def discover():
             # if it's appropriate.
             'key_properties': stream_map['key_properties']
         }
+        if stream_name == 'payment_methods':
+            catalog_entry['replication_method'] = 'FULL_TABLE'
         streams.append(catalog_entry)
 
     return {'streams': streams}
@@ -767,6 +774,11 @@ def sync_sub_stream(sub_stream_name, parent_obj, updates=False):
             LOGGER.info('Skipping retrieval of balance history for manual payout %s',
                         payout_id)
             return
+    elif sub_stream_name == "payment_methods":
+        customer_id = parent_obj['id']
+        object_list = stripe.PaymentMethod.list(
+            customer=customer_id,
+            limit=100         )
     else:
         raise Exception("Attempted to sync substream that is not implemented: {}"
                         .format(sub_stream_name))

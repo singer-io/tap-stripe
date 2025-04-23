@@ -18,6 +18,32 @@
       ],
       "format": "date-time"
     },
+    "cancellation_details": {
+      "type": [
+        "null",
+        "object"
+      ],
+      "properties": {
+        "comment": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "feedback": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "reason": {
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      }
+    },
     "updated_by_event_type": {
       "type": [
         "null",

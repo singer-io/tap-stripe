@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.2.1
+  * Bump dependency versions for twistlock compliance
+  * Update tests to fix circle build
+  * [#207](https://github.com/singer-io/tap-stripe/pull/207)
+
 ## 3.2.0
   * Makes tap compatible with singer-python 6.0.0 [#195](https://github.com/singer-io/tap-stripe/pull/195)
 

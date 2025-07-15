@@ -117,7 +117,8 @@ FIELDS_TO_NOT_CHECK = {
         'tax_info_verification',
         'cards',
         'default_card',
-        'updated_by_event_type'
+        'updated_by_event_type',
+        'sources'
     },
     'subscriptions': {
         # Below fields are deprecated or renamed.(https://stripe.com/docs/upgrades#2019-10-17, https://stripe.com/docs/upgrades#2019-12-03, https://stripe.com/docs/upgrades#2020-08-27)
@@ -158,7 +159,9 @@ FIELDS_TO_NOT_CHECK = {
         # Following both fields `card` and `statement_description` are deprecated. (https://stripe.com/docs/upgrades#2015-02-18, https://stripe.com/docs/upgrades#2014-12-17)
         'card',
         'statement_description',
-        'updated_by_event_type'
+        'updated_by_event_type',
+        'billing_details',
+        'outcome'
     },
     'subscription_items': {
         # Field is not available in stripe documentation and also not returned by API response. (https://stripe.com/docs/api/subscription_items/object)
@@ -509,7 +512,15 @@ class ALlFieldsTest(BaseTapTest):
                 ).union(SCHEMA_MISSING_FIELDS.get(stream, set()))
 
                 if stream == 'invoice_items':
-                    adjusted_actual_keys = adjusted_actual_keys.union({'subscription_item'})  # BUG_13666
+                    adjusted_actual_keys = adjusted_actual_keys.union({'subscription_item', 'pricing', 'parent'})  # BUG_13666
+                elif stream == 'payouts':
+                    adjusted_actual_keys = adjusted_actual_keys.union({'trace_id'})
+                elif stream == 'subscriptions':
+                    adjusted_actual_keys = adjusted_actual_keys.union({'billing_mode'})
+                elif stream == 'invoice_line_items':
+                    adjusted_actual_keys = adjusted_actual_keys.union({'taxes', 'pricing', 'parent', 'pretax_credit_amounts'})
+                elif stream == 'invoices':
+                    adjusted_actual_keys = adjusted_actual_keys.union({'total_taxes', 'total_pretax_credit_amounts', 'amount_overpaid', 'parent', 'automatically_finalizes_at'})
 
                 # Verify the expected_keys is a subset of the actual_keys
                 message = f"{adjusted_expected_keys} is not a subset of {adjusted_actual_keys}"

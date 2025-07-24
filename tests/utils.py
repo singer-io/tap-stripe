@@ -232,7 +232,7 @@ def list_all_object(stream, max_limit: int = 100, get_invoice_lines: bool = Fals
             if dict_obj.get('data'):
                 for obj in dict_obj['data']:
                     if obj.get('refunds'):
-                        refunds = obj['refunds']['data'] 
+                        refunds = obj['refunds']['data']
                         obj['refunds'] = refunds
 
                 return dict_obj['data']
@@ -352,13 +352,22 @@ def standard_create(stream):
             tax_id_data=[],
         )
     elif stream == 'payouts':
-        # stream order is random so we may need this payment_intent to keep the stripe account
+        # stream order is random so we may need to add a payment_intent to keep the stripe account
         # balance from getting too low to create payout objects
 
-        current_balances = stripe_client.Balance.retrieve()['available']
-        # if available balance goes below $100 usd add another $100.
-        for balance in current_balances:
-            if balance.get('currency') == 'usd' and balance.get('amount') <= 10000:
+        balance_information = stripe_client.Balance.retrieve()
+        available_balances = balance_information['available']
+        pending_balances = balance_information['pending']
+        pending_amount_usd = 0
+
+        for pending_amount in pending_balances:
+            if pending_amount.get('currency') == 'usd':
+                pending_amount_usd = pending_amount.get('amount')
+
+        # if available - pending balance goes below $100 usd add another $100.
+        for balance in available_balances:
+            if balance.get('currency') == 'usd' \
+               and balance.get('amount') + pending_amount_usd <= 10000:
                 # added balance bypasses pending if card 0077 is used
                 stripe_client.PaymentIntent.create(
                     amount=10000,
@@ -470,7 +479,7 @@ def create_object(stream):
             )
         elif stream == 'invoices':
             # Invoices requires the customer has an item associated with them
-            # Creating invoice record using olderversion because it generates invoice.lines data 
+            # Creating invoice record using olderversion because it generates invoice.lines data
             # at the time of record creation itself
             customer_id = cust['id']
             customer_default_source = cust['default_source']

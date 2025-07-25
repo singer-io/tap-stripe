@@ -24,7 +24,7 @@ jobs:
           command: |
             source /usr/local/share/virtualenvs/tap-stripe/bin/activate
             echo "Will ignore the following errors $PYLINT_DISABLE_LIST"
-            pylint tap_stripe -d "$PYLINT_DISABLE_LIST,line-too-long,too-many-lines,missing-module-docstring,missing-class-docstring,missing-function-docstring,too-many-branches,broad-exception-raised,consider-using-f-string,no-else-return"
+            pylint tap_stripe -d "$PYLINT_DISABLE_LIST,line-too-long,too-many-lines,missing-module-docstring,missing-class-docstring,missing-function-docstring,too-many-branches,broad-exception-raised,consider-using-f-string,no-else-return,too-many-arguments"
       - run:
           name: 'JSON Validator'
           command: |

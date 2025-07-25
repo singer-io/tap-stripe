@@ -59,7 +59,7 @@ jobs:
             uv pip install --upgrade awscli
             aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/tap_tester_sandbox /usr/local/share/virtualenvs/dev_env.sh
             source /usr/local/share/virtualenvs/dev_env.sh
-            pip install 'stripe==2.64.0'
+            uv pip install 'stripe==2.64.0'
             mkdir /tmp/${CIRCLE_PROJECT_REPONAME}
             export STITCH_CONFIG_DIR=/tmp/${CIRCLE_PROJECT_REPONAME}
             run-test --tap=${CIRCLE_PROJECT_REPONAME} tests

@@ -6,7 +6,7 @@ orbs:
 executors:
   tap_tester:
     docker:
-      - image: 218546966473.dkr.ecr.us-east-1.amazonaws.com/circle-ci:stitch-tap-tester
+      - image: 218546966473.dkr.ecr.us-east-1.amazonaws.com/circle-ci:stitch-tap-tester-uv
 
 jobs:
   build:
@@ -20,11 +20,10 @@ jobs:
       - run:
           name: 'Setup virtual env'
           command: |
-            python3 -mvenv /usr/local/share/virtualenvs/tap-stripe
+            uv venv --python 3.11 /usr/local/share/virtualenvs/tap-stripe
             source /usr/local/share/virtualenvs/tap-stripe/bin/activate
-            pip install -U pip setuptools
-            pip install .[test]
-            aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/tap_tester_sandbox /usr/local/share/virtualenvs/dev_env.sh
+            uv pip install -U pip setuptools
+            uv pip install .[test]
       - persist_to_workspace:
           root: /usr/local/share/virtualenvs/
           paths:
@@ -40,7 +39,6 @@ jobs:
           name: 'pylint'
           command: |
             source /usr/local/share/virtualenvs/tap-stripe/bin/activate
-            source /usr/local/share/virtualenvs/dev_env.sh
             echo "Will ignore the following errors $PYLINT_DISABLE_LIST"
             pylint tap_stripe -d "$PYLINT_DISABLE_LIST"
   json_validate:
@@ -71,8 +69,9 @@ jobs:
           name: 'Unit Tests'
           command: |
             source /usr/local/share/virtualenvs/tap-stripe/bin/activate
-            pip install nose2 parameterized nose2[coverage_plugin]>=0.6.5
-            nose2 --with-coverage -v -s tests/unittests
+            uv pip install pytest coverage parameterized
+            coverage run -m pytest tests/unittests
+            coverage html
       - store_test_results:
           path: test_output/report.xml
       - store_artifacts:
@@ -94,6 +93,8 @@ jobs:
           no_output_timeout: 45m
           command: |
             source /usr/local/share/virtualenvs/tap-tester/bin/activate
+            uv pip install --upgrade awscli
+            aws s3 cp s3://com-stitchdata-dev-deployment-assets/environments/tap-tester/tap_tester_sandbox /usr/local/share/virtualenvs/dev_env.sh
             source /usr/local/share/virtualenvs/dev_env.sh
             pip install 'stripe==2.64.0'
             mkdir /tmp/${CIRCLE_PROJECT_REPONAME}
@@ -129,7 +130,7 @@ workflows:
             - tier-1-tap-user
           requires:
             - ensure_env
-      - run_integration_test: 
+      - run_integration_test:
           name: 'Testing all_fields'
           context:
             - circleci-user

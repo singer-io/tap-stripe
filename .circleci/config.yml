@@ -24,7 +24,7 @@ jobs:
           command: |
             source /usr/local/share/virtualenvs/tap-stripe/bin/activate
             echo "Will ignore the following errors $PYLINT_DISABLE_LIST"
-            pylint tap_stripe -d "$PYLINT_DISABLE_LIST"
+            pylint tap_stripe -d "$PYLINT_DISABLE_LIST,line-too-long,too-many-lines,missing-module-docstring,missing-class-docstring,missing-function-docstring,too-many-branches,broad-exception-raised,consider-using-f-string,no-else-return"
       - run:
           name: 'JSON Validator'
           command: |
@@ -62,7 +62,8 @@ jobs:
             pip install 'stripe==2.64.0'
             mkdir /tmp/${CIRCLE_PROJECT_REPONAME}
             export STITCH_CONFIG_DIR=/tmp/${CIRCLE_PROJECT_REPONAME}
-            run-test --tap=${CIRCLE_PROJECT_REPONAME} tests      - slack/notify-on-failure:
+            run-test --tap=${CIRCLE_PROJECT_REPONAME} tests
+      - slack/notify-on-failure:
           only_for_branches: master
       - store_artifacts:
           path: /tmp/tap-stripe

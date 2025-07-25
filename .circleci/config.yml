@@ -5,16 +5,11 @@ orbs:
 
 executors:
   tap_tester:
-    docker:
-      - image: 218546966473.dkr.ecr.us-east-1.amazonaws.com/circle-ci:stitch-tap-tester-uv
 
 jobs:
   build:
-    executor: tap_tester
-    steps:
-      - run: echo 'CI done'
-  ensure_env:
-    executor: tap_tester
+    docker:
+      - image: 218546966473.dkr.ecr.us-east-1.amazonaws.com/circle-ci:stitch-tap-tester-uv
     steps:
       - checkout
       - run:
@@ -24,41 +19,18 @@ jobs:
             source /usr/local/share/virtualenvs/tap-stripe/bin/activate
             uv pip install -U pip setuptools
             uv pip install .[test]
-      - persist_to_workspace:
-          root: /usr/local/share/virtualenvs/
-          paths:
-            - tap-stripe
-            - dev_env.sh
-  pylint:
-    executor: tap_tester
-    steps:
-      - checkout
-      - attach_workspace:
-          at: /usr/local/share/virtualenvs
       - run:
           name: 'pylint'
           command: |
             source /usr/local/share/virtualenvs/tap-stripe/bin/activate
             echo "Will ignore the following errors $PYLINT_DISABLE_LIST"
             pylint tap_stripe -d "$PYLINT_DISABLE_LIST"
-  json_validate:
-    executor: tap_tester
-    steps:
-      - checkout
-      - attach_workspace:
-          at: /usr/local/share/virtualenvs
       - run:
           name: 'JSON Validator'
           command: |
             source /usr/local/share/virtualenvs/tap-tester/bin/activate
             stitch-validate-json tap_stripe/schemas/*.json
             stitch-validate-json tap_stripe/schemas/shared/*.json
-  unittest:
-    executor: tap_tester
-    steps:
-      - checkout
-      - attach_workspace:
-          at: /usr/local/share/virtualenvs
       - run:
           name: 'JSON Validator'
           command: |
@@ -76,15 +48,6 @@ jobs:
           path: test_output/report.xml
       - store_artifacts:
           path: htmlcov
-  run_integration_test:
-    parameters:
-      file:
-        type: string
-    executor: tap_tester
-    steps:
-      - checkout
-      - attach_workspace:
-          at: /usr/local/share/virtualenvs
       - run:
           # TODO Instead of using always steps to make reading the output
           # easier, emit an xUnit report and let Circle tell you what
@@ -99,156 +62,19 @@ jobs:
             pip install 'stripe==2.64.0'
             mkdir /tmp/${CIRCLE_PROJECT_REPONAME}
             export STITCH_CONFIG_DIR=/tmp/${CIRCLE_PROJECT_REPONAME}
-            run-test --tap=${CIRCLE_PROJECT_REPONAME} tests/test_<< parameters.file >>.py
-      - slack/notify-on-failure:
+            run-test --tap=${CIRCLE_PROJECT_REPONAME} tests      - slack/notify-on-failure:
           only_for_branches: master
       - store_artifacts:
           path: /tmp/tap-stripe
 
 workflows:
-  commit: &commit_jobs
+  commit:
     jobs:
-      - ensure_env:
-          context:
-            - circleci-user
-            - tier-1-tap-user
-      - pylint:
-          context:
-            - circleci-user
-            - tier-1-tap-user
-          requires:
-            - ensure_env
-      - json_validate:
-          context:
-            - circleci-user
-            - tier-1-tap-user
-          requires:
-            - ensure_env
-      - unittest:
-          context:
-            - circleci-user
-            - tier-1-tap-user
-          requires:
-            - ensure_env
-      - run_integration_test:
-          name: 'Testing all_fields'
-          context:
-            - circleci-user
-            - tier-1-tap-user
-          file: all_fields
-          requires:
-            - unittest
-            - pylint
-            - json_validate
-      - run_integration_test:
-          name: 'Testing discovery'
-          context:
-            - circleci-user
-            - tier-1-tap-user
-          file: discovery
-          requires:
-            - 'Testing all_fields'
-      - run_integration_test:
-          name: 'Testing all_tests_run'
-          context:
-            - circleci-user
-            - tier-1-tap-user
-          file: all_tests_run
-          requires:
-            - 'Testing all_fields'
-      - run_integration_test:
-          name: 'Testing start_date'
-          context:
-            - circleci-user
-            - tier-1-tap-user
-          file: start_date
-          requires:
-            - 'Testing all_fields'
-      - run_integration_test:
-          name: 'Testing automatic_fields'
-          context:
-            - circleci-user
-            - tier-1-tap-user
-          file: automatic_fields
-          requires:
-            - 'Testing all_fields'
-      - run_integration_test:
-          name: 'Testing pagination'
-          context:
-            - circleci-user
-            - tier-1-tap-user
-          file: pagination
-          requires:
-            - 'Testing all_fields'
-      - run_integration_test:
-          name: 'Testing create_object'
-          context:
-            - circleci-user
-            - tier-1-tap-user
-          file: create_object
-          requires:
-            - 'Testing all_fields'
-      - run_integration_test:
-          name: 'Testing event_updates'
-          context:
-            - circleci-user
-            - tier-1-tap-user
-          file: event_updates
-          requires:
-            - 'Testing discovery'
-            - 'Testing all_tests_run'
-            - 'Testing start_date'
-            - 'Testing automatic_fields'
-            - 'Testing pagination'
-            - 'Testing create_object'
-      - run_integration_test:
-          name: 'Testing full_replication'
-          context:
-            - circleci-user
-            - tier-1-tap-user
-          file: full_replication
-          requires:
-            - 'Testing event_updates'
-      - run_integration_test:
-          name: 'Testing bookmarks'
-          context:
-            - circleci-user
-            - tier-1-tap-user
-          file: bookmarks
-          requires:
-            - 'Testing full_replication'
-      - run_integration_test:
-          name: 'Testing configurable_lookback_window'
-          context:
-            - circleci-user
-            - tier-1-tap-user
-          file: configurable_lookback_window
-          requires:
-            - 'Testing all_fields'
-      - run_integration_test:
-          name: 'Testing parent_child_independent'
-          context:
-            - circleci-user
-            - tier-1-tap-user
-          file: parent_child_independent
-          requires:
-            - 'Testing all_fields'
-      - run_integration_test:
-          name: 'Testing automatic_payout_transactions'
-          context:
-            - circleci-user
-            - tier-1-tap-user
-          file: automatic_payout_transactions
-          requires:
-            - 'Testing all_fields'
       - build:
           context:
             - circleci-user
             - tier-1-tap-user
-          requires:
-            - 'Testing bookmarks'
   build_daily:
-    <<: *commit_jobs
     triggers:
       - schedule:
           cron: "0 1 * * *"

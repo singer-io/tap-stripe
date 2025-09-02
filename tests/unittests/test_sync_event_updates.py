@@ -83,7 +83,7 @@ class TestSyncEventUpdates(unittest.TestCase):
         mock_stripe_event.return_value = ""
         with self.assertRaises(Exception) as e:
             sync_event_updates("charges", False)
-        self.assertEquals(mock_reset_func.call_count, 1)
+        self.assertEqual(mock_reset_func.call_count, 1)
 
     @mock.patch("singer.write_state")
     def test_write_bookmark_event_updates_for_non_sub_streams(self, mock_state):

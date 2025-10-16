@@ -38,6 +38,7 @@ KNOWN_MISSING_FIELDS = {
     'payouts': {
         'application_fee',
         'application_fee_amount',
+        'payout_method',
         'reconciliation_status',
     },
     'charges': set(),
@@ -58,6 +59,8 @@ KNOWN_MISSING_FIELDS = {
         'shipping_details',
     },
     'payment_intents': {
+        'excluded_payment_method_types',
+        'payment_details',
         'payment_method_configuration_details',
     },
 }

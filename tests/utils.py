@@ -588,6 +588,25 @@ def create_object(stream):
                 # transfer_group=,  # CONNECT only
             )
 
+        # retrieve fresh balance info before attempting a transfer
+        balance_information = stripe_client.Balance.retrieve()
+        available_balances = balance_information.get('available', [])
+        pending_balances = balance_information.get('pending', [])
+        pending_amount_usd = 0
+        for pending_amount in pending_balances:
+            if pending_amount.get('currency') == 'usd':
+                pending_amount_usd = pending_amount.get('amount', 0)
+
+        # if available - pending balance goes below $100 usd add another $100.
+        for balance in available_balances:
+            if balance.get('currency') == 'usd' and balance.get('amount', 0) + pending_amount_usd <= 10000:
+                stripe_client.PaymentIntent.create(
+                    amount=10000,
+                    currency="usd",
+                    customer="cus_LAXuu6qTrq8LSf",
+                    confirm=True,
+                )
+
         if stream == 'transfers':
             return client[stream].create(
                 amount=1,

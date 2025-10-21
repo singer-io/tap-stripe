@@ -33,6 +33,7 @@ class BaseTapTest(BaseCase):
     FULL = "FULL_TABLE"
     START_DATE_FORMAT = "%Y-%m-%dT00:00:00Z"
     TS_COMPARISON_FORMAT = "%Y-%m-%dT%H:%M:%S.000000Z"
+    PARENT_TAP_STREAM_ID = "parent-tap-stream-id"
 
     @staticmethod
     def tap_name():
@@ -95,6 +96,7 @@ class BaseTapTest(BaseCase):
             'invoice_line_items': {
                 self.PRIMARY_KEYS: {"id", "invoice"},
                 self.REPLICATION_METHOD: self.INCREMENTAL,
+                self.PARENT_TAP_STREAM_ID: "invoices",
                 self.REPLICATION_KEYS: None,
                 self.AUTOMATIC_FIELDS: None
             },
@@ -105,6 +107,7 @@ class BaseTapTest(BaseCase):
                 self.AUTOMATIC_FIELDS: None,
                 self.REPLICATION_KEYS: {"created"},
                 self.PRIMARY_KEYS: {"id"},
+                self.PARENT_TAP_STREAM_ID: "subscriptions",
                 self.REPLICATION_METHOD: self.INCREMENTAL,
             },
             'balance_transactions': default,
@@ -113,6 +116,7 @@ class BaseTapTest(BaseCase):
                 self.AUTOMATIC_FIELDS: {"id"},
                 self.REPLICATION_KEYS: {"id"},
                 self.PRIMARY_KEYS: {"id"},
+                self.PARENT_TAP_STREAM_ID: "payouts",
                 self.REPLICATION_METHOD: self.INCREMENTAL
             },
             'disputes': default,

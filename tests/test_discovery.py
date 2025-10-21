@@ -156,6 +156,20 @@ class DiscoveryTest(BaseTapTest):
                                      expected_automatic_fields,
                                      actual_automatic_fields))
 
+                expected_parent_id = self.expected_metadata()[stream].get(self.PARENT_TAP_STREAM_ID)
+                actual_parent_id = stream_properties[0].get("metadata", {}).get(self.PARENT_TAP_STREAM_ID)
+
+                if expected_parent_id:
+                    self.assertEqual(
+                        actual_parent_id,
+                        expected_parent_id,
+                        msg=f"Stream {stream}: Expected PARENT_TAP_STREAM_ID to be "f"'{expected_parent_id}' but found '{actual_parent_id}'."
+                    )
+                else:
+                    self.assertIsNone(
+                        actual_parent_id,
+                        msg=f"Stream {stream}: Expected no PARENT_TAP_STREAM_ID but found " f"'{actual_parent_id}'.")
+
                 # verify that all other fields have inclusion of available
                 # This assumes there are no unsupported fields for SaaS sources
                 self.assertTrue(

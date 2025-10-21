@@ -200,7 +200,7 @@ class BaseTapTest(BaseCase):
 
         # if available - pending balance goes below $1000 usd add another $1000.
         for balance in available_balances:
-            if balance.get('currency') == 'usd' and balance.get('amount', 0) + pending_amount_usd <= 10000:
+            if balance.get('currency') == 'usd' and balance.get('amount', 0) + pending_amount_usd <= 100000:
                 stripe_client.PaymentIntent.create(
                     amount=100000,
                     currency="usd",

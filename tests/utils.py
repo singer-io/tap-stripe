@@ -352,30 +352,6 @@ def standard_create(stream):
             tax_id_data=[],
         )
     elif stream == 'payouts':
-        # stream order is random so we may need to add a payment_intent to keep the stripe account
-        # balance from getting too low to create payout objects
-
-        balance_information = stripe_client.Balance.retrieve()
-        available_balances = balance_information['available']
-        pending_balances = balance_information['pending']
-        pending_amount_usd = 0
-
-        for pending_amount in pending_balances:
-            if pending_amount.get('currency') == 'usd':
-                pending_amount_usd = pending_amount.get('amount')
-
-        # if available - pending balance goes below $100 usd add another $100.
-        for balance in available_balances:
-            if balance.get('currency') == 'usd' \
-               and balance.get('amount') + pending_amount_usd <= 10000:
-                # added balance bypasses pending if card 0077 is used
-                stripe_client.PaymentIntent.create(
-                    amount=10000,
-                    currency="usd",
-                    customer="cus_LAXuu6qTrq8LSf",
-                    confirm=True,
-                )
-
         return client[stream].create(
             amount=random.randint(1, 10),
             currency="usd",

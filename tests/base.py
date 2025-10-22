@@ -13,6 +13,7 @@ from tap_tester import connections, menagerie, runner, LOGGER
 from tap_tester.base_case import BaseCase
 from tap_tester.jira_client import JiraClient as jira_client
 from tap_tester.jira_client import CONFIGURATION_ENVIRONMENT as jira_config
+import stripe as stripe_client
 
 JIRA_CLIENT = jira_client({ **jira_config })
 
@@ -182,9 +183,37 @@ class BaseTapTest(BaseCase):
                    self.expected_replication_method().items()
                    if rep_meth == self.FULL)
 
+    def ensure_available_balance(self):
+        if not self.get_credentials().get('client_secret'):
+            raise RuntimeError("No or invalid API key provided.")
+        
+        stripe_client.api_version = '2022-11-15'
+        stripe_client.api_key = BaseTapTest.get_credentials()["client_secret"]
+
+        balance_information = stripe_client.Balance.retrieve()
+        available_balances = balance_information.get('available', [])
+        pending_balances = balance_information.get('pending', [])
+        pending_amount_usd = 0
+        for pending_amount in pending_balances:
+            if pending_amount.get('currency') == 'usd':
+                pending_amount_usd = pending_amount.get('amount', 0)
+
+        # if available - pending balance goes below $1000 usd add another $1000.
+        for balance in available_balances:
+            if balance.get('currency') == 'usd' and balance.get('amount', 0) + pending_amount_usd <= 100000:
+                stripe_client.PaymentIntent.create(
+                    amount=100000,
+                    currency="usd",
+                    customer="cus_LAXuu6qTrq8LSf",
+                    confirm=True,
+                )
+                break
+
+
     def setUp(self):
         """Verify that you have set the prerequisites to run the tap (creds, etc.)"""
         env_keys = {'TAP_STRIPE_CLIENT_SECRET'}
+        self.ensure_available_balance()
         missing_envs = [x for x in env_keys if os.getenv(x) is None]
         if missing_envs:
             raise Exception("Set environment variables: {}".format(missing_envs))

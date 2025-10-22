@@ -15,7 +15,7 @@ jobs:
       - run:
           name: 'Setup virtual env'
           command: |
-            uv venv --python 3.11 /usr/local/share/virtualenvs/tap-stripe
+            uv venv --python 3.12 /usr/local/share/virtualenvs/tap-stripe
             source /usr/local/share/virtualenvs/tap-stripe/bin/activate
             uv pip install -U pip setuptools
             uv pip install .[test]

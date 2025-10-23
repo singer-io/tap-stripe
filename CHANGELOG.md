@@ -1,5 +1,8 @@
 # Changelog
 
+## 3.3.0
+  * Added parent relationship for the child streams  [#214](https://github.com/singer-io/tap-stripe/pull/214)
+
 ## 3.2.0
   * Makes tap compatible with singer-python 6.0.0 [#195](https://github.com/singer-io/tap-stripe/pull/195)
 

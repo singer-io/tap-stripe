@@ -163,14 +163,12 @@ class DiscoveryTest(BaseTapTest):
                     self.assertEqual(
                         actual_parent_id,
                         expected_parent_id,
-                        msg=f"Stream {stream}: Expected PARENT_TAP_STREAM_ID to be "
-                            f"'{expected_parent_id}' but found '{actual_parent_id}'."
+                        msg=f"Stream {stream}: Expected PARENT_TAP_STREAM_ID to be '{expected_parent_id}' but found '{actual_parent_id}'."
                     )
                 else:
                     self.assertIsNone(
                         actual_parent_id,
-                        msg=f"Stream {stream}: Expected no PARENT_TAP_STREAM_ID but found "
-                            f"'{actual_parent_id}'.")
+                        msg=f"Stream {stream}: Expected no PARENT_TAP_STREAM_ID but found '{actual_parent_id}'.")
 
                 # verify that all other fields have inclusion of available
                 # This assumes there are no unsupported fields for SaaS sources

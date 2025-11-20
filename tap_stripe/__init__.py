@@ -30,8 +30,6 @@ STREAM_SDK_OBJECTS = {
     'payment_methods': {'sdk_object': stripe.PaymentMethod, 'key_properties': ['id']},
     'invoices': {'sdk_object': stripe.Invoice, 'key_properties': ['id']},
     'invoice_items': {'sdk_object': stripe.InvoiceItem, 'key_properties': ['id']},
-    'invoice_line_items': {'sdk_object': stripe.InvoiceLineItem,
-                           'key_properties': ['id', 'invoice']},
     'transfers': {'sdk_object': stripe.Transfer, 'key_properties': ['id']},
     'coupons': {'sdk_object': stripe.Coupon, 'key_properties': ['id']},
     'subscriptions': {
@@ -383,6 +381,22 @@ def discover():
         }
         if stream_name == 'payment_methods':
             catalog_entry['replication_method'] = 'FULL_TABLE'
+        streams.append(catalog_entry)
+
+    # Add invoice_line_items as a special case since it's handled via Invoice.list_line_items
+    if 'invoice_line_items' in raw_schemas:
+        schema = raw_schemas['invoice_line_items']['schema']
+        refs = load_shared_schema_refs()
+        catalog_entry = {
+            'stream': 'invoice_line_items',
+            'tap_stream_id': 'invoice_line_items',
+            'schema': singer.resolve_schema_references(schema, refs),
+            'metadata': get_discovery_metadata(schema,
+                                               ['id', 'invoice'],
+                                               'INCREMENTAL',
+                                               STREAM_REPLICATION_KEY.get('invoice_line_items')),
+            'key_properties': ['id', 'invoice']
+        }
         streams.append(catalog_entry)
 
     return {'streams': streams}
@@ -754,7 +768,10 @@ def sync_sub_stream(sub_stream_name, parent_obj, updates=False):
     extraction_time = singer.utils.now()
 
     if sub_stream_name == "invoice_line_items":
-        object_list = parent_obj.lines
+        invoice_id = parent_obj.id
+        # Use the correct API for Stripe 5.5.0
+        invoice_obj = stripe.Invoice.retrieve(invoice_id)
+        object_list = invoice_obj.lines.list(limit=100)
     elif sub_stream_name == "subscription_items":
         # parent_obj.items is a function that returns a dict iterator, so use the attribute
         object_list = parent_obj.get("items")

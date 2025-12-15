@@ -210,23 +210,10 @@ class BaseTapTest(BaseCase):
                 )
                 break
 
-    @classmethod
-    def setUpClass(cls):
-        """Run the class-level balance ensure (so setUpClass-level creates are safe)."""
-        # run the existing ensure_available_balance logic early
-        cls.ensure_available_balance()
-
-        # call parent setUpClass if present
-        try:
-            super(BaseTapTest, cls).setUpClass()
-        except AttributeError:
-            pass
-
-
     def setUp(self):
         """Verify that you have set the prerequisites to run the tap (creds, etc.)"""
-        env_keys = {'TAP_STRIPE_CLIENT_SECRET'}
         self.ensure_available_balance()
+        env_keys = {'TAP_STRIPE_CLIENT_SECRET'}
         missing_envs = [x for x in env_keys if os.getenv(x) is None]
         if missing_envs:
             raise Exception("Set environment variables: {}".format(missing_envs))

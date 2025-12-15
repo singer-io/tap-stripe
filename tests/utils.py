@@ -565,6 +565,7 @@ def create_object(stream):
             )
 
         if stream == 'transfers':
+            BaseTapTest.ensure_available_balance()
             return client[stream].create(
                 amount=1,
                 currency="usd",

@@ -16,7 +16,8 @@ from utils import create_object, delete_object, list_all_object, stripe_obj_to_d
 #             Original Ticket [https://stitchdata.atlassian.net/browse/SRCE-4736]
 KNOWN_MISSING_FIELDS = {
     'customers': {
-        'default_currency',
+        #'default_currency',
+        'customer_account'
     },
     'subscriptions': {
         'automatic_tax',
@@ -48,6 +49,7 @@ KNOWN_MISSING_FIELDS = {
     'plans': set(),
     'invoice_line_items': {
         'margins',
+        'subtotal',
     },
     'invoices': {
         'amount_shipping',
@@ -57,6 +59,7 @@ KNOWN_MISSING_FIELDS = {
         'rendering',
         'shipping_cost',
         'shipping_details',
+        'customer_account',
     },
     'payment_intents': {
         'excluded_payment_method_types',
@@ -68,7 +71,8 @@ KNOWN_MISSING_FIELDS = {
 # we have observed that the SDK object creation returns some new fields intermittently, which are not present in the schema
 SCHEMA_MISSING_FIELDS = {
     'customers': {
-        'test_clock'
+        'test_clock',
+        'customer_account'
     },
     'subscriptions': {
         'application',
@@ -83,6 +87,7 @@ SCHEMA_MISSING_FIELDS = {
     },
     'invoice_items': {
         'test_clock',
+        'customer_account'
     },
     'payouts': set(),
     'charges': {
@@ -103,7 +108,8 @@ SCHEMA_MISSING_FIELDS = {
         'rendering_options',
         'subtotal_excluding_tax',
         'test_clock',
-        'total_excluding_tax'
+        'total_excluding_tax',
+        'customer_account'
     },
     'payment_intents': {
         'amount_details',
@@ -121,7 +127,8 @@ FIELDS_TO_NOT_CHECK = {
         'cards',
         'default_card',
         'updated_by_event_type',
-        'sources'
+        'sources',
+        'customer_account'
     },
     'subscriptions': {
         # Below fields are deprecated or renamed.(https://stripe.com/docs/upgrades#2019-10-17, https://stripe.com/docs/upgrades#2019-12-03, https://stripe.com/docs/upgrades#2020-08-27)
@@ -129,7 +136,8 @@ FIELDS_TO_NOT_CHECK = {
         'start',
         'tax_percent',
         'invoice_customer_balance_settings',
-        'updated_by_event_type'
+        'updated_by_event_type',
+        'customer_account'
     },
     'products': {
         # Below fields are available in the product record only if the value of the type field is `service`.
@@ -217,7 +225,8 @@ FIELDS_TO_NOT_CHECK = {
         'invoice_item'
     },
     'payment_intents': {
-        'charges'
+        'charges',
+        'customer_account'
     }
 }
 

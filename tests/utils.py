@@ -64,7 +64,6 @@ def get_catalogs(conn_id, streams: list = None):
 
     return found_catalogs
 
-
 def activate_tracking():
     """
     Start tracking objects that are created in util_stripe but
@@ -564,8 +563,9 @@ def create_object(stream):
                 # transfer_group=,  # CONNECT only
             )
 
+        BaseTapTest.ensure_available_balance()
+
         if stream == 'transfers':
-            BaseTapTest.ensure_available_balance()
             return client[stream].create(
                 amount=1,
                 currency="usd",

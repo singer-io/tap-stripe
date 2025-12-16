@@ -203,13 +203,25 @@ class BaseTapTest(BaseCase):
         for balance in available_balances:
             if balance.get('currency') == 'usd' and balance.get('amount', 0) + pending_amount_usd <= 100000:
                 stripe_client.PaymentIntent.create(
-                    amount=100000,
+                    amount=1000000,
                     currency="usd",
                     customer="cus_LAXuu6qTrq8LSf",
                     confirm=True,
                 )
                 break
 
+    @classmethod
+    def setUpClass(cls):
+        """Run the class-level balance ensure (so setUpClass-level creates are safe)."""
+        # run the existing ensure_available_balance logic early
+        cls.ensure_available_balance()
+
+        # call parent setUpClass if present
+        try:
+            super(BaseTapTest, cls).setUpClass()
+        except AttributeError:
+            pass
+    
     def setUp(self):
         """Verify that you have set the prerequisites to run the tap (creds, etc.)"""
         self.ensure_available_balance()

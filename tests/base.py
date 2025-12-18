@@ -108,6 +108,12 @@ class BaseTapTest(BaseCase):
                 self.PRIMARY_KEYS: {"id"},
                 self.REPLICATION_METHOD: self.INCREMENTAL,
             },
+            'transfer_reversals': {
+                self.AUTOMATIC_FIELDS: None,
+                self.REPLICATION_KEYS: {"created"},
+                self.PRIMARY_KEYS: {"id"},
+                self.REPLICATION_METHOD: self.INCREMENTAL,
+            },
             'balance_transactions': default,
             'payouts': default,
             'payout_transactions' : {
@@ -130,7 +136,7 @@ class BaseTapTest(BaseCase):
         based on having foreign key metadata
         """
         return {stream for stream in self.expected_metadata()
-                if stream in ["invoice_line_items", "subscription_items"]}
+                if stream in ["invoice_line_items", "subscription_items", "transfer_reversals"]}
 
     def expected_primary_keys(self):
         """

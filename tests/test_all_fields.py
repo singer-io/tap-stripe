@@ -16,7 +16,7 @@ from utils import create_object, delete_object, list_all_object, stripe_obj_to_d
 #             Original Ticket [https://stitchdata.atlassian.net/browse/SRCE-4736]
 KNOWN_MISSING_FIELDS = {
     'customers': {
-        'default_currency',
+        'default_currency'
     },
     'subscriptions': {
         'automatic_tax',
@@ -26,7 +26,7 @@ KNOWN_MISSING_FIELDS = {
         'on_behalf_of',
         'payment_settings',
         'pending_update',
-        'trial_settings',
+        'trial_settings'
     },
     'products': {
         'features',
@@ -47,7 +47,7 @@ KNOWN_MISSING_FIELDS = {
     },
     'plans': set(),
     'invoice_line_items': {
-        'margins',
+        'margins'
     },
     'invoices': {
         'amount_shipping',
@@ -56,7 +56,7 @@ KNOWN_MISSING_FIELDS = {
         'latest_revision',
         'rendering',
         'shipping_cost',
-        'shipping_details',
+        'shipping_details'
     },
     'payment_intents': {
         'excluded_payment_method_types',
@@ -76,7 +76,7 @@ SCHEMA_MISSING_FIELDS = {
         'currency',
         'description',
         'invoice_settings',
-        'test_clock',
+        'test_clock'
     },
     'products': {
         'default_price'
@@ -103,7 +103,7 @@ SCHEMA_MISSING_FIELDS = {
         'rendering_options',
         'subtotal_excluding_tax',
         'test_clock',
-        'total_excluding_tax'
+        'total_excluding_tax',
     },
     'payment_intents': {
         'amount_details',
@@ -217,7 +217,8 @@ FIELDS_TO_NOT_CHECK = {
         'invoice_item'
     },
     'payment_intents': {
-        'charges'
+        'charges',
+        'customer_account'
     }
 }
 

@@ -22,6 +22,12 @@
         "string"
       ]
     },
+    "subtotal": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
     "discounts": {
       "type": [
         "null",

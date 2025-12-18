@@ -16,8 +16,7 @@ from utils import create_object, delete_object, list_all_object, stripe_obj_to_d
 #             Original Ticket [https://stitchdata.atlassian.net/browse/SRCE-4736]
 KNOWN_MISSING_FIELDS = {
     'customers': {
-        #'default_currency',
-        'customer_account'
+        'default_currency'
     },
     'subscriptions': {
         'automatic_tax',
@@ -27,7 +26,7 @@ KNOWN_MISSING_FIELDS = {
         'on_behalf_of',
         'payment_settings',
         'pending_update',
-        'trial_settings',
+        'trial_settings'
     },
     'products': {
         'features',
@@ -48,8 +47,7 @@ KNOWN_MISSING_FIELDS = {
     },
     'plans': set(),
     'invoice_line_items': {
-        'margins',
-        'subtotal',
+        'margins'
     },
     'invoices': {
         'amount_shipping',
@@ -58,8 +56,7 @@ KNOWN_MISSING_FIELDS = {
         'latest_revision',
         'rendering',
         'shipping_cost',
-        'shipping_details',
-        'customer_account',
+        'shipping_details'
     },
     'payment_intents': {
         'excluded_payment_method_types',
@@ -71,8 +68,7 @@ KNOWN_MISSING_FIELDS = {
 # we have observed that the SDK object creation returns some new fields intermittently, which are not present in the schema
 SCHEMA_MISSING_FIELDS = {
     'customers': {
-        'test_clock',
-        'customer_account'
+        'test_clock'
     },
     'subscriptions': {
         'application',
@@ -80,14 +76,13 @@ SCHEMA_MISSING_FIELDS = {
         'currency',
         'description',
         'invoice_settings',
-        'test_clock',
+        'test_clock'
     },
     'products': {
         'default_price'
     },
     'invoice_items': {
         'test_clock',
-        'customer_account'
     },
     'payouts': set(),
     'charges': {
@@ -109,7 +104,6 @@ SCHEMA_MISSING_FIELDS = {
         'subtotal_excluding_tax',
         'test_clock',
         'total_excluding_tax',
-        'customer_account'
     },
     'payment_intents': {
         'amount_details',
@@ -127,8 +121,7 @@ FIELDS_TO_NOT_CHECK = {
         'cards',
         'default_card',
         'updated_by_event_type',
-        'sources',
-        'customer_account'
+        'sources'
     },
     'subscriptions': {
         # Below fields are deprecated or renamed.(https://stripe.com/docs/upgrades#2019-10-17, https://stripe.com/docs/upgrades#2019-12-03, https://stripe.com/docs/upgrades#2020-08-27)
@@ -136,8 +129,7 @@ FIELDS_TO_NOT_CHECK = {
         'start',
         'tax_percent',
         'invoice_customer_balance_settings',
-        'updated_by_event_type',
-        'customer_account'
+        'updated_by_event_type'
     },
     'products': {
         # Below fields are available in the product record only if the value of the type field is `service`.

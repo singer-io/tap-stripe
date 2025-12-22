@@ -39,6 +39,7 @@ client = {
     'subscription_items': stripe_client.SubscriptionItem,
     'subscriptions': stripe_client.Subscription,
     'transfers': stripe_client.Transfer,
+    'transfer_reversals': stripe_client.Reversal
 }
 
 hidden_tracking = False
@@ -264,7 +265,7 @@ def list_all_object(stream, max_limit: int = 100, get_invoice_lines: bool = Fals
             if not isinstance(dict_obj['data'], list):
                 return [dict_obj['data']]
 
-            if stream in ["payment_intents", "payouts", "products", "coupons", "plans", "invoice_items", "disputes", "transfers"]:
+            if stream in ["payment_intents", "payouts", "products", "coupons", "plans", "invoice_items", "disputes", "transfers", "transfer_reversals"]:
                 return dict_obj['data']
 
         if not isinstance(dict_obj, list):
@@ -352,30 +353,6 @@ def standard_create(stream):
             tax_id_data=[],
         )
     elif stream == 'payouts':
-        # stream order is random so we may need to add a payment_intent to keep the stripe account
-        # balance from getting too low to create payout objects
-
-        balance_information = stripe_client.Balance.retrieve()
-        available_balances = balance_information['available']
-        pending_balances = balance_information['pending']
-        pending_amount_usd = 0
-
-        for pending_amount in pending_balances:
-            if pending_amount.get('currency') == 'usd':
-                pending_amount_usd = pending_amount.get('amount')
-
-        # if available - pending balance goes below $100 usd add another $100.
-        for balance in available_balances:
-            if balance.get('currency') == 'usd' \
-               and balance.get('amount') + pending_amount_usd <= 10000:
-                # added balance bypasses pending if card 0077 is used
-                stripe_client.PaymentIntent.create(
-                    amount=10000,
-                    currency="usd",
-                    customer="cus_LAXuu6qTrq8LSf",
-                    confirm=True,
-                )
-
         return client[stream].create(
             amount=random.randint(1, 10),
             currency="usd",
@@ -594,6 +571,17 @@ def create_object(stream):
                 currency="usd",
                 destination="acct_1DOR67LsKC35uacf",
                 transfer_group="ORDER_95"
+            )
+        
+        if stream == 'transfer_reversals':
+            transfer = get_a_record('transfers')
+            return stripe_client.Transfer.create_reversal(
+                transfer['id'],
+                amount=1,
+                metadata={
+                    "reason": "Order canceled",
+                    "internal_ref": "ORD-9021"
+                }
             )
 
     return None

@@ -47,6 +47,7 @@ STREAM_SDK_OBJECTS = {
     'payout_transactions': {'sdk_object': stripe.BalanceTransaction, 'key_properties': ['id']},
     'disputes': {'sdk_object': stripe.Dispute, 'key_properties': ['id']},
     'products': {'sdk_object': stripe.Product, 'key_properties': ['id']},
+    'transfer_reversals': {'sdk_object': stripe.Reversal, 'key_properties': ['id']},
 }
 
 # I think this can be merged into the above structure
@@ -70,6 +71,7 @@ STREAM_REPLICATION_KEY = {
     #'invoice_line_items': 'date'
     'disputes': 'created',
     'products': 'created',
+    'transfer_reversals': 'created'
 }
 
 STREAM_TO_TYPE_FILTER = {
@@ -88,6 +90,7 @@ STREAM_TO_TYPE_FILTER = {
     'invoice_line_items': {'type': 'invoice.*', 'object': ['line_item']},
     'subscription_items': {'type': 'customer.subscription.*', 'object': ['subscription_item']},
     'payout_transactions': {'type': 'payout.*', 'object': ['transfer', 'payout']},
+    'transfer_reversals': {'type': 'transfer.*', 'object': ['transfer_reversal']},
     # Cannot find evidence of these streams having events associated:
     # balance_transactions - seems to be immutable
 }
@@ -109,13 +112,15 @@ STREAM_TO_EXPAND_FIELDS = {
 SUB_STREAMS = {
     'subscriptions': 'subscription_items',
     'invoices': 'invoice_line_items',
-    'payouts': 'payout_transactions'
+    'payouts': 'payout_transactions',
+    'transfers': 'transfer_reversals'
 }
 
 PARENT_STREAM_MAP = {
     'subscription_items': 'subscriptions',
     'invoice_line_items': 'invoices',
-    'payout_transactions': 'payouts'
+    'payout_transactions': 'payouts',
+    'transfer_reversals': 'transfers'
 }
 
 # NB: These streams will only sync through once for creates, never updates.
@@ -751,6 +756,8 @@ def sync_sub_stream(sub_stream_name, parent_obj, updates=False):
 
     if sub_stream_name == "invoice_line_items":
         object_list = parent_obj.lines
+    elif sub_stream_name == "transfer_reversals":
+        object_list = parent_obj.reversals
     elif sub_stream_name == "subscription_items":
         # parent_obj.items is a function that returns a dict iterator, so use the attribute
         object_list = parent_obj.get("items")

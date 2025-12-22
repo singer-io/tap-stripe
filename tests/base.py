@@ -116,6 +116,7 @@ class BaseTapTest(BaseCase):
                 self.REPLICATION_KEYS: {"created"},
                 self.PRIMARY_KEYS: {"id"},
                 self.REPLICATION_METHOD: self.INCREMENTAL,
+                self.PARENT_TAP_STREAM_ID: "transfers"
             },
             'balance_transactions': default,
             'payouts': default,

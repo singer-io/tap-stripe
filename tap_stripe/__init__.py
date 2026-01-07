@@ -344,13 +344,15 @@ def load_schemas():
     return schemas
 
 
-def get_discovery_metadata(schema, key_properties, replication_method, replication_key):
+def get_discovery_metadata(schema, key_properties, replication_method, replication_key, parent=None):
     mdata = metadata.new()
     mdata = metadata.write(mdata, (), 'table-key-properties', key_properties)
     mdata = metadata.write(mdata, (), 'forced-replication-method', replication_method)
 
     if replication_key:
         mdata = metadata.write(mdata, (), 'valid-replication-keys', [replication_key])
+    if parent:
+        mdata = metadata.write(mdata, (), 'parent-tap-stream-id', parent)
 
     for field_name in schema['properties'].keys():
         if field_name in key_properties or field_name in [replication_key, "updated"]:
@@ -376,7 +378,8 @@ def discover():
             'metadata': get_discovery_metadata(schema,
                                                stream_map['key_properties'],
                                                'INCREMENTAL',
-                                               STREAM_REPLICATION_KEY.get(stream_name)),
+                                               STREAM_REPLICATION_KEY.get(stream_name),
+                                               PARENT_STREAM_MAP.get(stream_name)),
             # Events may have a different key property than this. Change
             # if it's appropriate.
             'key_properties': stream_map['key_properties']

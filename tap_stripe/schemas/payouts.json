@@ -7,6 +7,12 @@
       ],
       "properties": {}
     },
+    "reconciliation_status": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
     "failure_code": {
       "type": [
         "null",

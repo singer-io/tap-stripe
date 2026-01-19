@@ -27,7 +27,7 @@ STREAM_SDK_OBJECTS = {
     'customers': {'sdk_object': stripe.Customer, 'key_properties': ['id']},
     'plans': {'sdk_object': stripe.Plan, 'key_properties': ['id']},
     'payment_intents': {'sdk_object': stripe.PaymentIntent, 'key_properties': ['id']},
-    'invoices': {'sdk_object': stripe.Invoice, 'key_properties': ['id']},
+    'invoices': {'sdk_object': stripe.Invoice, 'key_properties': ['id', 'billing_reason']},
     'invoice_items': {'sdk_object': stripe.InvoiceItem, 'key_properties': ['id']},
     'invoice_line_items': {'sdk_object': stripe.InvoiceLineItem,
                            'key_properties': ['id', 'invoice']},
@@ -1065,8 +1065,7 @@ def sync_event_updates(stream_name, is_sub_stream):
                                 sync_sub_stream(sub_stream_name,
                                                 event_resource_obj,
                                                 updates=True)
-            if events_obj.created > max_created:
-                max_created = events_obj.created
+            max_created = max(events_obj.created, max_created)
 
         # The events stream returns results in descending order, so we
         # cannot bookmark until the entire page is processed

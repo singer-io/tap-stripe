@@ -194,12 +194,13 @@ class BaseTapTest(BaseCase):
                    self.expected_replication_method().items()
                    if rep_meth == self.FULL)
 
-    def ensure_available_balance(self):
-        if not self.get_credentials().get('client_secret'):
+    @classmethod
+    def ensure_available_balance(cls):
+        if not cls.get_credentials().get('client_secret'):
             raise RuntimeError("No or invalid API key provided.")
         
         stripe_client.api_version = '2022-11-15'
-        stripe_client.api_key = BaseTapTest.get_credentials()["client_secret"]
+        stripe_client.api_key = cls.get_credentials()["client_secret"]
 
         balance_information = stripe_client.Balance.retrieve()
         available_balances = balance_information.get('available', [])
@@ -213,18 +214,29 @@ class BaseTapTest(BaseCase):
         for balance in available_balances:
             if balance.get('currency') == 'usd' and balance.get('amount', 0) + pending_amount_usd <= 100000:
                 stripe_client.PaymentIntent.create(
-                    amount=100000,
+                    amount=1000000,
                     currency="usd",
                     customer="cus_LAXuu6qTrq8LSf",
                     confirm=True,
                 )
                 break
 
+    @classmethod
+    def setUpClass(cls):
+        """Run the class-level balance ensure (so setUpClass-level creates are safe)."""
+        # run the existing ensure_available_balance logic early
+        cls.ensure_available_balance()
 
+        # call parent setUpClass if present
+        try:
+            super(BaseTapTest, cls).setUpClass()
+        except AttributeError:
+            pass
+    
     def setUp(self):
         """Verify that you have set the prerequisites to run the tap (creds, etc.)"""
-        env_keys = {'TAP_STRIPE_CLIENT_SECRET'}
         self.ensure_available_balance()
+        env_keys = {'TAP_STRIPE_CLIENT_SECRET'}
         missing_envs = [x for x in env_keys if os.getenv(x) is None]
         if missing_envs:
             raise Exception("Set environment variables: {}".format(missing_envs))

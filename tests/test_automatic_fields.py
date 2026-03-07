@@ -32,6 +32,7 @@ class MinimumSelectionTest(BaseTapTest):
             "charges",
             "coupons",
             "customers",
+            "disputes",
             "invoice_items",
             "invoice_line_items", # this is created implicity by invoices, it just creates another invoice
             "invoices", # this will create an invoice_item

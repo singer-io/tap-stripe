@@ -211,7 +211,19 @@ class BaseTapTest(BaseCase):
 
         # if available - pending balance goes below $1000 usd add another $1000.
         for balance in available_balances:
-            if balance.get('currency') == 'usd' and balance.get('amount', 0) + pending_amount_usd <= 100000:
+            if balance.get('currency') == 'usd' and balance.get('amount', 0) <= 100000:
+                customer = "cus_LAXuu6qTrq8LSf"
+
+                # Ensure the customer's default card hasn't expired,
+                # otherwise the confirmed PaymentIntent won't land in available balance.
+                card_id = stripe_client.Customer.retrieve(customer)['default_source']
+                card_object = stripe_client.Customer.retrieve_source(customer, card_id)
+                now = dt.utcnow()
+                if now.year >= card_object['exp_year'] and now.month >= card_object['exp_month']:
+                    stripe_client.Customer.modify_source(
+                        customer, card_id, exp_year=dt.today().year + 2
+                    )
+
                 stripe_client.PaymentIntent.create(
                     amount=100000,
                     currency="usd",

@@ -34,6 +34,7 @@ KNOWN_MISSING_FIELDS = {
     },
     'invoice_items': {
         'price',
+        'quantity_decimal',
     },
     'payouts': {
         'application_fee',
@@ -48,6 +49,7 @@ KNOWN_MISSING_FIELDS = {
     'plans': set(),
     'invoice_line_items': {
         'margins',
+        'quantity_decimal',
     },
     'invoices': {
         'amount_shipping',
@@ -351,6 +353,7 @@ class ALlFieldsTest(BaseTapTest):
     @classmethod
     def setUpClass(cls):
         LOGGER.info("Start Setup")
+        BaseTapTest.ensure_available_balance(BaseTapTest)
         # Create data prior to first sync
         cls.streams_to_test = {
             "customers",

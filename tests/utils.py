@@ -416,7 +416,6 @@ def create_object(stream):
     """Logic for creating a record for a given  object stream"""
     global NOW
     NOW = dt.utcnow()  # update NOW time to maintain uniqueness across record
-
     LOGGER.info("Creating a %s record", stream)
 
     if stream in client:

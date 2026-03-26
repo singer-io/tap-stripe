@@ -12,7 +12,7 @@ from stripe.api_resources.list_object import ListObject
 from stripe.error import InvalidRequestError
 from stripe.api_requestor import APIRequestor
 import singer
-from singer import utils, Transformer, metrics
+from singer import utils, Transformer, metrics, state as st
 from singer import metadata
 import backoff
 
@@ -1112,18 +1112,16 @@ def reset_bookmark_for_event_updates(is_sub_stream, stream_name, sub_stream_name
     """
     # Write the parent bookmark value only when the parent is selected
     if not is_sub_stream:
-        singer.write_bookmark(Context.state,
-                              stream_name,
-                              STREAM_REPLICATION_KEY.get(stream_name),
-                              start_date)
+        st.clear_bookmark(Context.state,
+                          stream_name,
+                          STREAM_REPLICATION_KEY.get(stream_name))
         Context.state.get("bookmarks").pop(stream_name + '_events', None)
 
     # Write the child bookmark value only when the child is selected
     if sub_stream_name and Context.is_selected(sub_stream_name):
-        singer.write_bookmark(Context.state,
-                              sub_stream_name,
-                              STREAM_REPLICATION_KEY.get(sub_stream_name),
-                              start_date)
+        st.clear_bookmark(Context.state,
+                          sub_stream_name,
+                          STREAM_REPLICATION_KEY.get(sub_stream_name))
         Context.state.get("bookmarks").pop(sub_stream_name + '_events', None)
 
     singer.write_state(Context.state)

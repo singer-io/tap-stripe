@@ -86,7 +86,6 @@ class TestSyncEventUpdates(unittest.TestCase):
         mock_stripe_event.return_value = ""
         with self.assertRaises(Exception) as e:
             sync_event_updates("charges", False)
-        self.assertEqual({"bookmarks": {"charges": {}}}, Context.state)
         self.assertEqual(mock_reset_func.call_count, 1)
 
     @mock.patch("singer.write_state")

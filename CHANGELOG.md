@@ -1,5 +1,8 @@
 # Changelog
 
+## 3.3.1
+  * Update reset_bookmark_for_event_updates to clear bookmarks when events stream ages out
+
 ## 3.3.0
   * Add new stream - transfer_reversals [#216](https://github.com/singer-io/tap-stripe/pull/216)
   * Added parent relationship for the child streams  [#214](https://github.com/singer-io/tap-stripe/pull/214)

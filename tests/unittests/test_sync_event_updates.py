@@ -42,6 +42,7 @@ class TestSyncEventUpdates(unittest.TestCase):
         mock_stripe_event.return_value = ""
         with self.assertRaises(Exception) as e:
             sync_event_updates('charges', False)
+        self.assertEqual({'bookmarks': {'charges': {}}}, Context.state)
 
     @mock.patch('stripe.Event.list')
     @mock.patch('singer.utils.now', return_value = datetime.datetime.strptime("2023-05-10T08:30:50Z", "%Y-%m-%dT%H:%M:%SZ"))
@@ -55,6 +56,7 @@ class TestSyncEventUpdates(unittest.TestCase):
         mock_stripe_event.return_value = ""
         with self.assertRaises(Exception) as e:
             sync_event_updates("charges", False)
+        self.assertEqual({"bookmarks": {"charges": {}}}, Context.state)
 
     @mock.patch('stripe.Event.list')
     @mock.patch('singer.utils.now', return_value = datetime.datetime.strptime("2023-05-10T08:30:50Z", "%Y-%m-%dT%H:%M:%SZ"))
@@ -69,6 +71,7 @@ class TestSyncEventUpdates(unittest.TestCase):
         mock_stripe_event.return_value = ""
         with self.assertRaises(Exception) as e:
             sync_event_updates("subscriptions", False)
+        self.assertEqual({"bookmarks": {"subscriptions": {}, "subscription_items": {}}}, Context.state)
 
     @mock.patch('stripe.Event.list')
     @mock.patch('singer.utils.now', return_value = datetime.datetime.strptime("2023-05-15T08:30:50Z", "%Y-%m-%dT%H:%M:%SZ"))

@@ -981,7 +981,7 @@ def sync_event_updates(stream_name, is_sub_stream):
     max_created = int(max(bookmark_value, max_event_start_date))
 
     if max_created != bookmark_value and (bookmark_value != start_date or reset_brk_flag_value is True):
-        reset_bookmark_for_event_updates(is_sub_stream, stream_name, sub_stream_name, start_date)
+        reset_bookmark_for_event_updates(is_sub_stream, stream_name, sub_stream_name)
         raise Exception("Provided current bookmark date for event updates is older than 30 days."\
             " Hence, resetting the bookmark date of respective {}/{} stream to start date.".format(stream_name, sub_stream_name))
 
@@ -1106,24 +1106,22 @@ def write_bookmark_for_event_updates(is_sub_stream, stream_name, sub_stream_name
 
     singer.write_state(Context.state)
 
-def reset_bookmark_for_event_updates(is_sub_stream, stream_name, sub_stream_name, start_date):
+def reset_bookmark_for_event_updates(is_sub_stream, stream_name, sub_stream_name):
     """
     Reset bookmark for parent and child streams to start date and clear the bookmark date for event updates.
     """
     # Write the parent bookmark value only when the parent is selected
     if not is_sub_stream:
-        singer.write_bookmark(Context.state,
+        singer.clear_bookmark(Context.state,
                               stream_name,
-                              STREAM_REPLICATION_KEY.get(stream_name),
-                              start_date)
+                              STREAM_REPLICATION_KEY.get(stream_name))
         Context.state.get("bookmarks").pop(stream_name + '_events', None)
 
     # Write the child bookmark value only when the child is selected
     if sub_stream_name and Context.is_selected(sub_stream_name):
-        singer.write_bookmark(Context.state,
+        singer.clear_bookmark(Context.state,
                               sub_stream_name,
-                              STREAM_REPLICATION_KEY.get(sub_stream_name),
-                              start_date)
+                              STREAM_REPLICATION_KEY.get(sub_stream_name))
         Context.state.get("bookmarks").pop(sub_stream_name + '_events', None)
 
     singer.write_state(Context.state)

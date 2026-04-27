@@ -27,10 +27,12 @@ KNOWN_MISSING_FIELDS = {
         'payment_settings',
         'pending_update',
         'trial_settings',
+        'managed_payments',
     },
     'products': {
         'features',
         'marketing_features',
+        'tax_details'
     },
     'invoice_items': {
         'price',
@@ -64,6 +66,8 @@ KNOWN_MISSING_FIELDS = {
         'excluded_payment_method_types',
         'payment_details',
         'payment_method_configuration_details',
+        'managed_payments',
+        'shared_payment_granted_token'
     },
 }
 

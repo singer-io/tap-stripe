@@ -313,7 +313,9 @@ FICKLE_FIELDS = {
         'subscription_details'
     },
     'plans': set(),
-    'invoice_line_items': set()
+    'invoice_line_items': {
+        'plan'
+    }
 }
 
 FIELDS_ADDED_BY_TAP = {

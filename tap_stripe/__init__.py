@@ -435,7 +435,7 @@ def reduce_foreign_keys(rec, stream_name):
         elif isinstance(lines, dict):
             for k, val in lines.items():
                 if isinstance(val, list) and val and isinstance(val[0], StripeObject):
-                    rec['lines'][k] = [li.to_dict_recursive() for li in val]
+                    rec['lines'][k] = [recursive_to_dict(li) for li in val]
     return rec
 
 
@@ -547,7 +547,7 @@ def sync_full_table_stream(stream_name):
                 stripe_account=Context.config.get('account_id'),
                 expand=STREAM_TO_EXPAND_FIELDS.get(stream_name, [])
         ).auto_paging_iter():
-            rec = unwrap_data_objects(stream_obj.to_dict_recursive())
+            rec = unwrap_data_objects(recursive_to_dict(stream_obj))
             rec = reduce_foreign_keys(rec, stream_name)
             # The object carries its own `updated` timestamp; fall back to
             # `created` so the column is always populated.
@@ -672,7 +672,7 @@ def sync_stream(stream_name, is_sub_stream=False):
             ):
 
                 # get the replication key value from the object
-                rec = unwrap_data_objects(stream_obj.to_dict_recursive())
+                rec = unwrap_data_objects(recursive_to_dict(stream_obj))
                 rec = reduce_foreign_keys(rec, stream_name)
                 stream_obj_created = rec[replication_key]
                 rec['updated'] = stream_obj_created
@@ -844,7 +844,7 @@ def sync_sub_stream(sub_stream_name, parent_obj, updates=False):
                         "https://github.com/stripe/stripe-python/issues/567#issuecomment-490957400"
                     ).format(stripe.api_version,
                              parent_obj.id))
-            obj_ad_dict = sub_stream_obj.to_dict_recursive()
+            obj_ad_dict = recursive_to_dict(sub_stream_obj)
 
             if sub_stream_name == "invoice_line_items":
                 # we will get "unique_id" for default API versions older than "2019-12-03"
@@ -910,7 +910,7 @@ def should_sync_event(events_obj, object_type, id_to_created_map):
     """Checks to ensure the event's underlying object has an id and that the id_to_created_map
     contains an entry for that id. Returns true the first time an id should be added to the map
     and when we're looking at an event that is created later than one we've seen before."""
-    event_resource_dict = events_obj.data.object.to_dict_recursive()
+    event_resource_dict = recursive_to_dict(events_obj.data.object)
     event_resource_id = event_resource_dict.get('id')
     current_max_created = id_to_created_map.get(event_resource_id)
     event_created = events_obj.created
@@ -930,7 +930,9 @@ def should_sync_event(events_obj, object_type, id_to_created_map):
 
 def recursive_to_dict(some_obj):
     if isinstance(some_obj, StripeObject):
-        return recursive_to_dict(dict(some_obj))
+        # stripe-python v8+ removed dict(StripeObject); to_dict() is the public
+        # recursive serializer. Re-walk it to normalize any residual nesting.
+        return recursive_to_dict(some_obj.to_dict())
 
     if isinstance(some_obj, list):
         return [recursive_to_dict(item) for item in some_obj]

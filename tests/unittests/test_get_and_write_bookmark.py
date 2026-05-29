@@ -14,8 +14,8 @@ class TestGetBookmarks(unittest.TestCase):
 
         # Verify that get_bookmark is called with 'date' field
         args, kwargs = mocked_get_bookmark.call_args
-        self.assertEquals(args[1], "invoices")
-        self.assertEquals(args[2], "date")
+        self.assertEqual(args[1], "invoices")
+        self.assertEqual(args[2], "date")
 
     @mock.patch("tap_stripe.singer.get_bookmark")
     def test_get_bookmark_for_invoice_line_items(self, mocked_get_bookmark):
@@ -27,8 +27,8 @@ class TestGetBookmarks(unittest.TestCase):
 
         # Verify that get_bookmark is called with 'date' field
         args, kwargs = mocked_get_bookmark.call_args
-        self.assertEquals(args[1], "invoice_line_items")
-        self.assertEquals(args[2], "date")
+        self.assertEqual(args[1], "invoice_line_items")
+        self.assertEqual(args[2], "date")
 
     @mock.patch("tap_stripe.singer.get_bookmark")
     def test_get_bookmark_for_normal_streams(self, mocked_get_bookmark):
@@ -40,8 +40,8 @@ class TestGetBookmarks(unittest.TestCase):
 
         # Verify that get_bookmark is called with 'test_replication_key' field which passed in get_bookmark_for_stream()
         args, kwargs = mocked_get_bookmark.call_args
-        self.assertEquals(args[1], "test")
-        self.assertEquals(args[2], "test_replication_key")
+        self.assertEqual(args[1], "test")
+        self.assertEqual(args[2], "test_replication_key")
 
 
 class TestWriteBookmarks(unittest.TestCase):
@@ -56,8 +56,8 @@ class TestWriteBookmarks(unittest.TestCase):
 
         # Verify that write_bookmark is called with 'date' field
         args, kwargs = mocked_write_bookmark.call_args
-        self.assertEquals(args[1], "invoices")
-        self.assertEquals(args[2], "date")
+        self.assertEqual(args[1], "invoices")
+        self.assertEqual(args[2], "date")
 
     @mock.patch("tap_stripe.singer.write_bookmark")
     def test_write_bookmark_for_invoice_line_items(self, mocked_write_bookmark):
@@ -69,8 +69,8 @@ class TestWriteBookmarks(unittest.TestCase):
 
         # Verify that write_bookmark is called with 'date' field
         args, kwargs = mocked_write_bookmark.call_args
-        self.assertEquals(args[1], "invoice_line_items")
-        self.assertEquals(args[2], "date")
+        self.assertEqual(args[1], "invoice_line_items")
+        self.assertEqual(args[2], "date")
 
     @mock.patch("tap_stripe.singer.write_bookmark")
     def test_write_bookmark_for_normal_streams(self, mocked_write_bookmark):
@@ -82,5 +82,5 @@ class TestWriteBookmarks(unittest.TestCase):
 
         # Verify that write_bookmark is called with 'test_replication_key' field which passed in write_bookmark_for_stream()
         args, kwargs = mocked_write_bookmark.call_args
-        self.assertEquals(args[1], "test")
-        self.assertEquals(args[2], "test_replication_key")
+        self.assertEqual(args[1], "test")
+        self.assertEqual(args[2], "test_replication_key")

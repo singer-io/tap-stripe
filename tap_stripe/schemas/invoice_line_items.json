@@ -16,6 +16,18 @@
         "string"
       ]
     },
+    "customer_account": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    "subtotal": {
+      "type": [
+        "null",
+        "integer"
+      ]
+    },
     "discounts": {
       "type": [
         "null",

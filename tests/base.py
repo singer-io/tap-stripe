@@ -13,6 +13,7 @@ from tap_tester import connections, menagerie, runner, LOGGER
 from tap_tester.base_case import BaseCase
 from tap_tester.jira_client import JiraClient as jira_client
 from tap_tester.jira_client import CONFIGURATION_ENVIRONMENT as jira_config
+import stripe as stripe_client
 
 JIRA_CLIENT = jira_client({ **jira_config })
 
@@ -33,6 +34,7 @@ class BaseTapTest(BaseCase):
     FULL = "FULL_TABLE"
     START_DATE_FORMAT = "%Y-%m-%dT00:00:00Z"
     TS_COMPARISON_FORMAT = "%Y-%m-%dT%H:%M:%S.000000Z"
+    PARENT_TAP_STREAM_ID = "parent-tap-stream-id"
 
     @staticmethod
     def tap_name():
@@ -95,6 +97,7 @@ class BaseTapTest(BaseCase):
             'invoice_line_items': {
                 self.PRIMARY_KEYS: {"id", "invoice"},
                 self.REPLICATION_METHOD: self.INCREMENTAL,
+                self.PARENT_TAP_STREAM_ID: "invoices",
                 self.REPLICATION_KEYS: None,
                 self.AUTOMATIC_FIELDS: None
             },
@@ -105,7 +108,15 @@ class BaseTapTest(BaseCase):
                 self.AUTOMATIC_FIELDS: None,
                 self.REPLICATION_KEYS: {"created"},
                 self.PRIMARY_KEYS: {"id"},
+                self.PARENT_TAP_STREAM_ID: "subscriptions",
                 self.REPLICATION_METHOD: self.INCREMENTAL,
+            },
+            'transfer_reversals': {
+                self.AUTOMATIC_FIELDS: None,
+                self.REPLICATION_KEYS: {"created"},
+                self.PRIMARY_KEYS: {"id"},
+                self.REPLICATION_METHOD: self.INCREMENTAL,
+                self.PARENT_TAP_STREAM_ID: "transfers"
             },
             'balance_transactions': default,
             'payouts': default,
@@ -113,6 +124,7 @@ class BaseTapTest(BaseCase):
                 self.AUTOMATIC_FIELDS: {"id"},
                 self.REPLICATION_KEYS: {"id"},
                 self.PRIMARY_KEYS: {"id"},
+                self.PARENT_TAP_STREAM_ID: "payouts",
                 self.REPLICATION_METHOD: self.INCREMENTAL
             },
             'disputes': default,
@@ -129,7 +141,7 @@ class BaseTapTest(BaseCase):
         based on having foreign key metadata
         """
         return {stream for stream in self.expected_metadata()
-                if stream in ["invoice_line_items", "subscription_items"]}
+                if stream in ["invoice_line_items", "subscription_items", "transfer_reversals"]}
 
     def expected_primary_keys(self):
         """
@@ -182,9 +194,45 @@ class BaseTapTest(BaseCase):
                    self.expected_replication_method().items()
                    if rep_meth == self.FULL)
 
+    def ensure_available_balance(self):
+        if not self.get_credentials().get('client_secret'):
+            raise RuntimeError("No or invalid API key provided.")
+        
+        stripe_client.api_version = '2022-11-15'
+        stripe_client.api_key = BaseTapTest.get_credentials()["client_secret"]
+
+        balance_information = stripe_client.Balance.retrieve()
+        available_balances = balance_information.get('available', [])
+
+        # if available - pending balance goes below $1000 usd add another $1000.
+        for balance in available_balances:
+            if balance.get('currency') == 'usd' and balance.get('amount', 0) <= 100000:
+                customer = "cus_LAXuu6qTrq8LSf"
+
+                # Ensure the customer's default card hasn't expired,
+                # otherwise the confirmed PaymentIntent won't land in available balance.
+                # Default card 0077 is used.
+                card_id = stripe_client.Customer.retrieve(customer)['default_source']
+                card_object = stripe_client.Customer.retrieve_source(customer, card_id)
+                now = dt.utcnow()
+                if now.year >= card_object['exp_year'] and now.month >= card_object['exp_month']:
+                    stripe_client.Customer.modify_source(
+                        customer, card_id, exp_year=dt.today().year + 2
+                    )
+
+                stripe_client.PaymentIntent.create(
+                    amount=100000,
+                    currency="usd",
+                    customer="cus_LAXuu6qTrq8LSf",
+                    confirm=True,
+                )
+                break
+
+
     def setUp(self):
         """Verify that you have set the prerequisites to run the tap (creds, etc.)"""
         env_keys = {'TAP_STRIPE_CLIENT_SECRET'}
+        self.ensure_available_balance()
         missing_envs = [x for x in env_keys if os.getenv(x) is None]
         if missing_envs:
             raise Exception("Set environment variables: {}".format(missing_envs))

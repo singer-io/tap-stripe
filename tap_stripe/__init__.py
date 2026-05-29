@@ -6,15 +6,10 @@ import re
 
 from datetime import datetime, timedelta
 import stripe
-import stripe.error
-from stripe.stripe_object import StripeObject
-from stripe.api_resources.list_object import ListObject
-from stripe.error import InvalidRequestError
-from stripe.api_requestor import APIRequestor
+from stripe import StripeObject
 import singer
 from singer import utils, Transformer, metrics
 from singer import metadata
-import backoff
 
 REQUIRED_CONFIG_KEYS = [
     "start_date",
@@ -46,6 +41,8 @@ STREAM_SDK_OBJECTS = {
     'payout_transactions': {'sdk_object': stripe.BalanceTransaction, 'key_properties': ['id']},
     'disputes': {'sdk_object': stripe.Dispute, 'key_properties': ['id']},
     'products': {'sdk_object': stripe.Product, 'key_properties': ['id']},
+    'transfer_reversals': {'sdk_object': stripe.Reversal, 'key_properties': ['id']},
+    'credit_grants': {'sdk_object': stripe.billing.CreditGrant, 'key_properties': ['id']},
 }
 
 # I think this can be merged into the above structure
@@ -70,6 +67,10 @@ STREAM_REPLICATION_KEY = {
     #'invoice_line_items': 'date'
     'disputes': 'created',
     'products': 'created',
+    'transfer_reversals': 'created',
+    # Billing Credit Grants list endpoint has no `created` range filter, so this
+    # stream is synced as FULL_TABLE (see discover) and has no replication key.
+    'credit_grants': None
 }
 
 STREAM_TO_TYPE_FILTER = {
@@ -89,6 +90,7 @@ STREAM_TO_TYPE_FILTER = {
     'invoice_line_items': {'type': 'invoice.*', 'object': ['line_item']},
     'subscription_items': {'type': 'customer.subscription.*', 'object': ['subscription_item']},
     'payout_transactions': {'type': 'payout.*', 'object': ['transfer', 'payout']},
+    'transfer_reversals': {'type': 'transfer.*', 'object': ['transfer_reversal']},
     # Cannot find evidence of these streams having events associated:
     # balance_transactions - seems to be immutable
 }
@@ -111,14 +113,16 @@ SUB_STREAMS = {
     'subscriptions': 'subscription_items',
     'customers': 'payment_methods',
     'invoices': 'invoice_line_items',
-    'payouts': 'payout_transactions'
+    'payouts': 'payout_transactions',
+    'transfers': 'transfer_reversals'
 }
 
 PARENT_STREAM_MAP = {
     'subscription_items': 'subscriptions',
     'payment_methods': 'customers',
     'invoice_line_items': 'invoices',
-    'payout_transactions': 'payouts'
+    'payout_transactions': 'payouts',
+    'transfer_reversals': 'transfers'
 }
 
 # NB: These streams will only sync through once for creates, never updates.
@@ -132,47 +136,6 @@ DEFAULT_EVENT_UPDATE_DATE_WINDOW = 7  # default date window to fetch event updat
 
 # default request timeout
 REQUEST_TIMEOUT = 300  # 5 minutes
-
-
-def new_list(self, api_key=None, stripe_version=None, stripe_account=None, **params):
-    """
-        Reported 400 error for the deleted invoice_line_item as part of https://jira.talendforge.org/browse/TDL-16966.
-        The Stripe SDK is performing pagination API calls for invoice line items after 10 lines (we are getting the
-        first 10 default lines with each invoice). If there are more than 10 lines on any invoice, then the SDK will
-        collect those lines by passing the last line in the API call and for the '/events' API call, all the invoice
-        line items will be replicated whether they are deleted or not.
-        There is a corner case scenario where the 10th invoice line item is deleted and the API call will be:
-            https://api.stripe.com/v1/invoices/in_test123/lines?limit=100&starting_after=ii_invoiceLineItem10.
-        In this case, we will encounter 400 error code as this invoice line item 'ii_invoiceLineItem10' is deleted.
-        We skipped this kind of call as part of this function as this is the older event API call where we still
-        have deleted records.
-    """
-    try:
-        stripe_object = self._request(  # pylint: disable=protected-access
-            "get",
-            self.get("url"),
-            api_key=api_key,
-            stripe_version=stripe_version,
-            stripe_account=stripe_account,
-            params=params
-        )
-        stripe_object._retrieve_params = params  # pylint: disable=protected-access
-        return stripe_object
-    except InvalidRequestError as error:
-        # see if we found 'No such invoice item' in the error message
-        if 'No such invoice item' in str(error):
-            # warn the user, as we are skipping the deleted record
-            LOGGER.warning('%s. Currently, skipping this invoice line item call.', str(error))
-            # set 'self.data' to None to come out of the loop
-            self.data = None
-            return self
-        # if error contains message other than 'No such invoice item', raise the same error
-        raise error
-
-
-# To handle deleted invoice line item call, we replaced the 'list()' function of the 'ListObject'
-# class of SDK to skip the deleted invoice line item call and continue syncing
-ListObject.list = new_list
 
 
 class Context():
@@ -248,8 +211,10 @@ def configure_stripe_client():
     # Set the API key we'll be using
     # https://github.com/stripe/stripe-python/tree/a9a8d754b73ad47bdece6ac4b4850822fa19db4e#usage
     stripe.api_key = Context.config.get('client_secret')
-    # Override the Stripe API Version for consistent access
-    stripe.api_version = '2022-11-15'
+    # Override the Stripe API Version for consistent access. Pinned to the
+    # `acacia` release (matches pulumi-service stripe-go/v81) which is the first
+    # version exposing Billing Credit Grants.
+    stripe.api_version = '2024-10-28.acacia'
     # Allow ourselves to retry retryable network errors 15 times
     # https://github.com/stripe/stripe-python/tree/a9a8d754b73ad47bdece6ac4b4850822fa19db4e#configuring-automatic-retries
     stripe.max_network_retries = 15
@@ -261,7 +226,7 @@ def configure_stripe_client():
     else:  # If value is 0, "0" or "" then set default to 300 seconds.
         request_timeout = REQUEST_TIMEOUT
     # configure the clint with the request_timeout
-    client = stripe.http_client.RequestsClient(timeout=request_timeout)
+    client = stripe.RequestsClient(timeout=request_timeout)
     apply_request_timer_to_client(client)
     stripe.default_http_client = client
     # Set stripe logging to INFO level
@@ -342,13 +307,15 @@ def load_schemas():
     return schemas
 
 
-def get_discovery_metadata(schema, key_properties, replication_method, replication_key):
+def get_discovery_metadata(schema, key_properties, replication_method, replication_key, parent=None):
     mdata = metadata.new()
     mdata = metadata.write(mdata, (), 'table-key-properties', key_properties)
     mdata = metadata.write(mdata, (), 'forced-replication-method', replication_method)
 
     if replication_key:
         mdata = metadata.write(mdata, (), 'valid-replication-keys', [replication_key])
+    if parent:
+        mdata = metadata.write(mdata, (), 'parent-tap-stream-id', parent)
 
     for field_name in schema['properties'].keys():
         if field_name in key_properties or field_name in [replication_key, "updated"]:
@@ -374,12 +341,13 @@ def discover():
             'metadata': get_discovery_metadata(schema,
                                                stream_map['key_properties'],
                                                'INCREMENTAL',
-                                               STREAM_REPLICATION_KEY.get(stream_name)),
+                                               STREAM_REPLICATION_KEY.get(stream_name),
+                                               PARENT_STREAM_MAP.get(stream_name)),
             # Events may have a different key property than this. Change
             # if it's appropriate.
             'key_properties': stream_map['key_properties']
         }
-        if stream_name == 'payment_methods':
+        if stream_name in ('payment_methods', 'credit_grants'):
             catalog_entry['replication_method'] = 'FULL_TABLE'
         streams.append(catalog_entry)
 
@@ -469,25 +437,6 @@ def reduce_foreign_keys(rec, stream_name):
                 if isinstance(val, list) and val and isinstance(val[0], StripeObject):
                     rec['lines'][k] = [li.to_dict_recursive() for li in val]
     return rec
-
-# Retry 429 RateLimitError 7 times.
-@backoff.on_exception(backoff.expo,
-                        stripe.error.RateLimitError,
-                        max_tries=7,
-                        factor=2)
-def new_request(self, method, url, params=None, headers=None):
-    '''The new request function to overwrite the request() function of the APIRequestor class of SDK.'''
-    rbody, rcode, rheaders, my_api_key = self.request_raw(
-        method.lower(), url, params, headers, is_streaming=False
-    )
-    resp = self.interpret_response(rbody, rcode, rheaders)
-    LOGGER.debug('request id : %s', resp.request_id)
-    return resp, my_api_key
-
-
-# To log the request_id, we replaced the request() function of the APIRequestor
-# class o SDK, captured the response and logged the request_id
-APIRequestor.request = new_request
 
 
 def paginate(sdk_obj, filter_key, start_date, end_date, stream_name, request_args=None, limit=100):
@@ -579,6 +528,42 @@ def write_bookmark_for_stream(stream_name, replication_key, stream_bookmark):
 # pylint: disable=too-many-statements
 
 
+def sync_full_table_stream(stream_name):
+    """
+    Sync a stream as a full table on every run. Used for streams whose list
+    endpoint does not support a `created` range filter (e.g. Billing Credit
+    Grants), so date-windowed pagination is not possible. These streams are
+    low volume, so a full scan each run is cheap and keeps mutable attributes
+    (such as a credit grant's `voided_at` / `expires_at`) current without
+    relying on the events stream.
+    """
+    stream_metadata = metadata.to_map(Context.get_catalog_entry(stream_name)['metadata'])
+    stream_field_whitelist = json.loads(Context.config.get('whitelist_map', '{}')).get(stream_name)
+    extraction_time = singer.utils.now()
+
+    with Transformer(singer.UNIX_SECONDS_INTEGER_DATETIME_PARSING) as transformer:
+        for stream_obj in STREAM_SDK_OBJECTS[stream_name]['sdk_object'].list(
+                limit=100,
+                stripe_account=Context.config.get('account_id'),
+                expand=STREAM_TO_EXPAND_FIELDS.get(stream_name, [])
+        ).auto_paging_iter():
+            rec = unwrap_data_objects(stream_obj.to_dict_recursive())
+            rec = reduce_foreign_keys(rec, stream_name)
+            # The object carries its own `updated` timestamp; fall back to
+            # `created` so the column is always populated.
+            rec['updated'] = rec.get('updated') or rec.get('created')
+            rec = transformer.transform(rec,
+                                        Context.get_catalog_entry(stream_name)['schema'],
+                                        stream_metadata)
+            if stream_field_whitelist:
+                rec = apply_whitelist(rec, stream_field_whitelist)
+
+            singer.write_record(stream_name, rec, time_extracted=extraction_time)
+            Context.new_counts[stream_name] += 1
+
+    singer.write_state(Context.state)
+
+
 def sync_stream(stream_name, is_sub_stream=False):
     """
     Sync each stream, looking for newly created records. Updates are captured by events stream.
@@ -588,6 +573,12 @@ def sync_stream(stream_name, is_sub_stream=False):
                     or when called through only child stream i.e. when parent is not selected.
     """
     LOGGER.info("Started syncing stream %s", stream_name)
+
+    # Billing Credit Grants cannot be date-windowed (their list endpoint has no
+    # `created` filter), so they are synced as a full table.
+    if stream_name == 'credit_grants':
+        sync_full_table_stream(stream_name)
+        return
 
     stream_metadata = metadata.to_map(Context.get_catalog_entry(stream_name)['metadata'])
     stream_field_whitelist = json.loads(Context.config.get('whitelist_map', '{}')).get(stream_name)
@@ -769,9 +760,12 @@ def sync_sub_stream(sub_stream_name, parent_obj, updates=False):
 
     if sub_stream_name == "invoice_line_items":
         invoice_id = parent_obj.id
-        # Use the correct API for Stripe 5.5.0
+        # Fetch line items via the invoice; the expanded `lines` sub-list on the
+        # invoice object is deprecated in newer Stripe API versions
         invoice_obj = stripe.Invoice.retrieve(invoice_id)
         object_list = invoice_obj.lines.list(limit=100)
+    elif sub_stream_name == "transfer_reversals":
+        object_list = parent_obj.reversals
     elif sub_stream_name == "subscription_items":
         # parent_obj.items is a function that returns a dict iterator, so use the attribute
         object_list = parent_obj.get("items")
@@ -935,7 +929,7 @@ def should_sync_event(events_obj, object_type, id_to_created_map):
 
 
 def recursive_to_dict(some_obj):
-    if isinstance(some_obj, stripe.stripe_object.StripeObject):
+    if isinstance(some_obj, StripeObject):
         return recursive_to_dict(dict(some_obj))
 
     if isinstance(some_obj, list):
@@ -1000,7 +994,7 @@ def sync_event_updates(stream_name, is_sub_stream):
     max_created = int(max(bookmark_value, max_event_start_date))
 
     if max_created != bookmark_value and (bookmark_value != start_date or reset_brk_flag_value is True):
-        reset_bookmark_for_event_updates(is_sub_stream, stream_name, sub_stream_name, start_date)
+        reset_bookmark_for_event_updates(is_sub_stream, stream_name, sub_stream_name)
         raise Exception("Provided current bookmark date for event updates is older than 30 days."\
             " Hence, resetting the bookmark date of respective {}/{} stream to start date.".format(stream_name, sub_stream_name))
 
@@ -1125,24 +1119,22 @@ def write_bookmark_for_event_updates(is_sub_stream, stream_name, sub_stream_name
 
     singer.write_state(Context.state)
 
-def reset_bookmark_for_event_updates(is_sub_stream, stream_name, sub_stream_name, start_date):
+def reset_bookmark_for_event_updates(is_sub_stream, stream_name, sub_stream_name):
     """
     Reset bookmark for parent and child streams to start date and clear the bookmark date for event updates.
     """
     # Write the parent bookmark value only when the parent is selected
     if not is_sub_stream:
-        singer.write_bookmark(Context.state,
+        singer.clear_bookmark(Context.state,
                               stream_name,
-                              STREAM_REPLICATION_KEY.get(stream_name),
-                              start_date)
+                              STREAM_REPLICATION_KEY.get(stream_name))
         Context.state.get("bookmarks").pop(stream_name + '_events', None)
 
     # Write the child bookmark value only when the child is selected
     if sub_stream_name and Context.is_selected(sub_stream_name):
-        singer.write_bookmark(Context.state,
+        singer.clear_bookmark(Context.state,
                               sub_stream_name,
-                              STREAM_REPLICATION_KEY.get(sub_stream_name),
-                              start_date)
+                              STREAM_REPLICATION_KEY.get(sub_stream_name))
         Context.state.get("bookmarks").pop(sub_stream_name + '_events', None)
 
     singer.write_state(Context.state)

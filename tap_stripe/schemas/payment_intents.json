@@ -10,6 +10,12 @@
               "string"
             ]
         },
+        "customer_account": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
         "amount": {
             "type": [
               "null",

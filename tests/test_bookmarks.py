@@ -34,6 +34,7 @@ class BookmarkTest(BaseTapTest):
     @classmethod
     def setUpClass(cls):
         LOGGER.info("Start Setup")
+        BaseTapTest.ensure_available_balance(BaseTapTest)
         # Create data prior to first sync
         cls.streams_to_create = {
             "customers",

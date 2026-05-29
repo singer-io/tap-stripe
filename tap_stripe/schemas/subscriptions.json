@@ -18,6 +18,12 @@
       ],
       "format": "date-time"
     },
+    "customer_account": {
+      "type": [
+        "null",
+        "string"
+      ]
+    },
     "updated_by_event_type": {
       "type": [
         "null",

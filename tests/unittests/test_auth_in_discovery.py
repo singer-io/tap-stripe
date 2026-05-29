@@ -38,7 +38,7 @@ class TestBasicAuthInDiscoverMode(unittest.TestCase):
         except stripe.error.AuthenticationError as e:
             expected_error_message = 'Invalid API Key provided: test_secret'
             # Verifying the message formed for the custom exception
-            self.assertEquals(str(e), expected_error_message)
+            self.assertEqual(str(e), expected_error_message)
         # Verify that the discover is not called  when incorrect credentials are passed
         self.assertEqual(mocked_discover.call_count, 0)
 

@@ -767,8 +767,10 @@ def sync_sub_stream(sub_stream_name, parent_obj, updates=False):
     elif sub_stream_name == "transfer_reversals":
         object_list = parent_obj.reversals
     elif sub_stream_name == "subscription_items":
-        # parent_obj.items is a function that returns a dict iterator, so use the attribute
-        object_list = parent_obj.get("items")
+        # `items` is also the inherited dict method name, and stripe-python v8+
+        # dropped StripeObject.get(), so read the subscription's items field via
+        # subscript.
+        object_list = parent_obj["items"] if "items" in parent_obj else None
     elif sub_stream_name == "payout_transactions":
         payout_id = parent_obj['id']
         acct_id = Context.config.get('account_id')
@@ -1039,19 +1041,17 @@ def sync_event_updates(stream_name, is_sub_stream):
                     Context.get_catalog_entry(stream_name)['metadata']
                 )
 
-                # Filter out line items with null ids
-                if isinstance(events_obj.get('data').get('object'), stripe.Invoice):
-                    invoice_obj = events_obj.get('data', {}).get('object', {})
-                    line_items = invoice_obj.get('lines', {}).get('data')
-
-                    if line_items:
-                        filtered_line_items = [line_item for line_item in line_items
-                                               if line_item.get('id')]
-
-                        invoice_obj['lines']['data'] = filtered_line_items
-
                 rec = recursive_to_dict(event_resource_obj)
                 rec = unwrap_data_objects(rec)
+
+                # Filter out invoice line items with null ids before
+                # reduce_foreign_keys (which reads l['id']). Some legacy invoice
+                # events carry line items without an id. Done on the plain dict
+                # because stripe-python v8+ StripeObject no longer supports .get().
+                if isinstance(event_resource_obj, stripe.Invoice) and isinstance(rec.get('lines'), list):
+                    rec['lines'] = [line_item for line_item in rec['lines']
+                                    if line_item.get('id')]
+
                 rec = reduce_foreign_keys(rec, stream_name)
                 rec["updated"] = events_obj.created
                 rec["updated_by_event_type"] = events_obj.type
@@ -1071,7 +1071,7 @@ def sync_event_updates(stream_name, is_sub_stream):
                             Context.updated_counts[stream_name] += 1
 
                         # Delete events should be synced but not their subobjects
-                        if events_obj.get('type', '').endswith('.deleted'):
+                        if (events_obj.type or '').endswith('.deleted'):
                             continue
 
                         # Write child stream records only when the child stream is selected

@@ -1029,6 +1029,20 @@ def sync_event_updates(stream_name, is_sub_stream):
         for events_obj in response.auto_paging_iter():
             event_resource_obj = events_obj.data.object
 
+            # customer.discount.* events carry a Discount as data.object, not a
+            # Customer. should_sync_event filters by object type, so the discount
+            # object would be silently dropped. Fetch the parent Customer instead
+            # so the updated discount field is reflected in the customers stream.
+            if stream_name == 'customers' and isinstance(event_resource_obj, stripe.Discount):
+                customer_id = recursive_to_dict(event_resource_obj).get('customer')
+                if not customer_id:
+                    continue
+                event_resource_obj = stripe.Customer.retrieve(
+                    customer_id,
+                    expand=STREAM_TO_EXPAND_FIELDS.get('customers', []),
+                    stripe_account=Context.config.get('account_id'),
+                )
+
             # Check whether we should sync the event based on its created time
             if not should_sync_event(events_obj,
                                      STREAM_TO_TYPE_FILTER[stream_name]['object'],

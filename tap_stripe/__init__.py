@@ -908,11 +908,13 @@ def sync_sub_stream(sub_stream_name, parent_obj, updates=False):
                 Context.new_counts[sub_stream_name] += 1
 
 
-def should_sync_event(events_obj, object_type, id_to_created_map):
+def should_sync_event(events_obj, object_type, id_to_created_map, resource_dict=None):
     """Checks to ensure the event's underlying object has an id and that the id_to_created_map
     contains an entry for that id. Returns true the first time an id should be added to the map
-    and when we're looking at an event that is created later than one we've seen before."""
-    event_resource_dict = recursive_to_dict(events_obj.data.object)
+    and when we're looking at an event that is created later than one we've seen before.
+    resource_dict overrides the event's own data.object for the id/object check, for events
+    (e.g. customer.discount.*) whose payload is a child object of the synced resource."""
+    event_resource_dict = resource_dict if resource_dict is not None else recursive_to_dict(events_obj.data.object)
     event_resource_id = event_resource_dict.get('id')
     current_max_created = id_to_created_map.get(event_resource_id)
     event_created = events_obj.created
@@ -1031,22 +1033,31 @@ def sync_event_updates(stream_name, is_sub_stream):
 
             # customer.discount.* events carry a Discount as data.object, not a
             # Customer. should_sync_event filters by object type, so the discount
-            # object would be silently dropped. Fetch the parent Customer instead
-            # so the updated discount field is reflected in the customers stream.
+            # object would be silently dropped. Dedup against the parent customer
+            # id (the same key regular customer.* events use), then fetch the
+            # parent Customer so the updated discount field is reflected in the
+            # customers stream.
             if stream_name == 'customers' and isinstance(event_resource_obj, stripe.Discount):
                 customer_id = recursive_to_dict(event_resource_obj).get('customer')
                 if not customer_id:
                     continue
+                if not should_sync_event(events_obj,
+                                         STREAM_TO_TYPE_FILTER[stream_name]['object'],
+                                         updated_object_timestamps,
+                                         resource_dict={'id': customer_id, 'object': 'customer'}):
+                    continue
+                # The list-endpoint expand paths ('data.*') are invalid on a
+                # single-object retrieve; strip the prefix.
                 event_resource_obj = stripe.Customer.retrieve(
                     customer_id,
-                    expand=STREAM_TO_EXPAND_FIELDS.get('customers', []),
+                    expand=[field[len('data.'):] if field.startswith('data.') else field
+                            for field in STREAM_TO_EXPAND_FIELDS.get('customers', [])],
                     stripe_account=Context.config.get('account_id'),
                 )
-
             # Check whether we should sync the event based on its created time
-            if not should_sync_event(events_obj,
-                                     STREAM_TO_TYPE_FILTER[stream_name]['object'],
-                                     updated_object_timestamps):
+            elif not should_sync_event(events_obj,
+                                       STREAM_TO_TYPE_FILTER[stream_name]['object'],
+                                       updated_object_timestamps):
                 continue
 
             # Syncing an event as its the first time we've seen it or its the most recent version

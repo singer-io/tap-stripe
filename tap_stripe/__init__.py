@@ -312,6 +312,16 @@ class DependencyException(Exception):
     pass
 
 
+class TapPermissionError(Exception):
+    """Tap-owned exception raised when access to streams is denied.
+    
+    This exception is used when all streams are inaccessible due to permission issues,
+    providing a clear and stable way to report permission/access control errors
+    without depending on the Stripe SDK's exception structure.
+    """
+    pass
+
+
 def get_abs_path(path):
     return os.path.join(os.path.dirname(os.path.realpath(__file__)), path)
 
@@ -395,12 +405,8 @@ def _apply_access_checks(schemas):
     _prune_inaccessible_children(schemas)
 
     if not schemas:
-        raise StripeForbiddenError(
-            "HTTP-error-code: 403, Error: The credentials do not have 'read' access to any supported streams.",
-            None,
-            403,
-            None,
-            None,
+        raise TapPermissionError(
+            "The credentials do not have 'read' access to any supported streams."
         )
 
     if inaccessible_streams:

@@ -6,7 +6,7 @@ from tap_stripe import (
     _prune_inaccessible_children,
     PARENT_STREAM_MAP,
     STREAM_SDK_OBJECTS,
-    StripeForbiddenError,
+    TapPermissionError,
     discover,
 )
 
@@ -68,7 +68,7 @@ class TestApplyAccessChecks(unittest.TestCase):
     def test_raises_when_all_parents_inaccessible(self, _mock_check):
         schemas = {stream_name: {'schema': {}} for stream_name in set(PARENT_STREAM_MAP.values())}
 
-        with self.assertRaises(StripeForbiddenError):
+        with self.assertRaises(TapPermissionError):
             _apply_access_checks(schemas)
 
     @patch('tap_stripe._check_stream_access')

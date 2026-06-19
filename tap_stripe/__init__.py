@@ -135,6 +135,8 @@ DEFAULT_EVENT_UPDATE_DATE_WINDOW = 7  # default date window to fetch event updat
 # default request timeout
 REQUEST_TIMEOUT = 300  # 5 minutes
 
+StripeForbiddenError = stripe.error.PermissionError
+
 
 def new_list(self, api_key=None, stripe_version=None, stripe_account=None, **params):
     """
@@ -344,6 +346,70 @@ def load_schemas():
     return schemas
 
 
+def _check_stream_access(stream_name, stream_map):
+    request_args = dict(stream_map.get('request_args') or {})
+    sdk_object = stream_map['sdk_object']
+
+    try:
+        sdk_object.list(
+            limit=1,
+            stripe_account=Context.config.get('account_id'),
+            expand=STREAM_TO_EXPAND_FIELDS.get(stream_name, []),
+            **request_args
+        )
+        return True
+    except StripeForbiddenError as error:
+        LOGGER.warning("Excluding unauthorized stream '%s' "
+                       "from catalog. HTTP-Error-Message: '%s'", stream_name, error)
+        return False
+
+
+def _prune_inaccessible_children(schemas):
+    removed_stream = True
+    while removed_stream:
+        removed_stream = False
+        for stream_name, parent_stream in PARENT_STREAM_MAP.items():
+            if stream_name in schemas and parent_stream not in schemas:
+                LOGGER.warning(
+                    "Stream '%s' excluded from catalog because its parent stream '%s' is not accessible.",
+                    stream_name,
+                    parent_stream,
+                )
+                schemas.pop(stream_name, None)
+                removed_stream = True
+
+
+def _apply_access_checks(schemas):
+    inaccessible_streams = []
+
+    for stream_name, stream_map in STREAM_SDK_OBJECTS.items():
+        if stream_name not in schemas or stream_name in PARENT_STREAM_MAP:
+            continue
+
+        if not _check_stream_access(stream_name, stream_map):
+            inaccessible_streams.append(stream_name)
+
+    for stream_name in inaccessible_streams:
+        schemas.pop(stream_name, None)
+
+    _prune_inaccessible_children(schemas)
+
+    if not schemas:
+        raise StripeForbiddenError(
+            "HTTP-error-code: 403, Error: The credentials do not have 'read' access to any supported streams.",
+            None,
+            403,
+            None,
+            None,
+        )
+
+    if inaccessible_streams:
+        LOGGER.warning(
+            "No 'read' access to stream(s): %s. Excluded from catalog.",
+            ", ".join(inaccessible_streams),
+        )
+
+
 def get_discovery_metadata(schema, key_properties, replication_method, replication_key, parent=None):
     mdata = metadata.new()
     mdata = metadata.write(mdata, (), 'table-key-properties', key_properties)
@@ -365,9 +431,12 @@ def get_discovery_metadata(schema, key_properties, replication_method, replicati
 
 def discover():
     raw_schemas = load_schemas()
+    _apply_access_checks(raw_schemas)
     streams = []
 
     for stream_name, stream_map in STREAM_SDK_OBJECTS.items():
+        if stream_name not in raw_schemas:
+            continue
         schema = raw_schemas[stream_name]['schema']
         refs = load_shared_schema_refs()
         # create and add catalog entry
@@ -457,9 +526,10 @@ def reduce_foreign_keys(rec, stream_name):
                     rec['lines'][k] = [li.to_dict_recursive() for li in val]
     return rec
 
-# Retry 429 RateLimitError 7 times.
+# Retry 429 RateLimitError and transient network errors (e.g. ChunkedEncodingError wrapped as
+# APIConnectionError by the Stripe SDK) up to 7 times.
 @backoff.on_exception(backoff.expo,
-                        stripe.error.RateLimitError,
+                        (stripe.error.RateLimitError, stripe.error.APIConnectionError),
                         max_tries=7,
                         factor=2)
 def new_request(self, method, url, params=None, headers=None):

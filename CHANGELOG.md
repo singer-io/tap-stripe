@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.4.0
+  * Exclude 403-forbidden streams from discovery [#225](https://github.com/singer-io/tap-stripe/pull/225)
+  * Bump dependencies for compliance
+
 ## 3.3.1
   * Update reset_bookmark_for_event_updates to clear bookmarks when events stream ages out
 

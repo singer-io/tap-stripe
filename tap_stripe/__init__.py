@@ -9,7 +9,7 @@ import stripe
 import stripe.error
 from stripe.stripe_object import StripeObject
 from stripe.api_resources.list_object import ListObject
-from stripe.error import InvalidRequestError
+from stripe.error import InvalidRequestError, PermissionError
 from stripe.api_requestor import APIRequestor
 import singer
 from singer import utils, Transformer, metrics
@@ -134,8 +134,6 @@ DEFAULT_EVENT_UPDATE_DATE_WINDOW = 7  # default date window to fetch event updat
 
 # default request timeout
 REQUEST_TIMEOUT = 300  # 5 minutes
-
-StripeForbiddenError = stripe.error.PermissionError
 
 
 def new_list(self, api_key=None, stripe_version=None, stripe_account=None, **params):
@@ -308,17 +306,6 @@ def unwrap_data_objects(rec):
     return rec
 
 
-class DependencyException(Exception):
-    """Raised when stream dependencies cannot be satisfied."""
-
-
-class TapPermissionError(Exception):
-    """Tap-owned exception raised when access to streams is denied.
-    
-    This exception is used when all streams are inaccessible due to permission issues,
-    providing a clear and stable way to report permission/access control errors
-    without depending on the Stripe SDK's exception structure.
-    """
 def get_abs_path(path):
     return os.path.join(os.path.dirname(os.path.realpath(__file__)), path)
 
@@ -365,7 +352,7 @@ def _check_stream_access(stream_name, stream_map):
             **request_args
         )
         return True
-    except StripeForbiddenError as error:
+    except PermissionError as error:
         LOGGER.warning("Excluding unauthorized stream '%s' "
                        "from catalog. HTTP-Error-Message: '%s'", stream_name, error)
         return False
@@ -402,7 +389,7 @@ def _apply_access_checks(schemas):
     _prune_inaccessible_children(schemas)
 
     if not schemas:
-        raise TapPermissionError(
+        raise PermissionError(
             "The credentials do not have 'read' access to any supported streams."
         )
 

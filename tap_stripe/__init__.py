@@ -309,7 +309,7 @@ def unwrap_data_objects(rec):
 
 
 class DependencyException(Exception):
-    pass
+    """Raised when stream dependencies cannot be satisfied."""
 
 
 class TapPermissionError(Exception):
@@ -319,9 +319,6 @@ class TapPermissionError(Exception):
     providing a clear and stable way to report permission/access control errors
     without depending on the Stripe SDK's exception structure.
     """
-    pass
-
-
 def get_abs_path(path):
     return os.path.join(os.path.dirname(os.path.realpath(__file__)), path)
 

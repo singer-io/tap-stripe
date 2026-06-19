@@ -9,7 +9,7 @@ import stripe
 import stripe.error
 from stripe.stripe_object import StripeObject
 from stripe.api_resources.list_object import ListObject
-from stripe.error import InvalidRequestError, PermissionError
+from stripe.error import InvalidRequestError, PermissionError as StripePermissionError
 from stripe.api_requestor import APIRequestor
 import singer
 from singer import utils, Transformer, metrics
@@ -352,7 +352,7 @@ def _check_stream_access(stream_name, stream_map):
             **request_args
         )
         return True
-    except PermissionError as error:
+    except StripePermissionError as error:
         LOGGER.warning("Excluding unauthorized stream '%s' "
                        "from catalog. HTTP-Error-Message: '%s'", stream_name, error)
         return False
@@ -389,7 +389,7 @@ def _apply_access_checks(schemas):
     _prune_inaccessible_children(schemas)
 
     if not schemas:
-        raise PermissionError(
+        raise StripePermissionError(
             "The credentials do not have 'read' access to any supported streams."
         )
 

@@ -67,7 +67,8 @@ KNOWN_MISSING_FIELDS = {
         'payment_details',
         'payment_method_configuration_details',
         'managed_payments',
-        'shared_payment_granted_token'
+        'shared_payment_granted_token',
+        'allowed_payment_method_types'
     },
 }
 

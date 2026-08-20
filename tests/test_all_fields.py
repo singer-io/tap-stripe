@@ -37,6 +37,7 @@ KNOWN_MISSING_FIELDS = {
     'invoice_items': {
         'price',
         'quantity_decimal',
+        'frozen_fields',
     },
     'payouts': {
         'application_fee',
@@ -52,7 +53,6 @@ KNOWN_MISSING_FIELDS = {
     'invoice_line_items': {
         'margins',
         'quantity_decimal',
-        'frozen_fields',
     },
     'invoices': {
         'amount_shipping',

@@ -52,6 +52,7 @@ KNOWN_MISSING_FIELDS = {
     'invoice_line_items': {
         'margins',
         'quantity_decimal',
+        'frozen_fields',
     },
     'invoices': {
         'amount_shipping',
